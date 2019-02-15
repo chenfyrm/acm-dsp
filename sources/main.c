@@ -3,128 +3,29 @@
 // TITLE:	NUGTCU_DSP2
 // DESCRIPTION: NUGTCU,T=250uS
 //################################################################################
+/*
+ * #include
+ *
+ * */
 #include "DSP2833x_Device.h"     
 #include "DSP2833x_Examples.h"  
 #include "C28x_FPU_FastRTS.h"
 #include <math.h>
-
+/*
+ * #define
+ * */
 //--------------------------------------------------------------------------------
-#define	  Ver_DSP2			0x10
-
 #define	  IO_ABC_OVER		260
-//#define	  IO_RMS_OVER		70
-
 #define	  UDC_OVER			1850
 #define	  TEMP_IGBT_OVER	70
 #define	  TEMP_AMB_OVER		60
 #define	  PI2             6.283185
-//#define   PI              3.141593
-//--------------------------------------------------------------------------------
-#define   UDC_KP_UL  55  
-#define   UDC_KI_UL  60  
-#define   UDC_KP_LL  -90 
-#define   UDC_KI_LL  -90 
+#define   PI              3.141593
 //--------------------------------------------------------------------------------
 
-int16	*XintfZone0=(int16 *)0x004000;//Unused
-int16	*XintfZone6=(int16 *)0x100000;//Unused
-int16	*XintfZone7=(int16 *)0x200000;//DP RAM
-//--------------------------------------------------------------------------------
-Uint16	Cnt_Period,Cnt_us,Cnt_sec,Cnt_min,Cnt_IORMS,ERR_IORMS,Cnt_UDC,ERR_UDC;
-Uint16	Ua_CMPA,Ub_CMPA,Uc_CMPA,Ua_CMPB,Ub_CMPB,Uc_CMPB,GPIO_Temp181,GPIO_Temp182;
-int16	Ver_DSP1=0,Ver_FPGA=0;
-int16	Num_com,In_UDC;
-
-//--------------------------------------------------------------------------------
-float32	UDC_Kp=0.3;
-float32	sinVal,cosVal;   
-//--------------------------------------------------------------------------------
-volatile int16	DPRAM_SAM[50];
-volatile Uint16	TCU_Mode;
-
-
-//--------------------------------------------------------------------------------
-struct PI_Rms
-{
-	float32 Square;
-	float32 Rms;
-};
-volatile struct PI_Rms PI_PhARms = {0, 0};
-volatile struct PI_Rms PI_PhBRms = {0, 0};
-volatile struct PI_Rms PI_PhCRms = {0, 0};
-
-volatile struct ABC VO_abc;//娑撳娴夐悽闈涘竾ABC
-volatile struct ABC IO_abc = {0,0,0,0};//娑撳娴夐悽鍨ウABC
-                                                    
-
-
-volatile int16 NX_Dsp1OpSt;				// DSP1 operation state
-volatile int16 NX_Dsp2OpSt = 0x11;		// DSP2 operation state
-volatile int16 NX_Dsp2Ver;				// DSP2 version
-
-volatile Uint16 NX_Dsp1PlCn;		// DSP1 pulse(heartbeat) counter
-volatile Uint16 NX_Dsp2PlCn;		// DSP2 pulse(heartbeat) counter
-
-volatile float32 WU_DcLk_Nom;		// nominal voltage reference of DC link
-volatile float32 WI_DcLk_Nom;		// nominal current reference of DC link
-volatile float32 WI_Ac_Nom;			// nominal AC current reference
-
-volatile float32 PX_DcLkStbU;		// DC-link voltage stabilized
-volatile float32 PX_DcLkOscSpr;		// DC-link oscillation suppressed
-volatile Uint16 WU_BrCp;			// voltage reference of brake chopper
-
-volatile float32 WU_OpLo;			// voltage   reference for open loop
-volatile float32 WF_OpLo;			// frequency reference for open loop
-
-
-struct PF_HybMod					// frequency of hybrid modulation
-{
-	float32 PF_AsMod;				// asynchronous modulation
-	float32 PF_SynRt21Mod;			// synchronous modulation ratio=21
-	float32 PF_SynRt15Mod;			// synchronous modulation ratio=15
-	float32 PF_SynRt7Mod;			// synchronous modulation ratio=7
-	float32 PF_SynRt5Mod;			// synchronous modulation ratio=5
-	float32 PF_SynRt3Mod;			// synchronous modulation ratio=3
-};
-
-struct PF_HybMod PF_HybMod_Spf = {0,0,48,56,64,72};
-
-struct PX_Mt 					// motor parameters
-{
-	Uint16  PX_Ppa;				// pole pairs
-	Uint16 	PF_SxFr_Nom;		// stator rated(nominal) frequency, Hz
-	Uint16 	PX_SxRxLm;			// mutual inductance, mH
-	Uint16	PX_SxLl;			// stator leakage inductance, mH
-	Uint16  PX_RxLl;			// rotor leakage inductance referred to the stator, mH
-	Uint16  PR_SxRs;			// stator resistance, mOhm
-	Uint16  PR_RxRs;			// rotor resistance referred to the stator, mOhm
-	Uint16  PY_RxMag_Nom;		// rotor rated(nominal) flux magnitude, WB
-};
-
-volatile struct PX_Mt PX_AsMt  = {2,80,300,20,20,200,230,1.86};
-
-struct PX_PID
-{
-	float32  Ref;   			// Input: Reference input
-    float32  Fb;   				// Input: Feedback input
-	float32  Err;				// Variable: Error
-	float32  Kp;				// Parameter: Proportional gain
-	float32  Ki;			    // Parameter: Integral gain
-	float32  Kd; 		        // Parameter: Derivative gain
-	float32  Up;				// Variable: Proportional output
-	float32  Ui;				// Variable: Integral output
-	float32  Ud;				// Variable: Derivative output
-	float32  ItgMax;		    // Parameter: Maximum output
-	float32  ItgMin;	    	// Parameter: Minimum output
-	float32  OutMax;		    // Parameter: Maximum output
-	float32  OutMin;	    	// Parameter: Minimum output
-	float32  Out;   			// Output: PID output
-	float32  Err_1;		   	    // History: Previous Error
-};
-
-volatile struct PX_PID AsMtDAx  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};		// d-axis of asynchronous motor
-volatile struct PX_PID AsMtQAx  = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};		// q-axis of asynchronous motor
-
+/*
+ * struct define
+ * */
 //-----------------input-------------------------
 struct PX_In
 {
@@ -146,16 +47,14 @@ struct PX_In
 	float32  XX_TnWgh;					// train weight, Ton
 	float32  XH_AmTp;         			// ambient temperature, C
 };
-
-
 volatile struct PX_In PX_In_Spf = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
+//========================================================================
 struct PX_InPr
 {
-	float32  XU_DcLk_Max;   		// DC-link voltage, V
-	float32  XU_DcLk_Min;   		// DC-link voltage, V
-	Uint16   XU_DcLkOvCn;   		// DC-link over-voltage counter
-	Uint16   XU_DcLkUnCn;   		// DC-link under-voltage counter
+	float32  XU_DcLk_Max;   			// DC-link voltage, V
+	float32  XU_DcLk_Min;   			// DC-link voltage, V
+	Uint16   XU_DcLkOvCn;   			// DC-link over-voltage counter
+	Uint16   XU_DcLkUnCn;   			// DC-link under-voltage counter
     float32  XI_DcLk_Max;   			// DC current, A
     Uint16   XI_DcLkOvCn;   			// DC-link over-current counter
 	float32  XI_PhABC_Max;				// phase ABC maximum current, A
@@ -171,9 +70,7 @@ struct PX_InPr
 	float32  XV_AtSpdTn_Max;	    	// actual speed, km/h
 	float32  XH_AmTp_Max;         		// ambient temperature, C
 };
-
 volatile struct PX_InPr PX_InPr_Spf = {740,0,0,0,53,0,32,0,0,0,0,0,0,0,0,0,0,0};
-
 //-------------output-------------
 struct PX_Out
 {
@@ -192,16 +89,13 @@ struct PX_Out
 	float32  XI_PhC_Rms;		    // phase C current, RMS
 	float32  XH_BrRsTp_Est;	    	// estimated temperature of brake resistor, C
 	float32  XH_DcNdTp_Est;   		// estimated temperature of DC inductor, C
-//	Uint16	 XX_Flt1;				// 15 fault states
 	Uint16	 XX_Flt2;				// 15 fault states
 	Uint16	 XX_Flt3;				// 15 fault states
 	Uint16	 XX_Flt4;				// 15 fault states
 	Uint16	 XX_Flt5;				// 15 fault states
 	float32  Time;
 };
-
 volatile struct PX_Out PX_Out_Spf = {21,7500,3750,3750,3750,3750,0,0,0,0,0,0,0,0,0,0,0,0,0,1/1040};
-
 //============================================================================================
 struct  COM_BITS
 {							// XX_Flt1
@@ -222,44 +116,42 @@ struct  COM_BITS
     Uint16      TA14:1;		// Ic
     Uint16      TA15:1;		// Iac
 };
-
 union WARN_REG
 {
     Uint16             all;
     struct COM_BITS    bit;
 };
-
 union  WARN_REG   XX_Flt1;				// 16 fault states
 //======================================================================
 
-Uint16 SX_NtFlt = 0;	// initialization fault state
-Uint16 XX_NtFltCn = 0;	//
-Uint16 SX_Run = 0;		// DSP running state, 1 means running, 0 means stop
+int16	*XintfZone0=(int16 *)0x004000;//Unused
+int16	*XintfZone6=(int16 *)0x100000;//Unused
+int16	*XintfZone7=(int16 *)0x200000;//DP RAM
+//=======================================================================
+volatile int16 NX_Dsp1OpSt;				// DSP1 operation state
+volatile int16 NX_Dsp2OpSt = 0x11;		// DSP2 operation state
+volatile int16 NX_Dsp2Ver;				// DSP2 version
+
+volatile Uint16 NX_Dsp1PlCn;		// DSP1 pulse(heartbeat) counter
+volatile Uint16 NX_Dsp2PlCn;		// DSP2 pulse(heartbeat) counter
+
+volatile float32 PX_DcLkStbU;		// DC-link voltage stabilized
+volatile float32 PX_DcLkOscSpr;		// DC-link oscillation suppressed
+
+Uint16	GPIO_Temp181,GPIO_Temp182;
+Uint16 SX_Run = 0;		// DSP2 running state, 1 means running, 0 means stop
 Uint16 SX_Dsp2Rd = 0;	// Dsp2 Ready state
-
+//===========================================================================
 //--------------------------------------------------------------------------------
-Uint16 Buffer_cnt = 0;
-Uint16 Buffer_cnt1 = 0;
-Uint16 TIME_cnt = 0;
-
-//--------------------------------------------------------------------------------
+/**/
 void DPRAM_RD(void);
+void NX_Pr(void);
 void DPRAM_WR(void);
-void PI_RmsClc(void);	// current RMS calculation
-void Protect_L1(void);
-
 void EN_GPIO30(void);
 void DIS_GPIO30(void);
-void InitVariables(void);
-void InitMode(void);
-void DIS_CAL(void);
-void Nt_Warn(void);
-void Scope(void);
-float Uabc_PLL(float Ua,float Ub,float Uc);
-void NX_Pr(void);
+//===========================================================================
 interrupt void DPRAM_isr(void);
 //=================================================================================
-/*中文注释*/
 void main(void)
 {
 	InitSysCtrl();
@@ -288,48 +180,248 @@ void main(void)
 
 	while(1)
 	{
-
+	//--------------------------------------------------------------------------------
+		GPIO_Temp181 = GpioDataRegs.GPADAT.bit.GPIO18;//外部中断输入标志位
+		DELAY_US(2L);//主要是为了判断是否长时间未进入中断复位，此处可采用无效延时，或者插入其他有效的执行任务
+		GPIO_Temp182 = GpioDataRegs.GPADAT.bit.GPIO18;
+		if((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0))
+		{
+			//INTR复位语句
+		}
+	//--------------------------------------------------------------------------------
+        if(((NX_Dsp1OpSt == 0x33) || (NX_Dsp1OpSt == 0x44)) && (NX_Dsp2OpSt == 0x33) && (XX_Flt1.all == 0))
+        	SX_Dsp2Rd = 1;
+        else
+        	SX_Dsp2Rd = 0;
 	}
 }
 //==============================================================================
 interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger the interrupt
 {  
+	DIS_GPIO30();
 
+	DPRAM_RD(); //读dsp1交互信息
+	NX_Pr();
+
+	NX_Dsp2PlCn++;
+	if(NX_Dsp2PlCn > 32767)
+		NX_Dsp2PlCn = 0;
+
+	/**/
+	if(SX_Dsp2Rd == 1)
+	{
+
+		SX_Run = 1;
+	}
+	else
+	{
+		PX_Out_Spf.XX_Pwm1AVv = 9014;
+		PX_Out_Spf.XX_Pwm2AVv =	9014;
+		PX_Out_Spf.XX_Pwm3AVv = 9014;
+		SX_Run = 0;
+	}
+
+	DPRAM_WR();//写dsp2交互信息
+    PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
+
+    EN_GPIO30();
 }
 //==============================================================================
 void DPRAM_RD(void)
 {
-
+	NX_Dsp1PlCn = *(XintfZone7 + 0x7FFF);		// DSP1 pulse(heartbeat) counter    (RAM 0x7FFF clear)
+	NX_Dsp1OpSt = *(XintfZone7 + 0x1);			// DSP1 operation state
+	if(NX_Dsp2OpSt == 0x11)						// DSP2 initializing
+	{
+			NX_Dsp2OpSt = 0x33;
+	}
+	else if(NX_Dsp2OpSt == 0x33)				//DSP2 initialized
+	{
+		PX_In_Spf.XU_DcLk = *(XintfZone7 + 0x6) * 0.1;		// DC-link voltage, V
+		PX_In_Spf.XI_DcLk = *(XintfZone7 + 0x7) * 0.1;			// DC current, A
+		PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1;				// phase A current, A
+		PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1;				// phase B current, A
+		PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1;				// phase C current, A
+		PX_In_Spf.XV_SpdSn1 = *(XintfZone7 + 0xB);			// rotate speed 1, rad/min
+		PX_In_Spf.XV_SpdSn2 = *(XintfZone7 + 0xC);			// rotate speed 2, rad/min
+		PX_In_Spf.SX_AtDrTn = *(XintfZone7 + 0xD);			// actual direction of train
+		PX_In_Spf.XH_AxTpSn1 = *(XintfZone7 + 0xE) & 0x00FF;			// temperature 1 of axle, C
+		PX_In_Spf.XH_AxTpSn2 = *(XintfZone7 + 0xE) & 0xFF00;			// temperature 2 of axle, C
+		PX_In_Spf.XH_InnTp = *(XintfZone7 + 0xF) & 0x00FF;			// inner temperature, C
+		PX_In_Spf.XH_HtTp = *(XintfZone7 + 0xF) & 0xFF00;			// heatsink temperature, C
+		PX_In_Spf.XV_AtSpdTn = *(XintfZone7 + 0x10) * 0.01;		// actual speed, km/h   0.01->0.1
+		PX_In_Spf.CX_DrTn = *(XintfZone7 + 0x11);		        // direction command
+		PX_In_Spf.WM_TqCmd = *(XintfZone7 + 0x12);		// torque command, kN*m
+		PX_In_Spf.XX_TnWgh = *(XintfZone7 + 0x13) * 0.1;		// train weight, Ton
+		PX_In_Spf.XH_AmTp = *(XintfZone7 + 0x14) * 0.01;		// ambient temperature, C
+	}
 }
 
 
 //==============================================================================
 void DPRAM_WR(void)
 {
-
+	*(XintfZone7 + 0x2) = NX_Dsp2OpSt;		// NX_Dsp2OpSt: DSP2 operation state
+	*(XintfZone7 + 0x3) = NX_Dsp2Ver;		// DSP2 version
+	*(XintfZone7 + 0x15) = PX_Out_Spf.XX_PwmMo;     		// PWM  mode configuration
+	*(XintfZone7 + 0x16) = PX_Out_Spf.XT_PwmPdVv;			// PWM period value
+	*(XintfZone7 + 0x17) = PX_Out_Spf.XX_Pwm1AVv;			// PWM1A value
+	*(XintfZone7 + 0x18) = PX_Out_Spf.XX_Pwm2AVv;			// PWM2A value
+	*(XintfZone7 + 0x19) = PX_Out_Spf.XX_Pwm3AVv;			// PWM3A value
+	*(XintfZone7 + 0x1A) = PX_Out_Spf.XX_Pwm4AVv;			// PWM4A value, chopper
+	*(XintfZone7 + 0x1B) = PX_Out_Spf.XP_In * 10; 		    	// input power, 0.1kw (left value)
+	*(XintfZone7 + 0x1C) = PX_Out_Spf.XP_Out * 10;		    	// output power, 0.1kw (left value)
+	*(XintfZone7 + 0x1D) = PX_Out_Spf.XM_OutTq * 10;				// output torque, 0.1kN (left value)
+	*(XintfZone7 + 0x1E) = PX_Out_Spf.XX_PhUbl * 100;				// phase unbalance, 1% (left value)
+	*(XintfZone7 + 0x1F) = PX_Out_Spf.XI_PhA_Rms * 10;		    // phase A current, RMS, 0.1A (left value)
+	*(XintfZone7 + 0x20) = PX_Out_Spf.XI_PhB_Rms * 10;	    	// phase B current, RMS, 0.1A (left value)
+	*(XintfZone7 + 0x21) = PX_Out_Spf.XI_PhC_Rms * 10;		    // phase C current, RMS, 0.1A (left value)
+	*(XintfZone7 + 0x22) = PX_Out_Spf.XH_BrRsTp_Est * 10;	    // estimated temperature of brake resistor, 0.1C (left value)
+	*(XintfZone7 + 0x23) = PX_Out_Spf.XH_DcNdTp_Est * 10;   		// estimated temperature of DC inductor, 0.1C (left value)
+	*(XintfZone7 + 0x24) = XX_Flt1.all;						// 15 fault states
+	/*上位机*/
+	*(XintfZone7 + 0x25) = SX_Run;				//
+	*(XintfZone7 + 0x26) = 0;			// 调制标志位，5：异步，4:15分频，3:11分频。2:7分频，1:3分频，方波是自动的
+	*(XintfZone7 + 0x27) = 0;		//d轴电流指令
+	*(XintfZone7 + 0x28) = 0;		//q轴电流指令
+	*(XintfZone7 + 0x29) = 0;      //d轴电压指令
+	*(XintfZone7 + 0x2A) = 0;		//q轴电压指令
+	/*DA输出*/
+	*(XintfZone7 + 0x2B) = 0;   //d轴实际电流
+	*(XintfZone7 + 0x2C) = 0;   //q轴实际电流
+	*(XintfZone7 + 0x2D) = 0;   //d轴参考电流
+	*(XintfZone7 + 0x2E) = 0;   //q轴参考电流
+	*(XintfZone7 + 0x2F) = 0;  //alpha轴磁链
+	*(XintfZone7 + 0x30) = 0;  //beta轴磁链
+	*(XintfZone7 + 0x31) = 0;
 }
-
 //==============================================================================
-void Nt_Warn(void)		// initialization warn
-{
-
-}
-
-//==============================================================================
+/*
+ * 保护
+ * */
 void NX_Pr(void)
 {
+//-----------------------phase A over-current------------------------
+	if((PX_In_Spf.XI_PhA > PX_InPr_Spf.XI_PhABC_Max) || (PX_In_Spf.XI_PhA < -PX_InPr_Spf.XI_PhABC_Max))
+	{
+		PX_InPr_Spf.XI_PhAOvCn++;
+		if(PX_InPr_Spf.XI_PhAOvCn > 3)
+		{
+			SX_Run = 0;
+			XX_Flt1.bit.TA5 = 1;
+			SX_Dsp2Rd = 0;
+			PX_InPr_Spf.XI_PhAOvCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XI_PhAOvCn = 0;
 
-}
-//==============================================================================
-//==============================================================================
-void PI_RmsClc(void)
-{		
+//-----------------------phase B over-current------------------------
+	if((PX_In_Spf.XI_PhB > PX_InPr_Spf.XI_PhABC_Max) || (PX_In_Spf.XI_PhB < -PX_InPr_Spf.XI_PhABC_Max))
+	{
+		PX_InPr_Spf.XI_PhBOvCn++;
+		if(PX_InPr_Spf.XI_PhBOvCn > 3)
+		{
+			SX_Run = 0;
+			XX_Flt1.bit.TA6 = 1;
+			SX_Dsp2Rd = 0;
+			PX_InPr_Spf.XI_PhBOvCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XI_PhBOvCn = 0;
 
-}
-//===============================================================================================
-void DIS_CAL(void)
-{
+//-----------------------phase C over-current------------------------
+	if((PX_In_Spf.XI_PhC > PX_InPr_Spf.XI_PhABC_Max) || (PX_In_Spf.XI_PhC < -PX_InPr_Spf.XI_PhABC_Max))
+	{
+		PX_InPr_Spf.XI_PhCOvCn++;
+		if(PX_InPr_Spf.XI_PhCOvCn > 3)
+		{
+			SX_Run = 0;
+			XX_Flt1.bit.TA7 = 1;
+			SX_Dsp2Rd = 0;
+			PX_InPr_Spf.XI_PhCOvCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XI_PhCOvCn = 0;
 
+//-----------------------DC-link over-current------------------------
+	if(PX_In_Spf.XI_DcLk > PX_InPr_Spf.XI_DcLk_Max)
+	{
+		PX_InPr_Spf.XI_DcLkOvCn = PX_InPr_Spf.XI_DcLkOvCn + 1;
+		if(PX_InPr_Spf.XI_DcLkOvCn > 3)
+		{
+			SX_Run = 0;
+			XX_Flt1.bit.TA1 = 1;
+			SX_Dsp2Rd = 0;
+			PX_InPr_Spf.XI_DcLkOvCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XU_DcLkOvCn = 0;
+
+//---------------------DC-link current sample disabled---------------------
+	XX_Flt1.bit.TA2 = 0;
+
+//---------------------DC-link voltage sample disabled---------------------
+	XX_Flt1.bit.TA3 = 0;
+
+//-------------------Udc over-voltage--------------------
+	if(PX_In_Spf.XU_DcLk > PX_InPr_Spf.XU_DcLk_Max)
+	{
+		PX_InPr_Spf.XU_DcLkOvCn = PX_InPr_Spf.XU_DcLkOvCn + 1;
+		if(PX_InPr_Spf.XU_DcLkOvCn > 3)
+		{
+			SX_Run = 0;
+			XX_Flt1.bit.TA0 = 1;
+			SX_Dsp2Rd = 0;
+			PX_InPr_Spf.XU_DcLkOvCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XU_DcLkOvCn = 0;
+
+//------------------Udc under-voltage---------------------
+	if(PX_In_Spf.XU_DcLk < PX_InPr_Spf.XU_DcLk_Min && SX_Run == 1)
+	{
+		PX_InPr_Spf.XU_DcLkUnCn++;
+		if(PX_InPr_Spf.XU_DcLkUnCn > 3)
+		{
+			SX_Run = 0;
+			XX_Flt1.bit.TA0 = 1;
+			SX_Dsp2Rd = 0;
+			PX_InPr_Spf.XU_DcLkUnCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XU_DcLkUnCn = 0;
+//------------------DSP over-load---------------------
+	XX_Flt1.bit.TA4 = 0;
+
+//------------------AC current unbalance---------------------
+	XX_Flt1.bit.TA8 = 0;
+
+//------------------phase A fault---------------------
+	XX_Flt1.bit.TA9 = 0;
+
+//------------------phase B fault---------------------
+	XX_Flt1.bit.TA10 = 0;
+
+//------------------phase C fault---------------------
+	XX_Flt1.bit.TA11 = 0;
+
+//------------------phase A current sensor fault---------------------
+	XX_Flt1.bit.TA12 = 0;
+
+//------------------phase B current sensor fault---------------------
+	XX_Flt1.bit.TA13 = 0;
+
+//------------------phase C current sensor  fault---------------------
+	XX_Flt1.bit.TA14 = 0;
+
+//------------------AC current sampling fault---------------------
+	XX_Flt1.bit.TA15 = 0;
 }
 //==============================================================================
 void EN_GPIO30(void)
@@ -338,28 +430,14 @@ void EN_GPIO30(void)
     GpioDataRegs.GPASET.bit.GPIO30=1;
     EDIS;
 }
+//==============================================================================
 void DIS_GPIO30(void)
 {
 	EALLOW;
     GpioDataRegs.GPACLEAR.bit.GPIO30=1;
     EDIS;
 }
-//==============================================================================================
-void Protect_L1(void)
-{
 
-}
-
-//==============================================================================================
-void InitVariables(void)
-{
-
-}
-
-void InitMode(void)
-{
-
-}
 //===============================================================================================
 //=========================================THE END===============================================
 //===============================================================================================
