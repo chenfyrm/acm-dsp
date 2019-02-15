@@ -12,8 +12,7 @@
 #define	  Ver_DSP2			0x10
 
 #define	  IO_ABC_OVER		260
-//鐢垫祦淇濇姢鏈夋晥鍊�
-#define	  IO_RMS_OVER		70
+//#define	  IO_RMS_OVER		70
 
 #define	  UDC_OVER			1850
 #define	  TEMP_IGBT_OVER	70
@@ -206,22 +205,22 @@ volatile struct PX_Out PX_Out_Spf = {21,7500,3750,3750,3750,3750,0,0,0,0,0,0,0,0
 //============================================================================================
 struct  COM_BITS
 {							// XX_Flt1
-    Uint16      TA0:1;		// Udc杩囧帇/娆犲帇
-    Uint16      TA1:1;		// Idc杩囨祦
-    Uint16      TA2:1;		// Idc閲囨牱澶辨晥
-    Uint16      TA3:1;		// Udc閲囨牱澶辨晥
-    Uint16      TA4:1;		// DSP杩囪浇
-    Uint16      TA5:1;		// Ia杩囨祦
-    Uint16      TA6:1;		// Ib杩囨祦
-    Uint16      TA7:1;		// Ic杩囨祦
-    Uint16      TA8:1;		// Iac锛堜氦娴佺數娴侊級涓嶅钩琛�
-    Uint16      TA9:1;		// Ia澶辩浉
-    Uint16      TA10:1;		// Ib澶辩浉
-    Uint16      TA11:1;		// Ic澶辩浉
-    Uint16      TA12:1;		// Ia瑙傛祴鏁呴殰
-    Uint16      TA13:1;		// Ib瑙傛祴鏁呴殰
-    Uint16      TA14:1;		// Ic瑙傛祴鏁呴殰
-    Uint16      TA15:1;		// Iac锛堜氦娴佺數娴侊級閲囨牱澶辨晥
+    Uint16      TA0:1;		// Udc
+    Uint16      TA1:1;		// Idc
+    Uint16      TA2:1;		// Idc
+    Uint16      TA3:1;		// Udc
+    Uint16      TA4:1;		// DSP
+    Uint16      TA5:1;		// Ia
+    Uint16      TA6:1;		// Ib
+    Uint16      TA7:1;		// Ic
+    Uint16      TA8:1;		// Iac
+    Uint16      TA9:1;		// Ia
+    Uint16      TA10:1;		// Ib
+    Uint16      TA11:1;		// Ic
+    Uint16      TA12:1;		// Ia��
+    Uint16      TA13:1;		// Ib��
+    Uint16      TA14:1;		// Ic
+    Uint16      TA15:1;		// Iac
 };
 
 union WARN_REG
@@ -262,7 +261,8 @@ interrupt void DPRAM_isr(void);
 //=================================================================================
 void main(void)
 {
-
+	/*����*/
+while(1){}
 }
 //==============================================================================
 interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger the interrupt
@@ -283,7 +283,7 @@ void DPRAM_WR(void)
 }
 
 //==============================================================================
-void Nt_Warn(void)		// initialization warn    鏍规嵁瀹為檯鎯呭喌鍐嶄慨鏀�
+void Nt_Warn(void)		// initialization warn
 {
 
 }
