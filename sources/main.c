@@ -4,15 +4,29 @@
 // DESCRIPTION: NUGTCU,T=250uS
 //################################################################################
 /*
- * #include
+ * HISTORY
  *
+ *
+ *
+ * */
+
+/*
+ * INCLUDES
  * */
 #include "DSP2833x_Device.h"     
 #include "DSP2833x_Examples.h"  
 #include "C28x_FPU_FastRTS.h"
 #include <math.h>
 /*
- * #define
+ * EXTERNAL FUNCTION PROTOTYPES
+ * */
+
+/*
+ * DESCRIPTION
+ * */
+
+/*
+ * DEFINES
  * */
 //--------------------------------------------------------------------------------
 #define	  IO_ABC_OVER		260
@@ -24,7 +38,11 @@
 //--------------------------------------------------------------------------------
 
 /*
- * struct define
+ * TYPEDEFS
+ * */
+
+/*
+ * STRUCTDEFS
  * */
 //-----------------input-------------------------
 struct PX_In
@@ -123,7 +141,13 @@ union WARN_REG
 };
 union  WARN_REG   XX_Flt1;				// 16 fault states
 //======================================================================
+/*
+ * GLOBALS
+ * */
 
+/*
+ * LOCALS
+ * */
 int16	*XintfZone0=(int16 *)0x004000;//Unused
 int16	*XintfZone6=(int16 *)0x100000;//Unused
 int16	*XintfZone7=(int16 *)0x200000;//DP RAM
@@ -143,7 +167,9 @@ Uint16 SX_Run = 0;		// DSP2 running state, 1 means running, 0 means stop
 Uint16 SX_Dsp2Rd = 0;	// Dsp2 Ready state
 //===========================================================================
 //--------------------------------------------------------------------------------
-/**/
+/*
+ * LOCAL FUNCTIONS
+ * */
 void DPRAM_RD(void);
 void NX_Pr(void);
 void DPRAM_WR(void);
@@ -152,6 +178,10 @@ void DIS_GPIO30(void);
 //===========================================================================
 interrupt void DPRAM_isr(void);
 //=================================================================================
+
+/*
+ * MAIN
+ * */
 void main(void)
 {
 	InitSysCtrl();
