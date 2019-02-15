@@ -259,10 +259,37 @@ float Uabc_PLL(float Ua,float Ub,float Uc);
 void NX_Pr(void);
 interrupt void DPRAM_isr(void);
 //=================================================================================
+/*中文注释*/
 void main(void)
 {
-	/*中文*/
-while(1){}
+	InitSysCtrl();
+	InitGpio();
+	InitXintf();
+
+	DELAY_US(10000L);
+
+	DINT;
+	IER = 0x0000;
+	IFR = 0x0000;
+	InitPieCtrl();
+	InitPieVectTable();
+
+	EALLOW;
+	PieVectTable.XINT1 = &DPRAM_isr;
+	EDIS;
+
+	InitCpuTimers();
+	InitXInterrupt();
+	IER = M_INT1;
+	PieCtrlRegs.PIEIER1.bit.INTx4 = 1;
+
+	EINT;
+	ERTM;
+
+	while(1)
+	{
+
+	}
 }
 //==============================================================================
 interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger the interrupt
