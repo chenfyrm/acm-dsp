@@ -512,7 +512,6 @@ struct
 	float32 XH_Ovp_Est;
 	float32 XI_Rct1_Rms;
 	float32 XI_BtCp;//²»È·¶¨
-
 };
 
 /*
@@ -525,29 +524,7 @@ struct
 	float32 WF_3PhDsp;
 	float32 WI_PhActDsp;
 	float32 WI_PhRctDsp;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	float32 XX_IPhClTrsKpActDsp;
+	float32 XX_IPhClTrsKpRctDsp;
 };
 
