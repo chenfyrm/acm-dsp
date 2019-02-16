@@ -472,3 +472,82 @@ void DIS_GPIO30(void)
 //=========================================THE END===============================================
 //===============================================================================================
 
+/*
+ * HSTIMA - Host interface signals from DSP to MCU
+ * */
+struct
+{
+	float32 XU_DcLk;//DC-link voltage
+	float32 XU_3PhPek;//3-Phase output load voltage,phase-phase,peak value
+	float32 XI_PhPek;//Phase current,peak value
+	float32 XI_PhAct;//Active phase current
+	float32 XI_PhRct;//Reactive phase current
+	float32 XI_BtCg;//Battery charger current
+	float32 XI_Bt;//Battery current
+	float32 XU_PhInRms;//
+	float32 XI_PhInRms;
+	float32 WU_IPhClTrs;
+	float32 WU_IBtCgCl;
+	float32 WU_OvMd;
+	float32 WU_IPhClRms;
+	float32 XU_Bt;
+	float32 XI_Ph1Rms;
+	float32 XI_Ph2Rms;
+	float32 XI_Ph3Rms;
+	float32 XU_3PhRms;
+	float32 XU_3PhRe;
+	float32 XU_3PhIm;
+	float32 XT_U3Ph;//Period time of measured 3-phase output load voltage
+	float32 XI_PhReFix;
+	float32 XI_PhImFix;
+	float32 XP_2qc;
+	float32 XP_3Ph;//3-phase output power
+	float32 XP_Ovp;
+	float32 XX_AI24;
+	float32 XX_AI29;
+	float32 XQ_3Ph;
+	float32 XI_DfInFlt;
+	float32 WU_Flt;
+	float32 XU_DcLk2;
+	float32 XH_Ovp_Est;
+	float32 XI_Rct1_Rms;
+	float32 XI_BtCp;//²»È·¶¨
+
+};
+
+/*
+ * HSTOMA - Host interface signals from MCU to DSP
+ *
+ * */
+struct
+{
+	float32 WU_3PhDsp;
+	float32 WF_3PhDsp;
+	float32 WI_PhActDsp;
+	float32 WI_PhRctDsp;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+};
+
