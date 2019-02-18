@@ -33,6 +33,9 @@ typedef struct ACCLMA_IF
 	float32	XX_CmpA;//output
 	float32 XX_CmpB;
 	float32	XX_CmpC;
+	float32 XX_Ts;//parameter
+	float32 XX_M;
+	float32 XX_Theta;//variable
 }TYPE_ACCLMA_IF;
 
 #define ACCLMA_IF_DEFAULTS {\
@@ -47,7 +50,10 @@ typedef struct ACCLMA_IF
 	0.0,\
 	0.5,\
 	0.5,\
-	0.5\
+	0.5,\
+	1.0/1450.0/2.0,\
+	0.9,\
+	0.0,\
 	}
 
 typedef struct AUR_IF
