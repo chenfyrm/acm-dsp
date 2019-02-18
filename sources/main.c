@@ -17,6 +17,7 @@
 #include "DSP2833x_Examples.h"  
 #include "C28x_FPU_FastRTS.h"
 #include <math.h>
+#include "acclma.h"
 /*
  * EXTERNAL FUNCTION PROTOTYPES
  * */
@@ -41,10 +42,9 @@
  * TYPEDEFS
  * */
 
-/*
- * STRUCTDEFS
- * */
+
 //-----------------input-------------------------
+//采样、指令
 struct PX_In
 {
 	float32  XU_DcLk;   		    	// DC-link voltage, V
@@ -67,6 +67,7 @@ struct PX_In
 };
 volatile struct PX_In PX_In_Spf = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //========================================================================
+//保护值
 struct PX_InPr
 {
 	float32  XU_DcLk_Max;   			// DC-link voltage, V
@@ -90,6 +91,7 @@ struct PX_InPr
 };
 volatile struct PX_InPr PX_InPr_Spf = {740,0,0,0,53,0,32,0,0,0,0,0,0,0,0,0,0,0};
 //-------------output-------------
+//输出交互值
 struct PX_Out
 {
 	Uint16   XX_PwmMo;				// PWM mode
@@ -165,6 +167,8 @@ volatile float32 PX_DcLkOscSpr;		// DC-link oscillation suppressed
 Uint16	GPIO_Temp181,GPIO_Temp182;
 Uint16 SX_Run = 0;		// DSP2 running state, 1 means running, 0 means stop
 Uint16 SX_Dsp2Rd = 0;	// Dsp2 Ready state
+
+TYPE_ACCLMA_IF acmctrl;
 //===========================================================================
 //--------------------------------------------------------------------------------
 /*
@@ -311,7 +315,7 @@ void DPRAM_WR(void)
 	*(XintfZone7 + 0x24) = XX_Flt1.all;						// 15 fault states
 	/*上位机*/
 	*(XintfZone7 + 0x25) = SX_Run;				//
-	*(XintfZone7 + 0x26) = 0;			// 调制标志位，5：异步，4:15分频，3:11分频。2:7分频，1:3分频，方波是自动的
+	*(XintfZone7 + 0x26) = 0;		// 调制标志位，5：异步，4:15分频，3:11分频。2:7分频，1:3分频，方波是自动的
 	*(XintfZone7 + 0x27) = 0;		//d轴电流指令
 	*(XintfZone7 + 0x28) = 0;		//q轴电流指令
 	*(XintfZone7 + 0x29) = 0;      //d轴电压指令
@@ -472,59 +476,138 @@ void DIS_GPIO30(void)
 //=========================================THE END===============================================
 //===============================================================================================
 
-/*
- * HSTIMA - Host interface signals from DSP to MCU
- * */
-struct
-{
-	float32 XU_DcLk;//DC-link voltage
-	float32 XU_3PhPek;//3-Phase output load voltage,phase-phase,peak value
-	float32 XI_PhPek;//Phase current,peak value
-	float32 XI_PhAct;//Active phase current
-	float32 XI_PhRct;//Reactive phase current
-	float32 XI_BtCg;//Battery charger current
-	float32 XI_Bt;//Battery current
-	float32 XU_PhInRms;//
-	float32 XI_PhInRms;
-	float32 WU_IPhClTrs;
-	float32 WU_IBtCgCl;
-	float32 WU_OvMd;
-	float32 WU_IPhClRms;
-	float32 XU_Bt;
-	float32 XI_Ph1Rms;
-	float32 XI_Ph2Rms;
-	float32 XI_Ph3Rms;
-	float32 XU_3PhRms;
-	float32 XU_3PhRe;
-	float32 XU_3PhIm;
-	float32 XT_U3Ph;//Period time of measured 3-phase output load voltage
-	float32 XI_PhReFix;
-	float32 XI_PhImFix;
-	float32 XP_2qc;
-	float32 XP_3Ph;//3-phase output power
-	float32 XP_Ovp;
-	float32 XX_AI24;
-	float32 XX_AI29;
-	float32 XQ_3Ph;
-	float32 XI_DfInFlt;
-	float32 WU_Flt;
-	float32 XU_DcLk2;
-	float32 XH_Ovp_Est;
-	float32 XI_Rct1_Rms;
-	float32 XI_BtCp;//不确定
-};
 
-/*
- * HSTOMA - Host interface signals from MCU to DSP
- *
- * */
-struct
-{
-	float32 WU_3PhDsp;
-	float32 WF_3PhDsp;
-	float32 WI_PhActDsp;
-	float32 WI_PhRctDsp;
-	float32 XX_IPhClTrsKpActDsp;
-	float32 XX_IPhClTrsKpRctDsp;
-};
+///*
+// * HSTIMA - Host interface signals from DSP to MCU
+// * */
+//struct
+//{
+//	float32 XU_DcLk;//DC-link voltage
+//	float32 XU_3PhPek;//3-Phase output load voltage,phase-phase,peak value
+//	float32 XI_PhPek;//Phase current,peak value
+//	float32 XI_PhAct;//Active phase current
+//	float32 XI_PhRct;//Reactive phase current
+//	float32 XI_BtCg;//Battery charger current
+//	float32 XI_Bt;//Battery current
+//	float32 XU_PhInRms;//
+//	float32 XI_PhInRms;
+//	float32 WU_IPhClTrs;
+//	float32 WU_IBtCgCl;
+//	float32 WU_OvMd;
+//	float32 WU_IPhClRms;
+//	float32 XU_Bt;
+//	float32 XI_Ph1Rms;
+//	float32 XI_Ph2Rms;
+//	float32 XI_Ph3Rms;
+//	float32 XU_3PhRms;
+//	float32 XU_3PhRe;
+//	float32 XU_3PhIm;
+//	float32 XT_U3Ph;//Period time of measured 3-phase output load voltage
+//	float32 XI_PhReFix;
+//	float32 XI_PhImFix;
+//	float32 XP_2qc;
+//	float32 XP_3Ph;//3-phase output power
+//	float32 XP_Ovp;
+//	float32 XX_AI24;
+//	float32 XX_AI29;
+//	float32 XQ_3Ph;
+//	float32 XI_DfInFlt;
+//	float32 WU_Flt;
+//	float32 XU_DcLk2;
+//	float32 XH_Ovp_Est;
+//	float32 XI_Rct1_Rms;
+//	float32 XI_BtCp;//不确定
+//};
 
+///*
+// * HSTOMA - Host interface signals from MCU to DSP *
+// * */
+//struct WORD1_BITS
+//{
+//	Uint16	C_CvOpSaDsp:1;//SRTOMA:Command Start Converter Operation to Dsp
+//	Uint16	C_Sa2qcDsp:1;//SRTOMA:Command Start 2QC Operation to DSP
+//	Uint16	C_FpgaPrSd:1;
+//	Uint16	C_FpgaFsSd:1;
+//	Uint16	C_FpgaSfSd:1;
+//	Uint16	C_FpgaPrBc:1;
+//	Uint16	RstPrSd:1;
+//	Uint16	RstFsSd:1;
+//	Uint16	RstSfSd:1;
+//	Uint16	RstPrBc:1;
+//	Uint16	C_FrOvp:1;//两处来源
+//	Uint16	C_OvpFcTsDsp:1;
+//	Uint16	B_3PhCvDh:1;//DCDSMA:Command 3 phase inverter discharge
+//
+//
+//
+//};
+//union WORD1_REG
+//{
+//	Uint32				all;
+//	struct WORD1_BITS	bit;
+//};
+//
+//struct WORD2_BITS
+//{
+//	Uint16	A_PctMo:1;
+//	Uint16	B_EnSiPoTs;
+//	Uint16	B_FrcSiPoTs;
+//
+//};
+//union WORD2_REG
+//{
+//	Uint32				all;
+//	struct WORD2_BITS	bit;
+//};
+//
+//struct WORD3_BITS
+//{
+//
+//
+//};
+//union WORD3_REG
+//{
+//	Uint32				all;
+//	struct WORD3_BITS	bit;
+//};
+//
+//struct RSWDFPGA1_BITS
+//{
+//
+//
+//};
+//union RSWDFPGA1_REG
+//{
+//	Uint32				all;
+//	struct WORD3_BITS	bit;
+//};
+//
+//struct
+//{
+//	float32 		WU_3PhDsp; //BAUC1MA
+//	float32 		WF_3PhDsp; //UFCO1MA
+//	float32 		WI_PhActDsp; //ACCLMA:Active phase current limit,post-transsient control,to the DSP
+//	float32 		WI_PhRctDsp; //ACCLMA:
+//	float32 		XX_IPhClTrsKpActDsp;//ACCLMA
+//	float32 		XX_IPhClTrsKpRctDsp;//ACCLMA
+//	float32 		XX_IPhClTrsKpAbsDsp;//ACCLMA
+//	float32 		WI_BtCgLim;//BACCMA
+//	float32 		WU_3PhReDsp;//PCTS2MA
+//	float32 		WU_3PhImDsp;//PCTS2MA
+//	float32 		WI_PctParSelTrip;//PGCLMG
+//	float32 		XX_DdCmpFa;//APSIMA:Dead time compensation factor
+//	Uint32  		Z_PrSd;//HSTIMA:Protective shutdown word
+//	Uint32  		Z_FsSd;//HSTIMA:Fast shutdown word
+//	Uint32  		Z_SfSd;//HSTIMA:Soft shutdown word
+//	Uint32  		Z_PrBc;//HSTIMA:Protective blocking word
+//	Uint32  		Z_BtCpPrBc;//HSTIMA:BtCp Protective blocking word
+//	Uint32  		Z_Fpga203;//HSTIMA:Protective action word from FPGA,203
+//	Uint32  		Z_Fpga205;//HSTIMA:Protective action word from FPGA,205
+//	Uint32  		Z_Fpga206;//HSTIMA:Protective action word from FPGA,206
+//	float32 		WU_BtDsp;//BAUC1MA:Battery voltage reference to DSP for BtCp control
+//	union WORD1_REG	WORD1;
+//	union WORD2_REG	WORD2;
+//	union WORD3_REG	WORD3;
+//	union WORD1_REG	RSWDFPGA1;
+//};
+//
