@@ -9,9 +9,14 @@
 
 void ACCLMA(TYPE_ACCLMA_IF *data)
 {
-	data->XX_CmpA = data->XX_M*sin(data->XX_Theta);
-	data->XX_CmpB = data->XX_M*sin(data->XX_Theta-2/3*3.1415926);
-	data->XX_CmpC = data->XX_M*sin(data->XX_Theta-4/3*3.1415926);
+	data->XX_DutyA = data->XX_M*sin(data->XX_Theta)/2.0+0.5;
+	data->XX_DutyB = data->XX_M*sin(data->XX_Theta-2.0/3.0*3.1415926)/2.0+0.5;
+	data->XX_DutyC = data->XX_M*sin(data->XX_Theta-4.0/3.0*3.1415926)/2.0+0.5;
+
+	if(data->XX_M < 0.9)
+		data->XX_M += 0.001;
+	if(data->XX_M >0.9)
+		data->XX_M = 0.9;
 
 	data->XX_Theta += 100*3.1415926*data->XX_Ts;
 	if (data->XX_Theta>=2*3.1415926)
@@ -19,7 +24,9 @@ void ACCLMA(TYPE_ACCLMA_IF *data)
 	if(data->XX_Theta<0)
 		data->XX_Theta += 2*3.1415926;
 
-//	data->XX_CmpA = 0.2;
-//	data->XX_CmpB = 0.3;
-//	data->XX_CmpC = 0.4;
+	data->XX_DutyA = 0.3;
+	data->XX_DutyB = 0.6;
+	data->XX_DutyC = 0.9;
 }
+
+

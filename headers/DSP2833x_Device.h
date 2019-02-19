@@ -101,8 +101,7 @@ typedef long double        float64;
 //---------------------------------------------------------------------------
 // Include All Peripheral Header Files:
 //
-//#include "Coordinate.h"
-#include "DSP2833x_User.h"
+
 //#include "DSP2833x_Adc.h"                // ADC Registers
 #include "DSP2833x_DevEmu.h"             // Device Emulation Registers
 #include "DSP2833x_CpuTimers.h"          // 32-bit CPU Timers
@@ -121,11 +120,6 @@ typedef long double        float64;
 #include "DSP2833x_SysCtrl.h"            // System Control/Power Modes
 #include "DSP2833x_XIntrupt.h"           // External Interrupts
 #include "DSP2833x_Xintf.h"              // XINTF External Interface
-#include "float.h"
-#include "math.h"
-#include "C28X_FPU.h"
-#include "C28x_FPU_FastRTS.h"
-
 
 
 #if DSP28_28335

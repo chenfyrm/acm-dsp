@@ -17,6 +17,14 @@
 
 #include "DSP2833x_Device.h"     // DSP2833x Headerfile Include File
 #include "DSP2833x_Examples.h"   // DSP2833x Examples Include File
+#include "DSP2833x_User.h"
+#include "float.h"
+#include "math.h"
+#include "C28X_FPU.h"
+#include "C28x_FPU_FastRTS.h"
+#include "acclma.h"
+
+
 
 #endif  // end of DSP28x_PROJECT_H definition
 

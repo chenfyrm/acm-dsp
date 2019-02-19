@@ -30,9 +30,9 @@ typedef struct ACCLMA_IF
 	float32	XU_PhAlphaLk;
 	float32	XU_PhBetaLk;
 	float32	XU_DcLk;
-	float32	XX_CmpA;//output
-	float32 XX_CmpB;
-	float32	XX_CmpC;
+	float32	XX_DutyA;//output
+	float32 XX_DutyB;
+	float32	XX_DutyC;
 	float32 XX_Ts;//parameter
 	float32 XX_M;
 	float32 XX_Theta;//variable
@@ -52,7 +52,7 @@ typedef struct ACCLMA_IF
 	0.5,\
 	0.5,\
 	1.0/1450.0/2.0,\
-	0.9,\
+	0.0,\
 	0.0,\
 	}
 
