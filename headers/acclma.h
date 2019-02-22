@@ -72,10 +72,15 @@ typedef struct ACR_IF
 extern "C" {
 #endif /* extern "C" */
 
-extern void AUR(TYPE_AUR_IF *interface);
-extern void ACR(TYPE_ACR_IF *interface);
-
 extern void ACCLMA(TYPE_ACCLMA_IF *interface);
+
+//extern void CLARKE(TYPE_CLARKE_IF *interface);
+//extern void PARK(TYPE_PARK_IF *interface);
+//extern void IPARK(TYPE_IPARK_IF *interface);
+//extern void SPLL(TYPE_SPLL_IF *interface);
+//extern void PQ2UF(TYPE_PQ2UF_IF *interface);
+//extern void AUR(TYPE_AUR_IF *interface);
+//extern void ACR(TYPE_ACR_IF *interface);
 
 #ifdef __cplusplus
 }

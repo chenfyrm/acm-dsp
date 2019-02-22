@@ -27,6 +27,8 @@ void ACCLMA(TYPE_ACCLMA_IF *data)
 	data->XX_DutyA = 0.3;
 	data->XX_DutyB = 0.6;
 	data->XX_DutyC = 0.9;
+
+
 }
 
 

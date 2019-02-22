@@ -30,13 +30,14 @@
 struct PX_In
 {
 	float32 XU_DcLk;   		    		// DC-link voltage, V
-//    float32  XI_DcLk;   				// DC current, A
-	float32 XU_PhABGt;					// AB相线电压, V
+    float32	XI_DcLk;   				// DC current, A
 	float32 XI_PhA;						// phase A current, A
 	float32 XI_PhB;						// phase B current, A
 	float32	XI_PhC;			  	  		// phase C current, A
-	Uint16 	NX_McuPlCn;				// DSP1 pulse(heartbeat) counter
-	Uint16 	NX_McuOpSt;				// DSP1 operation state
+	float32 XU_PhABGt;					// AB相线电压, V
+	Uint16 	NX_McuPlCn;				// MCU pulse(heartbeat) counter
+	Uint16 	NX_McuOpSt;				// MCU operation state
+	Uint16 	NX_McuVer;			// MCU version
 };
 volatile struct PX_In PX_In_Spf = {
 		0,
@@ -45,7 +46,9 @@ volatile struct PX_In PX_In_Spf = {
 		0,
 		0,
 		0,
-		0x11,};
+		0,
+		0x11,
+		0x10,};
 //========================================================================
 //保护值
 struct PX_InPr
@@ -64,7 +67,7 @@ struct PX_InPr
 };
 volatile struct PX_InPr PX_InPr_Spf = {
 		600,//直流母线电压上限
-		0,
+		0,//直流母线电压下限
 		0,
 		0,
 		10,//直流母线电流上限
@@ -73,19 +76,19 @@ volatile struct PX_InPr PX_InPr_Spf = {
 		0,
 		0,
 		0,
-		0,};
+		0,};//环境温度上限
 //-------------output-------------
 //============================================================================================
 struct  WARN_BITS
 {
-    Uint16      TA0:1;		// Udc 过压欠压保护
-    Uint16      TA1:1;		// Idc 过流保护
+    Uint16      TA0:1;		//直流母线过压、欠压保护
+    Uint16      TA1:1;		//直流母线过流保护
     Uint16      TA2:1;		// Idc 采样保护
     Uint16      TA3:1;		// Udc 采样保护
     Uint16      TA4:1;		// DSP
-    Uint16      TA5:1;		// Ia
-    Uint16      TA6:1;		// Ib
-    Uint16      TA7:1;		// Ic
+    Uint16      TA5:1;		//A相电流过流保护
+    Uint16      TA6:1;		//B相电流过流保护
+    Uint16      TA7:1;		//C相电流过流保护
     Uint16      TA8:1;		// Iac
     Uint16      TA9:1;		// Ia
     Uint16      TA10:1;		// Ib
@@ -114,10 +117,10 @@ struct PX_Out
 	float32 		XI_PhA_Rms;		    // phase A current, RMS
 	float32 		XI_PhB_Rms;	    	// phase B current, RMS
 	float32 		XI_PhC_Rms;		    // phase C current, RMS
-	union WARN_REG	XX_Flt1;			//
+	union WARN_REG	XX_Flt1;			// 16位故障字
 	Uint16			SX_Run;
-	Uint16 			NX_DspPlCn;		// DSP2 pulse(heartbeat) counter
-	Uint16 			NX_DspOpSt;		// NX_Dsp2OpSt: DSP2 operation state 0x11:初始化中      0x22:初始化失败    0x33:初始化完成
+	Uint16 			NX_DspPlCn;			// DSP2 pulse(heartbeat) counter
+	Uint16 			NX_DspOpSt;			// NX_Dsp2OpSt: DSP2 operation state 0x11:初始化中      0x22:初始化失败    0x33:初始化完成
 	Uint16 			NX_DspVer;			// DSP2 version
 };
 volatile struct PX_Out PX_Out_Spf = {
@@ -147,14 +150,17 @@ volatile struct PX_Out PX_Out_Spf = {
 int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 //=======================================================================
 Uint16	GPIO_Temp181,GPIO_Temp182;
-Uint16	SX_Dsp2Rd = 0;	// Dsp2 Ready state
+Uint16	Cnt_Period =0;
+Uint16	Cnt_us = 0;
+Uint16 	Cnt_sec = 0;
+Uint16	Cnt_min = 0;
 
 TYPE_ACCLMA_IF acmctrl = ACCLMA_IF_DEFAULTS;
 //===========================================================================
 /* LOCAL FUNCTIONS */
 void DPRAM_RD(void);
-void NX_Pr(void);
 void DPRAM_WR(void);
+void NX_Pr(void);
 void EN_GPIO30(void);
 void DIS_GPIO30(void);
 interrupt void DPRAM_isr(void);
@@ -195,21 +201,38 @@ void main(void)
 		GPIO_Temp182 = GpioDataRegs.GPADAT.bit.GPIO18;
 		if((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0))
 		{
-			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//INTR复位语句,读操作
+			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//INTR复位语句,SDRAM读操作,SDRAM产生中断源
 		}
 	//--------------------------------------------------------------------------------
-        if((PX_In_Spf.NX_McuOpSt == 0x409) && (PX_Out_Spf.NX_DspOpSt == 0x33) && (PX_Out_Spf.XX_Flt1.all == 0))
-        	SX_Dsp2Rd = 1;
+		/*MCU状态
+		 * 0x404:系统初始化完成状态
+		 *		 *
+		 *  0x409:系统运行状态
+		 *  */
+        if((PX_In_Spf.NX_McuOpSt == 0x409) && (PX_Out_Spf.NX_DspOpSt == 0x33) )//&& (PX_Out_Spf.XX_Flt1.all == 0))
+        	PX_Out_Spf.SX_Run = 1;
         else
-        	SX_Dsp2Rd = 0;
+        	PX_Out_Spf.SX_Run = 0;
 	}
 }
 //==============================================================================
 interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger the interrupt
 {  
 	DIS_GPIO30();
+	DPRAM_RD(); //读MCU交互信息
 
-	DPRAM_RD(); //读dsp1交互信息
+	if(Cnt_min == 0)
+	{
+		if((Cnt_sec >= 10)&(Cnt_sec <= 15))
+			PX_In_Spf.XU_DcLk = 650;
+		if((Cnt_sec >= 20)&(Cnt_sec <= 25))
+			PX_In_Spf.XI_PhA = 35;
+		if((Cnt_sec >= 30)&(Cnt_sec <= 35))
+			PX_In_Spf.XI_PhB = 35;
+		if((Cnt_sec >= 40)&(Cnt_sec <= 45))
+			PX_In_Spf.XI_PhC = 35;
+	}
+
 	NX_Pr();
 
 	PX_Out_Spf.NX_DspPlCn++;
@@ -217,38 +240,55 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.NX_DspPlCn = 0;
 
 	/**/
-	if(SX_Dsp2Rd == 1)
+	if(PX_Out_Spf.SX_Run == 1)
 	{
+		Cnt_Period ++;
+		if(Cnt_Period>=2900)
+		{
+			Cnt_sec++;
+			Cnt_Period = 0;
+		}
+		if(Cnt_sec>=60)
+		{
+			Cnt_min++;
+			Cnt_sec = 0;
+		}
+		if(Cnt_min >=60)
+		{
+			Cnt_min = 60;
+		}
+
 		acmctrl.XI_PhAlpha = 0.0;
 		acmctrl.XI_PhBeta = 0.0;
 		ACCLMA(&acmctrl);
 
-		if(PX_Out_Spf.XX_PwmMo == 21)
-		{
-			PX_Out_Spf.XX_PwmMo = 0; //?计数器值大于比较器值开
-			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
-			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
-			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
-		}
-		else
-		{
-			PX_Out_Spf.XX_PwmMo = 21;//?计数器值大于比较器值开
-			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
-			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
-			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
-		}
+		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
+		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
+		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
 
-		PX_Out_Spf.SX_Run = 1;
+//		if(PX_Out_Spf.XX_PwmMo == 21)
+//		{
+//			PX_Out_Spf.XX_PwmMo = 0; //计数器值大于比较器值为高，经光纤反向
+//			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
+//			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
+//			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
+//		}
+//		else
+//		{
+//			PX_Out_Spf.XX_PwmMo = 21;//计数器值小于比较器值为高
+//			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
+//			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
+//			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
+//		}
 	}
 	else
 	{
 		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 		PX_Out_Spf.XX_Pwm2AVv =	PX_Out_Spf.XT_PwmPdVv*0.5;
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
-		PX_Out_Spf.SX_Run = 0;
 	}
 
-	DPRAM_WR();//写dsp2交互信息
+	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
 
     EN_GPIO30();
@@ -256,21 +296,25 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 //==============================================================================
 void DPRAM_RD(void)//MCU-->DSP
 {
-	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);		// DSP1 pulse(heartbeat) counter    (RAM 0x7FFF clear)
-	PX_In_Spf.NX_McuOpSt = *(XintfZone7 + 0x0001);			// DSP1 operation state
-	if(PX_Out_Spf.NX_DspOpSt == 0x11)						// DSP2 initializing
+	//----------------------------------------------------
+	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);		// MCU pulse(heartbeat) counter    (RAM 0x7FFF clear) 此行最先读，产生DPRAM中断源
+	//---------------------------------------------------------------------
+	PX_In_Spf.NX_McuOpSt = *(XintfZone7 + 0x0001);			// MCU operation state
+//	PX_In_Spf.NX_McuVer = 0x10;
+	if(PX_Out_Spf.NX_DspOpSt == 0x11)						// DSP initializing
 	{
 		PX_Out_Spf.NX_DspOpSt = 0x33;
 	}
 	else
 	{
-		if(PX_Out_Spf.NX_DspOpSt == 0x33)				//DSP2 initialized
+		if(PX_Out_Spf.NX_DspOpSt == 0x33)				//DSP initialized
 		{
 			PX_In_Spf.XU_DcLk = *(XintfZone7 + 0x6) * 0.1;		// DC-link voltage, V
-			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1;			// AB相输出线电压, V
+//			PX_In_Spf.XI_DcLk = 0;// DC-link current, V
 			PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1;				// phase A current, A
 			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1;				// phase B current, A
 			PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1;				// phase C current, A
+			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1;			// AB相输出线电压, V
 		}
 	}
 }
@@ -290,27 +334,25 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x21) = PX_Out_Spf.XI_PhA_Rms * 10;		    // phase A current, RMS, 0.1A (left value)
 //	*(XintfZone7 + 0x22) = PX_Out_Spf.XI_PhB_Rms * 10;	    	// phase B current, RMS, 0.1A (left value)
 //	*(XintfZone7 + 0x23) = PX_Out_Spf.XI_PhC_Rms * 10;		    // phase C current, RMS, 0.1A (left value)
-//	*(XintfZone7 + 0x24) = PX_Out_Spf.XX_Flt1.all;				// MCM fault states
-//	*(XintfZone7 + 0x25) = PX_Out_Spf.SX_Run;					//MCM 运行标志
 
-	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
-	*(XintfZone7 + 0x27) = PX_Out_Spf.SX_Run;
-	*(XintfZone7 + 0x28) = 0;
+	*(XintfZone7 + 0x26) = 0;		// ACM故障状态
+	/*上位机*/
+	*(XintfZone7 + 0x24) = Cnt_sec;
+	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_Flt1.all;
+	*(XintfZone7 + 0x27) = PX_In_Spf.XU_DcLk;
+	*(XintfZone7 + 0x28) = PX_In_Spf.XI_PhA;
+	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhB;;
+	*(XintfZone7 + 0x2A) = PX_In_Spf.XI_PhC;;
 	/*DA输出*/
-	*(XintfZone7 + 0x29) = 0;
-	*(XintfZone7 + 0x2A) = 0;
 	*(XintfZone7 + 0x2B) = 0;
 	*(XintfZone7 + 0x2C) = 0;
 	*(XintfZone7 + 0x2D) = 0;
 	*(XintfZone7 + 0x2E) = 0;
 	*(XintfZone7 + 0x2F) = 0;
-	/*上位机*/
-	//
 
-
-
-
-	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;
+//---------------------------------------------------
+	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;//此行最后写，DPRAM产生中断源
+//------------------------------------------------------------
 }
 //==============================================================================
 /* 保护 */
@@ -324,7 +366,6 @@ void NX_Pr(void)
 		{
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA0 = 1;
-			SX_Dsp2Rd = 0;
 			PX_InPr_Spf.XU_DcLkOvCn = 4;
 		}
 	}
@@ -339,7 +380,6 @@ void NX_Pr(void)
 		{
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA0 = 1;
-			SX_Dsp2Rd = 0;
 			PX_InPr_Spf.XU_DcLkUnCn = 4;
 		}
 	}
@@ -354,7 +394,6 @@ void NX_Pr(void)
 		{
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA5 = 1;
-			SX_Dsp2Rd = 0;
 			PX_InPr_Spf.XI_PhAOvCn = 4;
 		}
 	}
@@ -369,7 +408,6 @@ void NX_Pr(void)
 		{
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA6 = 1;
-			SX_Dsp2Rd = 0;
 			PX_InPr_Spf.XI_PhBOvCn = 4;
 		}
 	}
@@ -384,7 +422,6 @@ void NX_Pr(void)
 		{
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA7 = 1;
-			SX_Dsp2Rd = 0;
 			PX_InPr_Spf.XI_PhCOvCn = 4;
 		}
 	}
