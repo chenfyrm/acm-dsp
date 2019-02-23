@@ -40,12 +40,12 @@ struct PX_In
 	Uint16 	NX_McuVer;			// MCU version
 };
 volatile struct PX_In PX_In_Spf = {
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
+		0.0,
+		0.0,
+		0.0,
+		0.0,
+		0.0,
+		0.0,
 		0,
 		0x11,
 		0x10,};
@@ -66,17 +66,17 @@ struct PX_InPr
 	float32  XH_AmTp_Max;         		// ambient temperature, C
 };
 volatile struct PX_InPr PX_InPr_Spf = {
-		600,//直流母线电压上限
-		0,//直流母线电压下限
+		600.0,//直流母线电压上限
+		0.0,//直流母线电压下限
 		0,
 		0,
-		10,//直流母线电流上限
+		10.0,//直流母线电流上限
 		0,
-		30,//逆变器输出电流上限
+		30.0,//逆变器输出电流上限
 		0,
 		0,
 		0,
-		0,};//环境温度上限
+		0.0,};//环境温度上限
 //-------------output-------------
 //============================================================================================
 struct  WARN_BITS
@@ -209,7 +209,7 @@ void main(void)
 		 *		 *
 		 *  0x409:系统运行状态
 		 *  */
-        if((PX_In_Spf.NX_McuOpSt == 0x409) && (PX_Out_Spf.NX_DspOpSt == 0x33) )//&& (PX_Out_Spf.XX_Flt1.all == 0))
+        if((PX_In_Spf.NX_McuOpSt == 0x409) && (PX_Out_Spf.NX_DspOpSt == 0x33) && (PX_Out_Spf.XX_Flt1.all == 0))
         	PX_Out_Spf.SX_Run = 1;
         else
         	PX_Out_Spf.SX_Run = 0;
@@ -218,46 +218,55 @@ void main(void)
 //==============================================================================
 interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger the interrupt
 {  
-	DIS_GPIO30();
-	DPRAM_RD(); //读MCU交互信息
-
-	if(Cnt_min == 0)
-	{
-		if((Cnt_sec >= 10)&(Cnt_sec <= 15))
-			PX_In_Spf.XU_DcLk = 650;
-		if((Cnt_sec >= 20)&(Cnt_sec <= 25))
-			PX_In_Spf.XI_PhA = 35;
-		if((Cnt_sec >= 30)&(Cnt_sec <= 35))
-			PX_In_Spf.XI_PhB = 35;
-		if((Cnt_sec >= 40)&(Cnt_sec <= 45))
-			PX_In_Spf.XI_PhC = 35;
-	}
-
-	NX_Pr();
-
 	PX_Out_Spf.NX_DspPlCn++;
 	if(PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
+	Cnt_Period ++;
+	if(Cnt_Period>=2900)
+	{
+		Cnt_sec++;
+		Cnt_Period = 0;
+	}
+	if(Cnt_sec>=60)
+	{
+		Cnt_min++;
+		Cnt_sec = 0;
+	}
+	if(Cnt_min >=60)
+	{
+		Cnt_min = 60;
+	}
+
+	DIS_GPIO30();
+	DPRAM_RD(); //读MCU交互信息
+
+	if((Cnt_min >= 1)&&(Cnt_min < 2))
+		PX_In_Spf.XU_DcLk = 650.0;
+	if((Cnt_min >= 2)&&(Cnt_min < 3))
+		PX_Out_Spf.XX_Flt1.all = 0;
+	if((Cnt_min >= 3)&&(Cnt_min < 4))
+		PX_In_Spf.XI_PhA = 35;
+	if((Cnt_min >= 4)&&(Cnt_min < 5))
+			PX_Out_Spf.XX_Flt1.all = 0;
+	if((Cnt_min >= 5)&&(Cnt_min < 6))
+		PX_In_Spf.XI_PhB = 35;
+	if((Cnt_min >= 6)&&(Cnt_min < 7))
+			PX_Out_Spf.XX_Flt1.all = 0;
+	if((Cnt_min >= 7)&&(Cnt_min < 8))
+		PX_In_Spf.XI_PhC = 35;
+	if((Cnt_min >= 8)&&(Cnt_min < 9))
+			PX_Out_Spf.XX_Flt1.all = 0;
+	if((Cnt_min >= 9)&&(Cnt_min < 10))
+		PX_In_Spf.XI_DcLk = 15;
+	if((Cnt_min >= 10)&&(Cnt_min < 11))
+		PX_Out_Spf.XX_Flt1.all = 0;
+
+	NX_Pr();
+
 	/**/
 	if(PX_Out_Spf.SX_Run == 1)
 	{
-		Cnt_Period ++;
-		if(Cnt_Period>=2900)
-		{
-			Cnt_sec++;
-			Cnt_Period = 0;
-		}
-		if(Cnt_sec>=60)
-		{
-			Cnt_min++;
-			Cnt_sec = 0;
-		}
-		if(Cnt_min >=60)
-		{
-			Cnt_min = 60;
-		}
-
 		acmctrl.XI_PhAlpha = 0.0;
 		acmctrl.XI_PhBeta = 0.0;
 		ACCLMA(&acmctrl);
@@ -288,6 +297,13 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
 
+//	if(Cnt_min < 1)
+//		PX_Out_Spf.XX_Flt1.all = 0;
+//	if((Cnt_min >= 1)&&(Cnt_min < 2))
+//		PX_Out_Spf.XX_Flt1.all = 1;
+//	if((Cnt_min >= 2)&&(Cnt_min < 3))
+//		PX_Out_Spf.XX_Flt1.all = 0;
+
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
 
@@ -310,7 +326,7 @@ void DPRAM_RD(void)//MCU-->DSP
 		if(PX_Out_Spf.NX_DspOpSt == 0x33)				//DSP initialized
 		{
 			PX_In_Spf.XU_DcLk = *(XintfZone7 + 0x6) * 0.1;		// DC-link voltage, V
-//			PX_In_Spf.XI_DcLk = 0;// DC-link current, V
+			PX_In_Spf.XI_DcLk = 0;// DC-link current, V
 			PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1;				// phase A current, A
 			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1;				// phase B current, A
 			PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1;				// phase C current, A
@@ -335,14 +351,14 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x22) = PX_Out_Spf.XI_PhB_Rms * 10;	    	// phase B current, RMS, 0.1A (left value)
 //	*(XintfZone7 + 0x23) = PX_Out_Spf.XI_PhC_Rms * 10;		    // phase C current, RMS, 0.1A (left value)
 
-	*(XintfZone7 + 0x26) = 0;		// ACM故障状态
+	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
 	*(XintfZone7 + 0x24) = Cnt_sec;
-	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_Flt1.all;
-	*(XintfZone7 + 0x27) = PX_In_Spf.XU_DcLk;
-	*(XintfZone7 + 0x28) = PX_In_Spf.XI_PhA;
-	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhB;;
-	*(XintfZone7 + 0x2A) = PX_In_Spf.XI_PhC;;
+	*(XintfZone7 + 0x25) = Cnt_min;
+	*(XintfZone7 + 0x27) = PX_Out_Spf.XX_Flt1.all;
+	*(XintfZone7 + 0x28) = PX_In_Spf.XU_DcLk;
+	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhA;
+	*(XintfZone7 + 0x2A) = PX_In_Spf.XI_DcLk;
 	/*DA输出*/
 	*(XintfZone7 + 0x2B) = 0;
 	*(XintfZone7 + 0x2C) = 0;
@@ -361,7 +377,7 @@ void NX_Pr(void)
 //-------------------Udc over-voltage--------------------
 	if(PX_In_Spf.XU_DcLk > PX_InPr_Spf.XU_DcLk_Max)
 	{
-		PX_InPr_Spf.XU_DcLkOvCn = PX_InPr_Spf.XU_DcLkOvCn + 1;
+		PX_InPr_Spf.XU_DcLkOvCn++;
 		if(PX_InPr_Spf.XU_DcLkOvCn > 3)
 		{
 			PX_Out_Spf.SX_Run = 0;
@@ -373,7 +389,7 @@ void NX_Pr(void)
 		PX_InPr_Spf.XU_DcLkOvCn = 0;
 
 //------------------Udc under-voltage---------------------
-	if(PX_In_Spf.XU_DcLk < PX_InPr_Spf.XU_DcLk_Min && PX_Out_Spf.SX_Run == 1)
+	if((PX_In_Spf.XU_DcLk < PX_InPr_Spf.XU_DcLk_Min) && PX_Out_Spf.SX_Run == 1)
 	{
 		PX_InPr_Spf.XU_DcLkUnCn++;
 		if(PX_InPr_Spf.XU_DcLkUnCn > 3)
@@ -385,6 +401,20 @@ void NX_Pr(void)
 	}
 	else
 		PX_InPr_Spf.XU_DcLkUnCn = 0;
+
+//-----------------------DC-link over-current--------------------------------
+	if(PX_In_Spf.XI_DcLk > PX_InPr_Spf.XI_DcLk_Max)
+	{
+		PX_InPr_Spf.XI_DcLkOvCn ++;
+		if(PX_InPr_Spf.XI_DcLkOvCn > 3)
+		{
+			PX_Out_Spf.SX_Run = 0;
+			PX_Out_Spf.XX_Flt1.bit.TA1 = 1;
+			PX_InPr_Spf.XI_DcLkOvCn = 4;
+		}
+	}
+	else
+		PX_InPr_Spf.XI_DcLkOvCn = 0;
 
 //-----------------------phase A over-current------------------------
 	if((PX_In_Spf.XI_PhA > PX_InPr_Spf.XI_PhABC_Max) || (PX_In_Spf.XI_PhA < -PX_InPr_Spf.XI_PhABC_Max))
