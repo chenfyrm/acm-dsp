@@ -222,45 +222,24 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	if(PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
-	Cnt_Period ++;
-	if(Cnt_Period>=2900)
-	{
-		Cnt_sec++;
-		Cnt_Period = 0;
-	}
-	if(Cnt_sec>=60)
-	{
-		Cnt_min++;
-		Cnt_sec = 0;
-	}
-	if(Cnt_min >=60)
-	{
-		Cnt_min = 60;
-	}
+//	Cnt_Period ++;
+//	if(Cnt_Period>=2900)
+//	{
+//		Cnt_sec++;
+//		Cnt_Period = 0;
+//	}
+//	if(Cnt_sec>=60)
+//	{
+//		Cnt_min++;
+//		Cnt_sec = 0;
+//	}
+//	if(Cnt_min >=60)
+//	{
+//		Cnt_min = 60;
+//	}
 
 	DIS_GPIO30();
 	DPRAM_RD(); //读MCU交互信息
-
-	if((Cnt_min >= 1)&&(Cnt_min < 2))
-		PX_In_Spf.XU_DcLk = 650.0;
-	if((Cnt_min >= 2)&&(Cnt_min < 3))
-		PX_Out_Spf.XX_Flt1.all = 0;
-	if((Cnt_min >= 3)&&(Cnt_min < 4))
-		PX_In_Spf.XI_PhA = 35;
-	if((Cnt_min >= 4)&&(Cnt_min < 5))
-			PX_Out_Spf.XX_Flt1.all = 0;
-	if((Cnt_min >= 5)&&(Cnt_min < 6))
-		PX_In_Spf.XI_PhB = 35;
-	if((Cnt_min >= 6)&&(Cnt_min < 7))
-			PX_Out_Spf.XX_Flt1.all = 0;
-	if((Cnt_min >= 7)&&(Cnt_min < 8))
-		PX_In_Spf.XI_PhC = 35;
-	if((Cnt_min >= 8)&&(Cnt_min < 9))
-			PX_Out_Spf.XX_Flt1.all = 0;
-	if((Cnt_min >= 9)&&(Cnt_min < 10))
-		PX_In_Spf.XI_DcLk = 15;
-	if((Cnt_min >= 10)&&(Cnt_min < 11))
-		PX_Out_Spf.XX_Flt1.all = 0;
 
 	NX_Pr();
 
@@ -271,24 +250,24 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XI_PhBeta = 0.0;
 		ACCLMA(&acmctrl);
 
-		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
-		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
-		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
+//		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
+//		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
+//		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
 
-//		if(PX_Out_Spf.XX_PwmMo == 21)
-//		{
-//			PX_Out_Spf.XX_PwmMo = 0; //计数器值大于比较器值为高，经光纤反向
-//			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
-//			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
-//			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
-//		}
-//		else
-//		{
-//			PX_Out_Spf.XX_PwmMo = 21;//计数器值小于比较器值为高
-//			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
-//			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
-//			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
-//		}
+		if(PX_Out_Spf.XX_PwmMo == 21)
+		{
+			PX_Out_Spf.XX_PwmMo = 0; //FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤再反向
+			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
+			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
+			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
+		}
+		else
+		{
+			PX_Out_Spf.XX_PwmMo = 21;//FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤再反向
+			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
+			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
+			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
+		}
 	}
 	else
 	{
@@ -296,13 +275,6 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm2AVv =	PX_Out_Spf.XT_PwmPdVv*0.5;
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
-
-//	if(Cnt_min < 1)
-//		PX_Out_Spf.XX_Flt1.all = 0;
-//	if((Cnt_min >= 1)&&(Cnt_min < 2))
-//		PX_Out_Spf.XX_Flt1.all = 1;
-//	if((Cnt_min >= 2)&&(Cnt_min < 3))
-//		PX_Out_Spf.XX_Flt1.all = 0;
 
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
