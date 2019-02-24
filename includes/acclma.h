@@ -19,6 +19,13 @@ typedef unsigned long long Uint64;
 typedef float              float32;
 #endif
 
+#include "IQmathLib.h"
+#include "clarke.h"
+#include "park.h"
+#include "ipark.h"
+#include "pi.h"
+#include "svgen.h"
+
 typedef struct ACCLMA_IF
 {
 	float32	XI_PhAlpha;//input
@@ -36,6 +43,12 @@ typedef struct ACCLMA_IF
 	float32 XX_Ts;//parameter
 	float32 XX_M;
 	float32 XX_Theta;//variable
+	CLARKE	clarke;
+	PARK	park;
+	PI_CONTROLLER	acr;
+	PI_CONTROLLER	aur;
+	IPARK	ipark;
+	SVGEN	svgen;
 }TYPE_ACCLMA_IF;
 
 #define ACCLMA_IF_DEFAULTS {\
@@ -54,33 +67,19 @@ typedef struct ACCLMA_IF
 	1.0/1450.0/2.0,\
 	0.0,\
 	0.0,\
+	CLARKE_DEFAULTS,\
+	PARK_DEFAULTS,\
+	PI_CONTROLLER_DEFAULTS,\
+	PI_CONTROLLER_DEFAULTS,\
+	IPARK_DEFAULTS,\
+	SVGEN_DEFAULTS,\
 	}
-
-typedef struct AUR_IF
-{
-	float32 Ref;
-	float32 Fbk;
-}TYPE_AUR_IF;
-
-typedef struct ACR_IF
-{
-	float32 Ref;
-	float32	Fbk;
-}TYPE_ACR_IF;
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* extern "C" */
 
 extern void ACCLMA(TYPE_ACCLMA_IF *interface);
-
-//extern void CLARKE(TYPE_CLARKE_IF *interface);
-//extern void PARK(TYPE_PARK_IF *interface);
-//extern void IPARK(TYPE_IPARK_IF *interface);
-//extern void SPLL(TYPE_SPLL_IF *interface);
-//extern void PQ2UF(TYPE_PQ2UF_IF *interface);
-//extern void AUR(TYPE_AUR_IF *interface);
-//extern void ACR(TYPE_ACR_IF *interface);
 
 #ifdef __cplusplus
 }
