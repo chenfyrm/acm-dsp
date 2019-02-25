@@ -176,7 +176,7 @@ void NX_Pr(void);
 void EN_GPIO30(void);
 void DIS_GPIO30(void);
 interrupt void DPRAM_isr(void);
-
+void PI_RmsClc(void);
 //=================================================================================
 /* MAIN */
 void main(void)
@@ -483,23 +483,6 @@ void PI_RmsClc(void)
 		PI_PhARms.Square = 0;
 		PI_PhBRms.Square = 0;
 		PI_PhCRms.Square = 0;
-		Cnt_Period=0;
-	}
-}
-//===============================================================================================
-void DIS_CAL(void)
-{
-	if(Cnt_Period>=256)
-	{
-		Cnt_Period=256;
-
-		PI_PhARms.Rms = __ffsqrtf(PI_PhARms.Square * 0.00390625);		// 0.00390625 = 1/256  square root function
-		PI_PhBRms.Rms = __ffsqrtf(PI_PhBRms.Square * 0.00390625);		// 0.00390625 = 1/256
-		PI_PhCRms.Rms = __ffsqrtf(PI_PhARms.Square * 0.00390625);		// 0.00390625 = 1/256
-		PI_PhARms.Square = 0;
-		PI_PhBRms.Square = 0;
-		PI_PhCRms.Square = 0;
-
 		Cnt_Period=0;
 	}
 }
