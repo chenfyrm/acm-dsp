@@ -315,9 +315,9 @@ void DPRAM_RD(void)//MCU-->DSP
 		{
 			PX_In_Spf.XU_DcLk = *(XintfZone7 + 0x6) * 0.1 * 2.0;		// DC-link voltage, V
 			PX_In_Spf.XI_DcLk = 0;// DC-link current, V
-			PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1;				// phase A current, A
-			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1;				// phase B current, A
-			PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1;				// phase C current, A
+			PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1/2.0*(-1.0);				// phase A current, A
+			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1/2.0*(-1.0);				// phase B current, A
+			PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1/2.0*(-1.0);				// phase C current, A
 			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1;			// AB相输出线电压, V
 		}
 	}
@@ -343,10 +343,10 @@ void DPRAM_WR(void)//DSP-->MCU
 	/*上位机*/
 	*(XintfZone7 + 0x24) = PX_Out_Spf.XX_Flt1.all;
 	*(XintfZone7 + 0x25) = PX_In_Spf.XU_DcLk;
-	*(XintfZone7 + 0x27) = fabs(PX_In_Spf.XI_PhA);
-	*(XintfZone7 + 0x28) = fabs(PX_Out_Spf.XI_PhA_Rms);
-	*(XintfZone7 + 0x29) = fabs(IOvC);
-	*(XintfZone7 + 0x2A) = PX_In_Spf.XU_PhABGt;
+	*(XintfZone7 + 0x27) = PX_In_Spf.XI_PhA;
+	*(XintfZone7 + 0x28) = PX_In_Spf.XI_PhB;
+	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhC;
+	*(XintfZone7 + 0x2A) = fabs(PX_Out_Spf.XI_PhA_Rms);
 	/*DA输出*/
 	*(XintfZone7 + 0x2B) = 0;
 	*(XintfZone7 + 0x2C) = 0;
