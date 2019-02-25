@@ -47,7 +47,8 @@ typedef struct ACCLMA_IF
 	float32 XX_Theta;//variable
 	CLARKE	clarke;
 	PARK	park;
-	PI_CONTROLLER	acr;
+	PI_CONTROLLER	acrd;
+	PI_CONTROLLER	acrq;
 	PI_CONTROLLER	aur;
 	IPARK	ipark;
 	SVGEN	svgen;
@@ -73,6 +74,7 @@ typedef struct ACCLMA_IF
 	0.0,\
 	CLARKE_DEFAULTS,\
 	PARK_DEFAULTS,\
+	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	IPARK_DEFAULTS,\
