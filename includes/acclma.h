@@ -34,6 +34,8 @@ typedef struct ACCLMA_IF
 	float32 XX_DutyB;
 	float32	XX_DutyC;
 	float32 XX_Ts;//parameter
+	float32	XF_3Ph;
+	float32 XU_3PhPek;
 	float32 XX_M;
 	float32 XX_Theta;//variable
 }TYPE_ACCLMA_IF;
@@ -52,6 +54,8 @@ typedef struct ACCLMA_IF
 	0.5,\
 	0.5,\
 	1.0/1450.0/2.0,\
+	0.0,\
+	0.0,\
 	0.0,\
 	0.0,\
 	}

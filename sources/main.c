@@ -67,7 +67,7 @@ struct PX_InPr
 };
 volatile struct PX_InPr PX_InPr_Spf = {
 		600.0,//直流母线电压上限
-		0.0,//直流母线电压下限
+		36.0,//直流母线电压下限
 		0,
 		0,
 		10.0,//直流母线电流上限
@@ -297,7 +297,7 @@ void DPRAM_RD(void)//MCU-->DSP
 	{
 		if(PX_Out_Spf.NX_DspOpSt == 0x33)				//DSP initialized
 		{
-			PX_In_Spf.XU_DcLk = *(XintfZone7 + 0x6) * 0.1;		// DC-link voltage, V
+			PX_In_Spf.XU_DcLk = *(XintfZone7 + 0x6) * 0.1 * 2.0;		// DC-link voltage, V
 			PX_In_Spf.XI_DcLk = 0;// DC-link current, V
 			PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1;				// phase A current, A
 			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1;				// phase B current, A
@@ -325,12 +325,12 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
-	*(XintfZone7 + 0x24) = Cnt_sec;
-	*(XintfZone7 + 0x25) = Cnt_min;
-	*(XintfZone7 + 0x27) = PX_Out_Spf.XX_Flt1.all;
-	*(XintfZone7 + 0x28) = PX_In_Spf.XU_DcLk;
-	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhA;
-	*(XintfZone7 + 0x2A) = PX_In_Spf.XI_DcLk;
+	*(XintfZone7 + 0x24) = PX_Out_Spf.SX_Run;
+	*(XintfZone7 + 0x25) = PX_In_Spf.XU_DcLk;
+	*(XintfZone7 + 0x27) = PX_In_Spf.XI_PhA;
+	*(XintfZone7 + 0x28) = PX_In_Spf.XI_PhB;
+	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhC;
+	*(XintfZone7 + 0x2A) = PX_In_Spf.XU_PhABGt;
 	/*DA输出*/
 	*(XintfZone7 + 0x2B) = 0;
 	*(XintfZone7 + 0x2C) = 0;
