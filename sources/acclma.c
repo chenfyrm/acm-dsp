@@ -10,20 +10,31 @@
 
 void ACCLMA(TYPE_ACCLMA_IF *data)
 {
-	data->XF_3Ph += 0.001;
-	if(data->XF_3Ph>50.0)
-		data->XF_3Ph = 50.0;
-	data->XU_3PhPek = 380.0/1.732*1.414/50.0*data->XF_3Ph;
+	//--------------------------------------
+//	data->XF_3Ph += 0.1;
+//	if(data->XF_3Ph>50.0)
+//		data->XF_3Ph = 50.0;
+//	data->XU_3PhPek = 380.0/1.732*1.414/50.0*data->XF_3Ph;
 
-	if(data->XU_3PhPek>380.0/1.732*1.414)
-		data->XU_3PhPek = 380.0/1.732*1.414;
 
-	data->XX_M = data->XU_3PhPek/(data->XU_DcLk/sqrt(3));
-
-	if(data->XX_M>0.8)
-		data->XX_M = 0.8;
+//	if(data->XU_3PhPek>380.0/1.732*1.414)
+//		data->XU_3PhPek = 380.0/1.732*1.414;
+//
+//	data->XX_M = data->XU_3PhPek/(data->XU_DcLk/sqrt(3));
+//
+//	if(data->XX_M>0.8)
+//		data->XX_M = 0.8;
 //	if(data->XX_M< 0.1)
 //		data->XX_M = 0.1;
+	//------------------------------------------------------
+		data->XF_3Ph = 50;
+	//-------------------------------------------------------------
+		data->XX_Theta += 2*3.1415926*data->XF_3Ph*data->XX_Ts;
+		if (data->XX_Theta>=2*3.1415926)
+			data->XX_Theta -= 2*3.1415926;
+		if(data->XX_Theta<0)
+			data->XX_Theta += 2*3.1415926;
+
 //--------------------------------------------------
 	data->park.Alpha = data->XI_PhAlpha;
 	data->park.Beta = data->XI_PhBeta;
@@ -35,18 +46,18 @@ void ACCLMA(TYPE_ACCLMA_IF *data)
 	data->acrd.Ref = 10;
 	data->acrd.Fbk = data->park.Ds;
 	data->acrd.Kp = 0.6767;
-	data->acrd.Ki = 232.0;
+	data->acrd.Ki = 232.0*data->XX_Ts;
 	data->acrd.Umax = 600;
-	data->acrd.Umax = -600;
+	data->acrd.Umin = -600;
 	PI_MACRO(data->acrd);
 
 //--------------------------------------------------------
 	data->acrq.Ref = 0;
 	data->acrq.Fbk = data->park.Qs;
 	data->acrq.Kp = 0.6767;
-	data->acrq.Ki = 232.0;
+	data->acrq.Ki = 232.0*data->XX_Ts;
 	data->acrq.Umax = 600;
-	data->acrq.Umax = -600;
+	data->acrq.Umin = -600;
 	PI_MACRO(data->acrq);
 
 //----------------------------------------------------------
@@ -57,19 +68,14 @@ void ACCLMA(TYPE_ACCLMA_IF *data)
 	IPARK_MACRO(data->ipark);
 
 //-------------------------------------------------------------
-	data->svgen.Ualpha = data->ipark.Alpha;
-	data->svgen.Ubeta = data->ipark.Beta;
+	data->svgen.Ualpha = data->ipark.Alpha/(data->XU_DcLk/1.732);
+	data->svgen.Ubeta = data->ipark.Beta/(data->XU_DcLk/1.732);
 	SVGENDQ_MACRO(data->svgen);//[-1,1]
 //---------------------------------------------------------
 	data->XX_DutyA = data->svgen.Ta/2.0+0.5;
 	data->XX_DutyB = data->svgen.Tb/2.0+0.5;
 	data->XX_DutyC = data->svgen.Tc/2.0+0.5;
-//-------------------------------------------------------------
-	data->XX_Theta += 2*3.1415926*data->XF_3Ph*data->XX_Ts;
-	if (data->XX_Theta>=2*3.1415926)
-		data->XX_Theta -= 2*3.1415926;
-	if(data->XX_Theta<0)
-		data->XX_Theta += 2*3.1415926;
+
 }
 
 

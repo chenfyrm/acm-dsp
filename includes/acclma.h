@@ -23,7 +23,7 @@ typedef float              float32;
 #include "clarke.h"
 #include "park.h"
 #include "ipark.h"
-#include "pi.h"
+#include "pi_ctrl.h"
 #include "svgen.h"
 
 typedef struct ACCLMA_IF
