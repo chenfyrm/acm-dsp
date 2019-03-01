@@ -28,14 +28,16 @@ typedef float              float32;
 
 typedef struct ACCLMA_IF
 {
-	float32	XI_PhAlpha;//input
-	float32 XI_PhBeta;
+	float32	XI_PhA;//input
+	float32 XI_PhB;
+	float32 XI_PhC;
 	float32 XU_PhAlphaGt;
 	float32	XU_PhBetaGt;
 	float32	XI_PhAlphaGt;
 	float32	XI_PhBetaGt;
 	float32	XU_PhAlphaLk;
 	float32	XU_PhBetaLk;
+	float32 XU_PhAB;
 	float32	XU_DcLk;
 	float32	XX_DutyA;//output
 	float32 XX_DutyB;
@@ -56,6 +58,8 @@ typedef struct ACCLMA_IF
 
 #define ACCLMA_IF_DEFAULTS {\
 	0.0,	/**/			\
+	0.0,\
+	0.0,\
 	0.0,\
 	0.0,\
 	0.0,\

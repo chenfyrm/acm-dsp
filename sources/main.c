@@ -262,13 +262,12 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	/**/
 	if(PX_Out_Spf.SX_Run == 1)
 	{
-		acmctrl.XI_PhAlpha = 0.0;
-		acmctrl.XI_PhBeta = 0.0;
+		acmctrl.XI_PhA = PX_In_Spf.XI_PhA;
+		acmctrl.XI_PhB = PX_In_Spf.XI_PhB;
+		acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
+		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
+		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
 		ACCLMA(&acmctrl);
-
-//		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
-//		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
-//		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
@@ -341,14 +340,14 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
-	*(XintfZone7 + 0x24) = PX_Out_Spf.XX_Flt1.all;
-	*(XintfZone7 + 0x25) = PX_In_Spf.XU_DcLk;
-	*(XintfZone7 + 0x27) = PX_In_Spf.XI_PhA;
-	*(XintfZone7 + 0x28) = PX_In_Spf.XI_PhB;
-	*(XintfZone7 + 0x29) = PX_In_Spf.XI_PhC;
-	*(XintfZone7 + 0x2A) = fabs(PX_Out_Spf.XI_PhA_Rms);
+	*(XintfZone7 + 0x24) = acmctrl.XF_3Ph;
+	*(XintfZone7 + 0x25) = acmctrl.park.Ds;
+	*(XintfZone7 + 0x27) = acmctrl.park.Qs;
+	*(XintfZone7 + 0x28) = acmctrl.acrq.Ref;
+	*(XintfZone7 + 0x29) = acmctrl.acrq.Fbk;
+	*(XintfZone7 + 0x2A) = acmctrl.XU_PhAB;
 	/*DA输出*/
-	*(XintfZone7 + 0x2B) = 0;
+	*(XintfZone7 + 0x2B) = acmctrl.park.Ds;
 	*(XintfZone7 + 0x2C) = 0;
 	*(XintfZone7 + 0x2D) = 0;
 	*(XintfZone7 + 0x2E) = 0;
