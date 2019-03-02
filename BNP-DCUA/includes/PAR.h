@@ -14,7 +14,7 @@ REMARKS : ANY CHANGES TO THIS FILE WILL BE LOST !!!
 #ifndef PAR_H
 #define PAR_H
 //#ifndef TARGET_SIM_DLL
-#include "mwt_types.h"
+#include "typedef.h"
 //#include "usertypes.h"
 //#endif
 typedef struct dataBlock_PAR
@@ -99,12 +99,6 @@ MWT_REAL PARTDP_PX_IPhSnRt; /* output Phase current measurement ratio (Ratio of 
 MWT_BOOL PARTDP_L_IPh1MmNg; /* output Phase current 1 measurement inverted (FALSE=Positive direction into 3-phase,
 TRUE=Positive direction into DC-link) */
 MWT_BOOL PARTDP_L_IPh2MmNg; /* output Phase current 2 measurement inverted (FALSE=Positive direction into 3-phase,
-Legal owner: PPC Responsible unit: PPC/NE1SC Project: MCU2A
-b
-Responsible: Markus Pettersson
-Changed: 2017-01-19
-Projectdate: 2017-01-19 Language: en
-Document type: Software diagram Doc. no.: 3EST000888-5401 MCXg3 DCUA ve 0.0.1.7.pdf Page: 1099
 TRUE=Positive direction into DC-link) */
 MWT_BOOL PARTDP_L_UDcLkSnU; /* output DC-link voltage sensor output (FALSE=Current (V/A), TRUE=Voltage (V/V)) */
 MWT_REAL PARTDP_PX_UDcLkSnRt; /* output DC-link voltage measurement ratio (Ratio of DC-link voltage measurement device) */
@@ -742,12 +736,6 @@ failures */
 MWT_UINT PARTAP_PX_IRctMmFl; /* output HPP rectifier current measurement supervision, maximum number of allowed failures within
 a fixed time window */
 MWT_TIME PARTAP_PT_IRctMmFl; /* output HPP rectifier current measurement supervision, time window for monitoring the number of
-Legal owner: PPC Responsible unit: PPC/NE1SC Project: MCU2A
-b
-Responsible: Markus Pettersson
-Changed: 2017-01-19
-Projectdate: 2017-01-19 Language: en
-Document type: Software diagram Doc. no.: 3EST000888-5401 MCXg3 DCUA ve 0.0.1.7.pdf Page: 1111
 failures */
 MWT_REAL PARTDP_PT_3PhMmSvRipDy; /* output Delay to detect ripple failure of measured 3-phase converter signals */
 MWT_REAL PARTDP_PT_2qcMmSvRipDy; /* output Delay to detect ripple failure of measured 2QC signals */

@@ -1,18 +1,31 @@
 #ifndef MWT_TYPES_H
 #define MWT_TYPES_H
 
-typedef int					MWT_BOOL;
-typedef int                	MWT_INT;
-typedef int                	MWT_TIME;
-typedef long 				MWT_DINT;
-typedef long long          	int64;
-typedef unsigned int       	MWT_UINT;
-typedef unsigned long      	MWT_UDINT;
-typedef unsigned long long 	Uint64;
-typedef float              	MWT_REAL;
+typedef CC_ANALOG MWT_ANALOG;
+typedef CC_BCD4 MWT_BCD4;
+typedef CC_BIFRACT200 MWT_BIFRACT200;
+typedef CC_BOOL MWT_BOOL;
+typedef CC_BOOLEAN2 MWT_BOOLEAN2;
+typedef CC_BYTE MWT_BYTE;
+typedef CC_DATE MWT_DATE;
+typedef CC_DATE_AND_TIME MWT_DATE_AND_TIME;
+typedef CC_DINT MWT_DINT;
+typedef CC_DWORD MWT_DWORD;
+typedef CC_ENUM4 MWT_ENUM4;
+typedef CC_FIXED MWT_FIXED;
+typedef CC_INT MWT_INT;
+typedef CC_REAL MWT_REAL;
+typedef CC_SINT MWT_SINT;
+typedef CC_STRING MWT_STRING;
+typedef CC_TIME MWT_TIME;
+typedef CC_TIME_OF_DAY MWT_TIME_OF_DAY;
+typedef CC_TIMEDATE48 MWT_TIMEDATE48;
+typedef CC_UDINT MWT_UDINT;
+typedef CC_UINT MWT_UINT;
+typedef CC_UNIFRACT MWT_UNIFRACT;
+typedef CC_USINT MWT_USINT;
+typedef CC_WORD MWT_WORD;
 
-#define	FALSE 	0
-#define	TRUE	1
+#endif /* MWT_TYPES_H */
 
-#endif
 
