@@ -19,7 +19,8 @@
 
 /* DEFINES */
 //--------------------------------------------------------------------------------
-
+#define PI 	3.1415926
+#define PI2	6.2831853
 
 /* TYPEDEFS */
 
@@ -153,12 +154,16 @@ volatile struct PI_Rms PI_PhCRms = {0, 0};
 /* GLOBALS */
 
 
+
 /* LOCALS */
 //int16	*XintfZone0=(int16 *)0x004000;//Unused
 //int16	*XintfZone6=(int16 *)0x100000;//Unused
 int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 //=======================================================================
 Uint16	GPIO_Temp181,GPIO_Temp182;
+TYPE_ACCLMA_IF acmctrl = ACCLMA_IF_DEFAULTS;
+TYPE_SOGIOSGMA_IF sogiosgma = SOGIOSGMA_IF_DEFAULTS;
+//===========================================================================
 Uint16	Cnt_Period =0;
 Uint16	Cnt_us = 0;
 Uint16 	Cnt_sec = 0;
@@ -166,9 +171,11 @@ Uint16	Cnt_min = 0;
 float32 IOvA = 0;
 float32 IOvB = 0;
 float32 IOvC = 0;
+float32 Theta = 0.0;
 
-TYPE_ACCLMA_IF acmctrl = ACCLMA_IF_DEFAULTS;
-//===========================================================================
+int16 DA[8] = {0};
+
+
 /* LOCAL FUNCTIONS */
 void DPRAM_RD(void);
 void DPRAM_WR(void);
@@ -291,6 +298,9 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
 
+	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
+	SOGIOSGMA(&sogiosgma);
+
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
 
@@ -343,15 +353,56 @@ void DPRAM_WR(void)//DSP-->MCU
 	*(XintfZone7 + 0x24) = acmctrl.XF_3Ph;
 	*(XintfZone7 + 0x25) = acmctrl.park.Ds;
 	*(XintfZone7 + 0x27) = acmctrl.park.Qs;
-	*(XintfZone7 + 0x28) = acmctrl.acrq.Ref;
-	*(XintfZone7 + 0x29) = acmctrl.acrq.Fbk;
-	*(XintfZone7 + 0x2A) = acmctrl.XU_PhAB;
+//	*(XintfZone7 + 0x28) = acmctrl.acrq.Ref;
+//	*(XintfZone7 + 0x29) = acmctrl.acrq.Fbk;
+//	*(XintfZone7 + 0x2A) = acmctrl.XU_PhAB;
 	/*DA输出*/
-	*(XintfZone7 + 0x2B) = acmctrl.park.Ds;
-	*(XintfZone7 + 0x2C) = 0;
-	*(XintfZone7 + 0x2D) = 0;
-	*(XintfZone7 + 0x2E) = 0;
-	*(XintfZone7 + 0x2F) = 0;
+	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//AC540
+	if(DA[3] >= 4095)
+		DA[3] = 4095;
+	if(DA[3] <= -4095)
+		DA[3] = -4095;
+	DA[4] = PX_In_Spf.XU_DcLk*10.0;//DC2250
+	if(DA[4] >= 4095)
+		DA[4] = 4095;
+	if(DA[4] <= -4095)
+		DA[4] = -4095;
+	DA[5] = PX_In_Spf.XI_PhA*10.0;//AC160;
+	if(DA[5] >= 4095)
+		DA[5] = 4095;
+	if(DA[5] <= -4095)
+		DA[5] = -4095;
+	DA[6] = PX_In_Spf.XI_PhB*10.0;
+	if(DA[6] >= 4095)
+		DA[6] = 4095;
+	if(DA[6] <= -4095)
+		DA[6] = -4095;
+	DA[7] = PX_In_Spf.XI_PhC*10.0;
+	if(DA[7] >= 4095)
+		DA[7] = 4095;
+	if(DA[7] <= -4095)
+		DA[7] = -4095;
+	*(XintfZone7 + 0x2B) = DA[3];
+	*(XintfZone7 + 0x2C) = DA[4];
+	*(XintfZone7 + 0x2D) = DA[5];
+	*(XintfZone7 + 0x2E) = DA[6];
+	*(XintfZone7 + 0x2F) = DA[7];
+	/*DA测试*/
+//	Theta += 100.0*PI*8.0/150.0/1000000.0*PX_Out_Spf.XT_PwmPdVv;
+//	if(Theta>=PI2)
+//		Theta -=PI2;
+//	if(Theta<0)
+//		Theta +=PI2;
+//
+//	*(XintfZone7 + 0x28) = 0.0;
+//	*(XintfZone7 + 0x29) = 0.0;
+//	*(XintfZone7 + 0x2A) = 0.0;
+//	*(XintfZone7 + 0x2B) = Theta*500;
+//	*(XintfZone7 + 0x2C) = 1000.0*sin(Theta);
+//	*(XintfZone7 + 0x2D) = 2000.0*sin(Theta);
+//	*(XintfZone7 + 0x2E) = 3000.0*sin(Theta);
+//	*(XintfZone7 + 0x2F) = 4000.0*sin(Theta);
+
 
 //---------------------------------------------------
 	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;//此行最后写，DPRAM产生中断源
