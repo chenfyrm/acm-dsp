@@ -18,8 +18,9 @@ typedef struct{
 	float32 alpha;//output
 	float32 beta;
 	float32	Ts;//param
-	float32	w;
+	float32	w0;
 	float32 K;
+	float32	Ki;
 	float32 oldPhase1;//state
 	float32 oldPhase2;
 	float32 oldAlpha1;
@@ -28,6 +29,9 @@ typedef struct{
 	float32 oldBeta2;
 	float32 a;//local
 	float32 b;
+	float32 w;
+	float32 ErrF;
+	float32 ComW;
 }TYPE_SOGIOSGMA_IF;
 
 #define SOGIOSGMA_IF_DEFAULTS {\
@@ -35,14 +39,18 @@ typedef struct{
 	0.0,\
 	0.0,\
 	1.0/1450.0/2.0,\
-	100*PI,\
+	100*3.1415926,\
 	1.4142135,\
+	10000,\
 	0.0,\
 	0.0,\
 	0.0,\
 	0.0,\
 	0.0,\
 	0.0,\
+	0.0,\
+	0.0,\
+	100*3.1415926,\
 	0.0,\
 	0.0,\
 	}
@@ -53,6 +61,7 @@ extern "C" {
 #endif /* extern "C" */
 
 extern void SOGIOSGMA(TYPE_SOGIOSGMA_IF *interface);
+extern void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *interface);
 
 #ifdef __cplusplus
 }

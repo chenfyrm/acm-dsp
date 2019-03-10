@@ -12,7 +12,8 @@ typedef struct{
 	float32	theta;//output
 	float32	Upeak;
 	float32	w;
-	flaot32	w0;//param
+	float32 Ts;//param
+	float32	w0;
 	PARK	park;//local
 	PI_CONTROLLER	aqr;
 }TYPE_SRFPLL_IF;
@@ -23,6 +24,8 @@ typedef struct{
 	0.0,\
 	0.0,\
 	0.0,\
+	1.0/1450.0/2.0,\
+	100*3.1415926,\
 	PARK_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	}
