@@ -5,8 +5,8 @@
  *      Author: 700363
  */
 
-#ifndef ACCLMA_H_
-#define ACCLMA_H_
+#ifndef UFCTRL_H_
+#define UFCTRL_H_
 
 #include "typedefs.h"
 #include "IQmathLib.h"
@@ -16,7 +16,7 @@
 #include "pi_ctrl.h"
 #include "svgen.h"
 
-typedef struct ACCLMA_IF
+typedef struct UFCTRL_IF
 {
 	float32	XI_PhA;//input
 	float32 XI_PhB;
@@ -44,9 +44,9 @@ typedef struct ACCLMA_IF
 	PI_CONTROLLER	aur;
 	IPARK	ipark;
 	SVGEN	svgen;
-}TYPE_ACCLMA_IF;
+}TYPE_UFCTRL_IF;
 
-#define ACCLMA_IF_DEFAULTS {\
+#define UFCTRL_IF_DEFAULTS {\
 	0.0,	/**/			\
 	0.0,\
 	0.0,\
@@ -79,9 +79,9 @@ typedef struct ACCLMA_IF
 extern "C" {
 #endif /* extern "C" */
 
-extern void ACCLMAOpenLoop(TYPE_ACCLMA_IF *interface);
-extern void ACCLMASingleLoop(TYPE_ACCLMA_IF *interface);
-extern void ACCLMADoubleLoop(TYPE_ACCLMA_IF *interface);
+extern void UFCTRLOpenLoop(TYPE_UFCTRL_IF *interface);
+extern void UFCTRLSingleLoop(TYPE_UFCTRL_IF *interface);
+extern void UFCTRLDoubleLoop(TYPE_UFCTRL_IF *interface);
 
 #ifdef __cplusplus
 }

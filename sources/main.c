@@ -161,7 +161,7 @@ volatile struct PI_Rms PI_PhCRms = {0, 0};
 int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 //=======================================================================
 Uint16	GPIO_Temp181,GPIO_Temp182;
-TYPE_ACCLMA_IF acmctrl = ACCLMA_IF_DEFAULTS;
+TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
 TYPE_SOGIOSGMA_IF sogiosgma = SOGIOSGMA_IF_DEFAULTS;
 //===========================================================================
 Uint16	Cnt_Period =0;
@@ -274,7 +274,7 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
 		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
 		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
-		ACCLMA(&acmctrl);
+		UFCTRLOpenLoop(&acmctrl);
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
@@ -298,8 +298,8 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
 
-	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
-	SOGIOSGMA(&sogiosgma);
+//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
+//	SOGIOSGMA(&sogiosgma);
 
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
@@ -350,24 +350,24 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
-	*(XintfZone7 + 0x24) = acmctrl.XF_3Ph;
-	*(XintfZone7 + 0x25) = acmctrl.park.Ds;
-	*(XintfZone7 + 0x27) = acmctrl.park.Qs;
-//	*(XintfZone7 + 0x28) = acmctrl.acrq.Ref;
-//	*(XintfZone7 + 0x29) = acmctrl.acrq.Fbk;
-//	*(XintfZone7 + 0x2A) = acmctrl.XU_PhAB;
+	*(XintfZone7 + 0x24) = acmctrl.XU_3PhPek;
+	*(XintfZone7 + 0x25) = acmctrl.XF_3Ph;
+	*(XintfZone7 + 0x27) = acmctrl.XU_DcLk;
+	*(XintfZone7 + 0x28) = acmctrl.XX_M*100;
+	*(XintfZone7 + 0x29) = 0;
+	*(XintfZone7 + 0x2A) = 0;
 	/*DA输出*/
-	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//AC540
+	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
 	if(DA[3] <= -4095)
 		DA[3] = -4095;
-	DA[4] = PX_In_Spf.XU_DcLk*10.0;//DC2250
+	DA[4] = acmctrl.XX_Theta*100.0;//
 	if(DA[4] >= 4095)
 		DA[4] = 4095;
 	if(DA[4] <= -4095)
 		DA[4] = -4095;
-	DA[5] = PX_In_Spf.XI_PhA*10.0;//AC160;
+	DA[5] = PX_In_Spf.XI_PhA*10.0;//
 	if(DA[5] >= 4095)
 		DA[5] = 4095;
 	if(DA[5] <= -4095)

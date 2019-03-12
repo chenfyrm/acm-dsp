@@ -12,7 +12,7 @@ typedef struct{
 	float32	theta;//output
 	float32	Upeak;
 	float32	w;
-	flaot32	w0;//param
+	float32	w0;//param
 	PARK	park;//local
 	PI_CONTROLLER	aqr;
 }TYPE_SRFPLL_IF;
