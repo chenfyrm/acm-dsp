@@ -163,6 +163,7 @@ int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 Uint16	GPIO_Temp181,GPIO_Temp182;
 TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
 TYPE_SOGIOSGMA_IF sogiosgma = SOGIOSGMA_IF_DEFAULTS;
+TYPE_SRFPLL_IF srfpll = SRFPLL_IF_DEFAULTS;
 //===========================================================================
 Uint16	Cnt_Period =0;
 Uint16	Cnt_us = 0;
@@ -278,17 +279,44 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
-			PX_Out_Spf.XX_PwmMo = 0; //FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤再反向
+			PX_Out_Spf.XX_PwmMo = 0; //FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
+//			//最小脉宽限制
+//			if(PX_Out_Spf.XX_Pwm1AVv < 300)
+//				PX_Out_Spf.XX_Pwm1AVv =0;
+//			if(PX_Out_Spf.XX_Pwm1AVv > (PX_Out_Spf.XT_PwmPdVv-300))
+//				PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv;
+//			if(PX_Out_Spf.XX_Pwm2AVv < 300)
+//				PX_Out_Spf.XX_Pwm2AVv =0;
+//			if(PX_Out_Spf.XX_Pwm2AVv > (PX_Out_Spf.XT_PwmPdVv-300))
+//				PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv;
+//			if(PX_Out_Spf.XX_Pwm3AVv < 300)
+//				PX_Out_Spf.XX_Pwm3AVv =0;
+//			if(PX_Out_Spf.XX_Pwm3AVv > (PX_Out_Spf.XT_PwmPdVv-300))
+//				PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv;
+
 		}
 		else
 		{
-			PX_Out_Spf.XX_PwmMo = 21;//FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤再反向
+			PX_Out_Spf.XX_PwmMo = 21;//FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
+//			//最小脉宽限制
+//			if(PX_Out_Spf.XX_Pwm1AVv < 300)
+//				PX_Out_Spf.XX_Pwm1AVv =0;
+//			if(PX_Out_Spf.XX_Pwm1AVv > (PX_Out_Spf.XT_PwmPdVv-300))
+//				PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv;
+//			if(PX_Out_Spf.XX_Pwm2AVv < 300)
+//				PX_Out_Spf.XX_Pwm2AVv =0;
+//			if(PX_Out_Spf.XX_Pwm2AVv > (PX_Out_Spf.XT_PwmPdVv-300))
+//				PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv;
+//			if(PX_Out_Spf.XX_Pwm3AVv < 300)
+//				PX_Out_Spf.XX_Pwm3AVv =0;
+//			if(PX_Out_Spf.XX_Pwm3AVv > (PX_Out_Spf.XT_PwmPdVv-300))
+//				PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv;
 		}
 	}
 	else
@@ -298,8 +326,12 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
 
-//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
-//	SOGIOSGMA(&sogiosgma);
+	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
+	SOGIOSGFLL(&sogiosgma);
+
+	srfpll.alpha = sogiosgma.alpha;
+	srfpll.beta = sogiosgma.beta;
+	SRFPLL(&srfpll);
 
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
@@ -350,34 +382,34 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
-	*(XintfZone7 + 0x24) = acmctrl.XU_3PhPek;
-	*(XintfZone7 + 0x25) = acmctrl.XF_3Ph;
-	*(XintfZone7 + 0x27) = acmctrl.XU_DcLk;
-	*(XintfZone7 + 0x28) = acmctrl.XX_M*100;
-	*(XintfZone7 + 0x29) = 0;
-	*(XintfZone7 + 0x2A) = 0;
+	*(XintfZone7 + 0x24) = sogiosgma.w/PI2*10.0;
+	*(XintfZone7 + 0x25) = fabs(sogiosgma.ErrF)*1000.0;
+	*(XintfZone7 + 0x27) = fabs(srfpll.aqr.Ref)*1000.0;
+	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
+	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
+	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
 	/*DA输出*/
 	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
 	if(DA[3] <= -4095)
 		DA[3] = -4095;
-	DA[4] = acmctrl.XX_Theta*100.0;//
+	DA[4] = sogiosgma.alpha*10.0;//
 	if(DA[4] >= 4095)
 		DA[4] = 4095;
 	if(DA[4] <= -4095)
 		DA[4] = -4095;
-	DA[5] = PX_In_Spf.XI_PhA*10.0;//
+	DA[5] = sogiosgma.beta*10.0;//
 	if(DA[5] >= 4095)
 		DA[5] = 4095;
 	if(DA[5] <= -4095)
 		DA[5] = -4095;
-	DA[6] = PX_In_Spf.XI_PhB*10.0;
+	DA[6] = srfpll.Upeak*10.0;
 	if(DA[6] >= 4095)
 		DA[6] = 4095;
 	if(DA[6] <= -4095)
 		DA[6] = -4095;
-	DA[7] = PX_In_Spf.XI_PhC*10.0;
+	DA[7] = srfpll.w/PI2*10.0;
 	if(DA[7] >= 4095)
 		DA[7] = 4095;
 	if(DA[7] <= -4095)

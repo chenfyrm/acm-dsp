@@ -30,6 +30,7 @@ typedef struct{
 	float32 a;//local
 	float32 b;
 	float32 w;
+	float32 peak;
 	float32 ErrF;
 	float32 ComW;
 }TYPE_SOGIOSGMA_IF;
@@ -51,6 +52,7 @@ typedef struct{
 	0.0,\
 	0.0,\
 	100*3.1415926,\
+	0.0,\
 	0.0,\
 	0.0,\
 	}

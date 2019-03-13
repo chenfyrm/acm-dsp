@@ -12,7 +12,7 @@
 #define KI 100
 
 static float32 XF_3PhRef = 50.0;
-float32 XU_3PhPeakRef = 674.0/380.0*40.0*1.414;
+float32 XU_3PhPeakRef = 674.0/380.0*20.0*1.414;
 
 void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 {
@@ -79,6 +79,20 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 	data->XX_DutyA = data->svgen.Ta/2.0+0.5;
 	data->XX_DutyB = data->svgen.Tb/2.0+0.5;
 	data->XX_DutyC = data->svgen.Tc/2.0+0.5;
+
+//	if(data->XX_DutyA<0.05)
+//		data->XX_DutyA = 0.0;
+//	if(data->XX_DutyA>0.95)
+//			data->XX_DutyA = 1.0;
+//	if(data->XX_DutyB<0.05)
+//		data->XX_DutyB = 0.0;
+//	if(data->XX_DutyB>0.95)
+//			data->XX_DutyB = 1.0;
+//	if(data->XX_DutyC<0.05)
+//		data->XX_DutyC = 0.0;
+//	if(data->XX_DutyC>0.95)
+//			data->XX_DutyC = 1.0;
+
 
 /*Update*/
 	data->XX_Theta += 2.0*3.1415926*data->XF_3Ph*data->XX_Ts;

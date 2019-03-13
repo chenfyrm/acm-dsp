@@ -51,8 +51,17 @@ void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *data)
 			-2.0*data->b/(data->a+data->K)*data->oldBeta1\
 			-(data->a-data->K)/(data->a+data->K)*data->oldBeta2;
 
-	data->ErrF = (data->phase-data->alpha)*data->beta;
+	data->peak = sqrt(data->alpha*data->alpha + data->beta*data->beta);
+	if(data->peak <= 0.001)
+		data->peak = 0.001;
+/**/
+	data->ErrF = (data->phase-data->alpha)*data->beta/(data->peak*data->peak);
 	data->ComW +=data->ErrF*(-1.0)*data->Ki*data->Ts;
+	if (data->ComW > 30.0)
+		data->ComW = 30.0;
+	if (data->ComW <-30.0)
+		data->ComW = -30.0;
+
 
 	/*update*/
 	data->w = data->w0 + data->ComW;
