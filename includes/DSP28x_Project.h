@@ -24,8 +24,9 @@
 #include "C28x_FPU_FastRTS.h"
 //#include "typedefs.h"
 #include "ufctrl.h"
-#include "sogiosgma.h"
-#include "srfpll.h"
+//#include "sogiosgma.h"
+//#include "srfpll.h"
+#include "dosgpll.h"
 
 
 

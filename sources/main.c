@@ -162,8 +162,9 @@ int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 //=======================================================================
 Uint16	GPIO_Temp181,GPIO_Temp182;
 TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
-TYPE_SOGIOSGMA_IF sogiosgma = SOGIOSGMA_IF_DEFAULTS;
-TYPE_SRFPLL_IF srfpll = SRFPLL_IF_DEFAULTS;
+//TYPE_SOGIOSGMA_IF sogiosgma = SOGIOSGMA_IF_DEFAULTS;
+//TYPE_SRFPLL_IF srfpll = SRFPLL_IF_DEFAULTS;
+TYPE_DOSGPLL_IF dosgpll = DOSGPLL_IF_DEFAULTS;
 //===========================================================================
 Uint16	Cnt_Period =0;
 Uint16	Cnt_us = 0;
@@ -326,12 +327,15 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
 
-	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
-	SOGIOSGFLL(&sogiosgma);
+//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
+//	SOGIOSGFLL(&sogiosgma);
+//
+//	srfpll.alpha = sogiosgma.alpha;
+//	srfpll.beta = sogiosgma.beta;
+//	SRFPLL(&srfpll);
 
-	srfpll.alpha = sogiosgma.alpha;
-	srfpll.beta = sogiosgma.beta;
-	SRFPLL(&srfpll);
+	dosgpll.phase = PX_In_Spf.XU_PhABGt;
+	DOSGPLL(&dosgpll);
 
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
@@ -359,7 +363,8 @@ void DPRAM_RD(void)//MCU-->DSP
 			PX_In_Spf.XI_PhA = *(XintfZone7 + 0x8)*0.1/2.0*(-1.0);				// phase A current, A
 			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1/2.0*(-1.0);				// phase B current, A
 			PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1/2.0*(-1.0);				// phase C current, A
-			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1;			// AB相输出线电压, V
+//			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1;			// AB相输出线电压, V
+			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1*2.0;			// AB相输出线电压, V 采样滤波对幅值的衰减
 		}
 	}
 }
@@ -382,34 +387,46 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
-	*(XintfZone7 + 0x24) = sogiosgma.w/PI2*10.0;
-	*(XintfZone7 + 0x25) = fabs(sogiosgma.ErrF)*1000.0;
-	*(XintfZone7 + 0x27) = fabs(srfpll.aqr.Ref)*1000.0;
-	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
-	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
-	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
+//	*(XintfZone7 + 0x24) = sogiosgma.w/PI2*10.0;
+//	*(XintfZone7 + 0x25) = fabs(sogiosgma.ErrF)*1000.0;
+//	*(XintfZone7 + 0x27) = fabs(srfpll.aqr.Ref)*1000.0;
+//	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
+//	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
+//	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
+	*(XintfZone7 + 0x24) = dosgpll.theta*10.0;
+	*(XintfZone7 + 0x25) = dosgpll.Upeak*10.0;
+	*(XintfZone7 + 0x27) = dosgpll.w/PI2*10.0;
+	*(XintfZone7 + 0x28) = fabs(dosgpll.aqr.Ref)*1000.0;
+	*(XintfZone7 + 0x29) = fabs(dosgpll.aqr.Out)/PI2*10.0;
+	*(XintfZone7 + 0x2A) = 0.0;
 	/*DA输出*/
 	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
 	if(DA[3] <= -4095)
 		DA[3] = -4095;
-	DA[4] = sogiosgma.alpha*10.0;//
+	DA[4] = dosgpll.alpha*10.0;//
 	if(DA[4] >= 4095)
 		DA[4] = 4095;
 	if(DA[4] <= -4095)
 		DA[4] = -4095;
-	DA[5] = sogiosgma.beta*10.0;//
+	DA[5] = dosgpll.beta*10.0;//
 	if(DA[5] >= 4095)
 		DA[5] = 4095;
 	if(DA[5] <= -4095)
 		DA[5] = -4095;
-	DA[6] = srfpll.Upeak*10.0;
+	DA[6] = dosgpll.Upeak*10.0;
 	if(DA[6] >= 4095)
 		DA[6] = 4095;
 	if(DA[6] <= -4095)
 		DA[6] = -4095;
-	DA[7] = srfpll.w/PI2*10.0;
+//	DA[7] = dosgpll.theta*100.0;
+	Theta = dosgpll.theta + PI/2.0;
+	if(Theta >= PI2)
+		Theta -= PI2;
+	if(Theta < 0)
+		Theta += PI2;
+	DA[7] = Theta*100.0;
 	if(DA[7] >= 4095)
 		DA[7] = 4095;
 	if(DA[7] <= -4095)
