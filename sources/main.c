@@ -364,7 +364,7 @@ void DPRAM_RD(void)//MCU-->DSP
 			PX_In_Spf.XI_PhB = *(XintfZone7 + 0xA)*0.1/2.0*(-1.0);				// phase B current, A
 			PX_In_Spf.XI_PhC = *(XintfZone7 + 0x9)*0.1/2.0*(-1.0);				// phase C current, A
 //			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1;			// AB相输出线电压, V
-			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1*2.0;			// AB相输出线电压, V 采样滤波对幅值的衰减
+			PX_In_Spf.XU_PhABGt= *(XintfZone7 + 0x7) * 0.1*2.0;			// AB相输出线电压, V 采样滤波对幅值的衰减 50Hz时衰减为0.5
 		}
 	}
 }
@@ -393,24 +393,25 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
 //	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
 //	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
-	*(XintfZone7 + 0x24) = dosgpll.theta*10.0;
+	*(XintfZone7 + 0x24) = acmctrl.WU_3PhDsp*10.0;
 	*(XintfZone7 + 0x25) = dosgpll.Upeak*10.0;
-	*(XintfZone7 + 0x27) = dosgpll.w/PI2*10.0;
-	*(XintfZone7 + 0x28) = fabs(dosgpll.aqr.Ref)*1000.0;
-	*(XintfZone7 + 0x29) = fabs(dosgpll.aqr.Out)/PI2*10.0;
-	*(XintfZone7 + 0x2A) = 0.0;
+	*(XintfZone7 + 0x27) = acmctrl.XF_3Ph*10.0;
+	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
+	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
+	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
 	/*DA输出*/
 	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
 	if(DA[3] <= -4095)
 		DA[3] = -4095;
-	DA[4] = dosgpll.alpha*10.0;//
+	DA[4] = (acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;//
 	if(DA[4] >= 4095)
 		DA[4] = 4095;
 	if(DA[4] <= -4095)
 		DA[4] = -4095;
-	DA[5] = dosgpll.beta*10.0;//
+
+	DA[5] = acmctrl.XX_Theta *100.0;//
 	if(DA[5] >= 4095)
 		DA[5] = 4095;
 	if(DA[5] <= -4095)
@@ -451,7 +452,6 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x2D) = 2000.0*sin(Theta);
 //	*(XintfZone7 + 0x2E) = 3000.0*sin(Theta);
 //	*(XintfZone7 + 0x2F) = 4000.0*sin(Theta);
-
 
 //---------------------------------------------------
 	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;//此行最后写，DPRAM产生中断源
