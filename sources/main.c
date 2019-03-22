@@ -276,7 +276,8 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
 		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
 		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
-		UFCTRLOpenLoop(&acmctrl);
+//		UFCTRLOpenLoop(&acmctrl);
+		UFCTRLSingleLoop(&acmctrl);
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
@@ -393,12 +394,18 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
 //	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
 //	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
-	*(XintfZone7 + 0x24) = acmctrl.WU_3PhDsp*10.0;
-	*(XintfZone7 + 0x25) = dosgpll.Upeak*10.0;
-	*(XintfZone7 + 0x27) = acmctrl.XF_3Ph*10.0;
-	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
-	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
-	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
+//	*(XintfZone7 + 0x24) = acmctrl.WU_3PhDsp*10.0;
+//	*(XintfZone7 + 0x25) = dosgpll.Upeak*10.0;
+//	*(XintfZone7 + 0x27) = acmctrl.XF_3Ph*10.0;
+//	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
+//	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
+//	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
+	*(XintfZone7 + 0x24) = acmctrl.ipark.Ds*10.0;
+	*(XintfZone7 + 0x25) = acmctrl.ipark.Qs*10.0;
+	*(XintfZone7 + 0x27) = acmctrl.XI_Act3Ph*10.0;
+	*(XintfZone7 + 0x28) = acmctrl.XI_Rct3Ph*10.0;
+	*(XintfZone7 + 0x29) = acmctrl.XI_Act3PhFlt*10.0;
+	*(XintfZone7 + 0x2A) = acmctrl.XI_Rct3PhFlt*10.0;
 	/*DAÊä³ö*/
 	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
 	if(DA[3] >= 4095)

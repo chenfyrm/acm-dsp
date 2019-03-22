@@ -16,6 +16,35 @@
 #include "pi_ctrl.h"
 #include "svgen.h"
 
+typedef struct LPFILTER
+{
+	float32	XX_In;
+	float32 XX_Out;
+	float32	XX_Ts;
+	float32	XX_T;
+}TYPE_LPFILTER;
+
+#define LPFILTER_DEFAULTS {\
+	0.0,\
+	0.0,\
+	1.0/1450.0/2.0,\
+	1.0/30.0,\
+	}
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void LPFILTER(TYPE_LPFILTER *interface);
+
+#ifdef __cplusplus
+}
+#endif
+
+/*
+ *
+ * */
+
 typedef struct UFCTRL_IF
 {
 	float32 WU_3PhDsp;//input
@@ -23,12 +52,6 @@ typedef struct UFCTRL_IF
 	float32	XI_PhA;
 	float32 XI_PhB;
 	float32 XI_PhC;
-	float32 XU_PhAlphaGt;
-	float32	XU_PhBetaGt;
-	float32	XI_PhAlphaGt;
-	float32	XI_PhBetaGt;
-	float32	XU_PhAlphaLk;
-	float32	XU_PhBetaLk;
 	float32 XU_PhAB;
 	float32	XU_DcLk;
 	float32 XI_DcLk;
@@ -42,8 +65,14 @@ typedef struct UFCTRL_IF
 	float32	XF_3Ph;
 	float32 XX_Theta;
 	float32 XX_M;
+	float32 XI_Act3Ph;
+	float32 XI_Rct3Ph;
+	float32 XI_Act3PhFlt;
+	float32 XI_Rct3PhFlt;
 	CLARKE	clarke;
 	PARK	park;
+	TYPE_LPFILTER	LpFilterId;
+	TYPE_LPFILTER	LpFilterIq;
 	PI_CONTROLLER	acrd;
 	PI_CONTROLLER	acrq;
 	PI_CONTROLLER	aur;
@@ -60,24 +89,24 @@ typedef struct UFCTRL_IF
 	0.0,\
 	0.0,\
 	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
+	0.5,/**/\
 	0.5,\
 	0.5,\
-	0.5,\
-	1.0/1450.0/2.0,\
+	1.0/1450.0/2.0,/**/\
 	1.0,\
 	0.0,\
+	0.0,/**/\
 	0.0,\
 	0.0,\
 	0.0,\
 	0.0,\
-	CLARKE_DEFAULTS,\
+	0.0,\
+	0.0,\
+	0.0,\
+	CLARKE_DEFAULTS,/**/\
 	PARK_DEFAULTS,\
+	LPFILTER_DEFAULTS,\
+	LPFILTER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
@@ -96,5 +125,8 @@ extern void UFCTRLDoubleLoop(TYPE_UFCTRL_IF *interface);
 #ifdef __cplusplus
 }
 #endif
+
+
+
 
 #endif /* ACCLMA_H_ */
