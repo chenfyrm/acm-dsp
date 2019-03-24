@@ -8,15 +8,15 @@
 #include <math.h>
 #include "ufctrl.h"
 
-#define KP 1.0
-#define KI 10.0
+#define KP 0.6767
+#define KI 232.0
 
 //static float32 XF_3PhRef = 50.0;
 //static float32 XU_3PhPeakRef = 50.0;
 
 void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 {
-
+	/*command*/
 	data->WF_3PhDsp = 50.0;
 	data->WU_3PhDsp = 50.0/1.732*1.64;
 
@@ -134,20 +134,6 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 			data->XF_3Ph = 0.0;
 	}
 
-////--------------------------------------
-//	if(data->XU_3PhPek<data->WU_3PhDsp*data->XX_UPeakCom)
-//	{
-//		data->XU_3PhPek += 0.1;
-//		if(data->XU_3PhPek>data->WU_3PhDsp*data->XX_UPeakCom)
-//			data->XU_3PhPek = data->WU_3PhDsp*data->XX_UPeakCom;
-//	}
-//	if(data->XU_3PhPek>data->WU_3PhDsp*data->XX_UPeakCom)
-//	{
-//		data->XU_3PhPek -= 0.1;
-//		if(data->XU_3PhPek<0.0)
-//			data->XU_3PhPek = 0.0;
-//	}
-
 //----------------------------------------
 	data->clarke.As = data->XI_PhA;
 	data->clarke.Bs = data->XI_PhB;
@@ -171,10 +157,29 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 	LPFILTER(&data->LpFilterIq);
 	data->XI_Rct3PhFlt = data->LpFilterIq.XX_Out;
 
+	//--------------------------------------------------
+		data->park.Alpha = data->XU_PhAl/1.732;
+		data->park.Beta = data->XU_PhBe/1.732;
+		data->park.Sine = sin(data->XX_Theta-3.1415926/6.0);
+		data->park.Cosine = cos(data->XX_Theta-3.1415926/6.0);
+		PARK_MACRO(data->park);
+
+	//---------------------------------------
+		data->XU_Act3Ph = data->park.Ds;
+		data->LpFilterUd.XX_In = data->park.Ds;
+		data->LpFilterUd.XX_T = 1/300;
+		LPFILTER(&data->LpFilterUd);
+		data->XU_Act3PhFlt = data->LpFilterUd.XX_Out;
+		data->XU_Rct3Ph = data->park.Qs;
+		data->LpFilterUq.XX_In = data->park.Qs;
+		data->LpFilterUq.XX_T = 1/300;
+		LPFILTER(&data->LpFilterUq);
+		data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
+
 //--------------------------------------------------------
-	data->acrd.Ref = 5;
-//	data->acrd.Fbk = data->park.Ds;
-	data->acrd.Fbk = data->XI_Act3PhFlt;
+//	data->acrd.Ref = 5;
+	data->acrd.Fbk = data->XI_Act3Ph;
+//	data->acrd.Fbk = data->XI_Act3PhFlt;
 	data->acrd.Kp = KP;
 	data->acrd.Ki = KI*data->XX_Ts;
 	data->acrd.Umax = 50;
@@ -182,9 +187,9 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 	PI_MACRO(data->acrd);
 
 //--------------------------------------------------------
-	data->acrq.Ref = 3;
-//	data->acrq.Fbk = data->park.Qs;
-	data->acrq.Fbk = data->XI_Rct3PhFlt;
+//	data->acrq.Ref = 3;
+	data->acrq.Fbk = data->XI_Rct3Ph;
+//	data->acrq.Fbk = data->XI_Rct3PhFlt;
 	data->acrq.Kp = KP;
 	data->acrq.Ki = KI*data->XX_Ts;
 	data->acrq.Umax = 50;
@@ -192,6 +197,8 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 	PI_MACRO(data->acrq);
 
 //----------------------------------------------------------
+//	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs + data->XU_Act3PhFlt;
+//	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds + data->XU_Rct3PhFlt;
 	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs;
 	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds;
 	data->ipark.Sine = sin(data->XX_Theta + 2.0*3.1415926*data->XF_3Ph*data->XX_Ts);

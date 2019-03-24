@@ -275,7 +275,7 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XI_PhB = PX_In_Spf.XI_PhB;
 		acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
 		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
-		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
+//		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
 //		UFCTRLOpenLoop(&acmctrl);
 		UFCTRLSingleLoop(&acmctrl);
 

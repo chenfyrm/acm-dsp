@@ -28,7 +28,7 @@ typedef struct LPFILTER
 	0.0,\
 	0.0,\
 	1.0/1450.0/2.0,\
-	1.0/30.0,\
+	1.0/2900.0,\
 	}
 
 #ifdef __cplusplus
@@ -52,7 +52,8 @@ typedef struct UFCTRL_IF
 	float32	XI_PhA;
 	float32 XI_PhB;
 	float32 XI_PhC;
-	float32 XU_PhAB;
+	float32 XU_PhAl;
+	float32 XU_PhBe;
 	float32	XU_DcLk;
 	float32 XI_DcLk;
 	float32	XX_DutyA;//output
@@ -69,10 +70,16 @@ typedef struct UFCTRL_IF
 	float32 XI_Rct3Ph;
 	float32 XI_Act3PhFlt;
 	float32 XI_Rct3PhFlt;
+	float32 XU_Act3Ph;
+	float32 XU_Rct3Ph;
+	float32 XU_Act3PhFlt;
+	float32 XU_Rct3PhFlt;
 	CLARKE	clarke;
 	PARK	park;
 	TYPE_LPFILTER	LpFilterId;
 	TYPE_LPFILTER	LpFilterIq;
+	TYPE_LPFILTER	LpFilterUd;
+	TYPE_LPFILTER	LpFilterUq;
 	PI_CONTROLLER	acrd;
 	PI_CONTROLLER	acrq;
 	PI_CONTROLLER	aur;
@@ -82,6 +89,7 @@ typedef struct UFCTRL_IF
 
 #define UFCTRL_IF_DEFAULTS {\
 	0.0,	/**/			\
+	0.0,\
 	0.0,\
 	0.0,\
 	0.0,\
@@ -103,8 +111,14 @@ typedef struct UFCTRL_IF
 	0.0,\
 	0.0,\
 	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
 	CLARKE_DEFAULTS,/**/\
 	PARK_DEFAULTS,\
+	LPFILTER_DEFAULTS,\
+	LPFILTER_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
