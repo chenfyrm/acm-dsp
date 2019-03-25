@@ -388,18 +388,21 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
+	/**/
 //	*(XintfZone7 + 0x24) = sogiosgma.w/PI2*10.0;
 //	*(XintfZone7 + 0x25) = fabs(sogiosgma.ErrF)*1000.0;
 //	*(XintfZone7 + 0x27) = fabs(srfpll.aqr.Ref)*1000.0;
 //	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
 //	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
 //	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
+	/**/
 //	*(XintfZone7 + 0x24) = acmctrl.WU_3PhDsp*10.0;
 //	*(XintfZone7 + 0x25) = dosgpll.Upeak*10.0;
 //	*(XintfZone7 + 0x27) = acmctrl.XF_3Ph*10.0;
 //	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
 //	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
 //	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
+	/**/
 	*(XintfZone7 + 0x24) = acmctrl.ipark.Ds*10.0;
 	*(XintfZone7 + 0x25) = acmctrl.ipark.Qs*10.0;
 	*(XintfZone7 + 0x27) = acmctrl.XI_Act3Ph*10.0;
@@ -407,34 +410,46 @@ void DPRAM_WR(void)//DSP-->MCU
 	*(XintfZone7 + 0x29) = acmctrl.XI_Act3PhFlt*10.0;
 	*(XintfZone7 + 0x2A) = acmctrl.XI_Rct3PhFlt*10.0;
 	/*DA输出*/
-	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
+	/**/
+//	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
+//	DA[4] = (acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;//
+//	DA[5] = acmctrl.XX_Theta *100.0;//
+//	DA[6] = dosgpll.Upeak*10.0;
+////	DA[7] = dosgpll.theta*100.0;
+//	Theta = dosgpll.theta + PI/2.0;
+//	if(Theta >= PI2)
+//		Theta -= PI2;
+//	if(Theta < 0)
+//		Theta += PI2;
+//	DA[7] = Theta*100.0;
+	/**/
+	DA[3] = acmctrl.acrd.Ref;
+	DA[4] = acmctrl.acrd.Fbk;
+	DA[5] = acmctrl.acrq.Ref;
+	DA[6] = acmctrl.acrq.Fbk;
+	DA[7] = acmctrl;
+
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
 	if(DA[3] <= -4095)
 		DA[3] = -4095;
-	DA[4] = (acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;//
+
 	if(DA[4] >= 4095)
 		DA[4] = 4095;
 	if(DA[4] <= -4095)
 		DA[4] = -4095;
 
-	DA[5] = acmctrl.XX_Theta *100.0;//
+
 	if(DA[5] >= 4095)
 		DA[5] = 4095;
 	if(DA[5] <= -4095)
 		DA[5] = -4095;
-	DA[6] = dosgpll.Upeak*10.0;
+
 	if(DA[6] >= 4095)
 		DA[6] = 4095;
 	if(DA[6] <= -4095)
 		DA[6] = -4095;
-//	DA[7] = dosgpll.theta*100.0;
-	Theta = dosgpll.theta + PI/2.0;
-	if(Theta >= PI2)
-		Theta -= PI2;
-	if(Theta < 0)
-		Theta += PI2;
-	DA[7] = Theta*100.0;
+
 	if(DA[7] >= 4095)
 		DA[7] = 4095;
 	if(DA[7] <= -4095)
