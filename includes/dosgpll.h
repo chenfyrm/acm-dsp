@@ -56,6 +56,7 @@ extern "C" {
 #endif /* extern "C" */
 
 extern void DOSGPLL(TYPE_DOSGPLL_IF *interface);
+extern void DOSGPLL_1(TYPE_DOSGPLL_IF *interface);
 
 #ifdef __cplusplus
 }

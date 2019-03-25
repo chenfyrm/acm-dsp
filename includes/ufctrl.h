@@ -28,7 +28,7 @@ typedef struct LPFILTER
 	0.0,\
 	0.0,\
 	1.0/1450.0/2.0,\
-	1.0/300.0,\
+	1.0/30.0,\
 	}
 
 #ifdef __cplusplus

@@ -407,8 +407,8 @@ void DPRAM_WR(void)//DSP-->MCU
 	*(XintfZone7 + 0x25) = acmctrl.ipark.Qs*10.0;
 	*(XintfZone7 + 0x27) = acmctrl.XI_Act3Ph*10.0;
 	*(XintfZone7 + 0x28) = acmctrl.XI_Rct3Ph*10.0;
-	*(XintfZone7 + 0x29) = acmctrl.XI_Act3PhFlt*10.0;
-	*(XintfZone7 + 0x2A) = acmctrl.XI_Rct3PhFlt*10.0;
+	*(XintfZone7 + 0x29) = acmctrl.acrd.Out*10.0;
+	*(XintfZone7 + 0x2A) = acmctrl.XX_M*100.0;
 	/*DAÊä³ö*/
 	/**/
 //	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
@@ -423,33 +423,28 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.acrd.Ref;
-	DA[4] = acmctrl.acrd.Fbk;
-	DA[5] = acmctrl.acrq.Ref;
-	DA[6] = acmctrl.acrq.Fbk;
-	DA[7] = acmctrl;
+	DA[3] = acmctrl.acrd.Out*100.0;
+	DA[4] = acmctrl.acrd.Fbk*100.0;
+	DA[5] = acmctrl.acrq.Out*100.0;
+	DA[6] = acmctrl.acrq.Fbk*100.0;
+	DA[7] = acmctrl.XI_PhA*100.0;
 
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
 	if(DA[3] <= -4095)
 		DA[3] = -4095;
-
 	if(DA[4] >= 4095)
 		DA[4] = 4095;
 	if(DA[4] <= -4095)
 		DA[4] = -4095;
-
-
 	if(DA[5] >= 4095)
 		DA[5] = 4095;
 	if(DA[5] <= -4095)
 		DA[5] = -4095;
-
 	if(DA[6] >= 4095)
 		DA[6] = 4095;
 	if(DA[6] <= -4095)
 		DA[6] = -4095;
-
 	if(DA[7] >= 4095)
 		DA[7] = 4095;
 	if(DA[7] <= -4095)
