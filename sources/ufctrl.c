@@ -11,7 +11,7 @@
 //#define KP 0.6767
 //#define KI 232.0
 
-#define KP 0.1
+#define KP 0.15
 #define KI 40.0
 
 //static float32 XF_3PhRef = 50.0;
@@ -143,8 +143,8 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 
 void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 {
-//	data->WF_3PhDsp = 50.0;
-	data->WF_3PhDsp = 0.0;
+	data->WF_3PhDsp = 50.0;
+//	data->WF_3PhDsp = 0.0;
 //--------------------------------------
 	if(data->XF_3Ph<data->WF_3PhDsp)
 	{
@@ -204,7 +204,7 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 		data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
 
 		/**/
-		data->rampId.XX_In = 10.0;
+		data->rampId.XX_In = 3.0;
 		data->rampId.XX_Step = 0.01;
 		RAMP(&data->rampId);
 
@@ -214,12 +214,12 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 //	data->acrd.Fbk = data->XI_Act3PhFlt;
 	data->acrd.Kp = KP;
 	data->acrd.Ki = KI*data->XX_Ts;
-	data->acrd.Umax = 50;
-	data->acrd.Umin = -50;
+	data->acrd.Umax = 550;
+	data->acrd.Umin = -550;
 	PI_MACRO(data->acrd);
 
 	/**/
-	data->rampIq.XX_In = 0.0;
+	data->rampIq.XX_In = 10.0;
 	data->rampIq.XX_Step = 0.01;
 	RAMP(&data->rampIq);
 
@@ -229,8 +229,8 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 //	data->acrq.Fbk = data->XI_Rct3PhFlt;
 	data->acrq.Kp = KP;
 	data->acrq.Ki = KI*data->XX_Ts;
-	data->acrq.Umax = 50;
-	data->acrq.Umin = -50;
+	data->acrq.Umax = 550;
+	data->acrq.Umin = -550;
 	PI_MACRO(data->acrq);
 
 //----------------------------------------------------------
@@ -249,14 +249,14 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 	data->svgen.Ubeta = data->ipark.Beta/(data->XU_DcLk/1.732);
 	data->XX_M = sqrt(data->svgen.Ualpha*data->svgen.Ualpha+data->svgen.Ubeta*data->svgen.Ubeta);
 	/*插入死区时间和最小脉宽限制减小线性调制区
-	 * 死区5微妙，最小脉宽10微妙，调制周期1/2900=345微秒
-	 * 线性调制比区[0.1,0.9]
+	 * 死区10微妙，最小脉宽10微妙，调制周期1/2900=345微秒
+	 * 线性调制比区[0,0.85]
 	 * */
-	if(data->XX_M>0.9)
+	if(data->XX_M>0.85)
 	{
-		data->svgen.Ualpha /= data->XX_M*0.9;
-		data->svgen.Ubeta /= data->XX_M*0.9;
-		data->XX_M = 0.9;
+		data->svgen.Ualpha /= data->XX_M*0.85;
+		data->svgen.Ubeta /= data->XX_M*0.85;
+		data->XX_M = 0.85;
 	}
 	SVGENDQ_MACRO(data->svgen);//[-1,1]
 

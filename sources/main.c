@@ -68,7 +68,7 @@ struct PX_InPr
 };
 volatile struct PX_InPr PX_InPr_Spf = {
 		600.0,//直流母线电压上限
-		0.0,//直流母线电压下限
+		36.0,//直流母线电压下限
 		0,
 		0,
 		10.0,//直流母线电流上限
@@ -243,21 +243,21 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	if(PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
-//	Cnt_Period ++;
-//	if(Cnt_Period>=2900)
-//	{
-//		Cnt_sec++;
-//		Cnt_Period = 0;
-//	}
-//	if(Cnt_sec>=60)
-//	{
-//		Cnt_min++;
-//		Cnt_sec = 0;
-//	}
-//	if(Cnt_min >=60)
-//	{
-//		Cnt_min = 60;
-//	}
+	Cnt_Period ++;
+	if(Cnt_Period>=2900)
+	{
+		Cnt_sec++;
+		Cnt_Period = 0;
+	}
+	if(Cnt_sec>=60)
+	{
+		Cnt_min++;
+		Cnt_sec = 0;
+	}
+	if(Cnt_min >=60)
+	{
+		Cnt_min = 60;
+	}
 
 	DIS_GPIO30();
 	DPRAM_RD(); //读MCU交互信息
@@ -290,9 +290,9 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XU_PhBe =dosgpll.beta;
 //		UFCTRLOpenLoop(&acmctrl);
 		UFCTRLSingleLoop(&acmctrl);
-		acmctrl.XX_DutyA = 0.2;
-		acmctrl.XX_DutyB = 0.7;
-		acmctrl.XX_DutyC = 0.4;
+//		acmctrl.XX_DutyA = 0.2;
+//		acmctrl.XX_DutyB = 0.7;
+//		acmctrl.XX_DutyC = 0.4;
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
@@ -383,8 +383,8 @@ void DPRAM_WR(void)//DSP-->MCU
 	/**/
 	*(XintfZone7 + 0x24) = acmctrl.ipark.Ds*10.0;
 	*(XintfZone7 + 0x25) = acmctrl.ipark.Qs*10.0;
-	*(XintfZone7 + 0x27) = acmctrl.XI_Act3Ph*10.0;
-	*(XintfZone7 + 0x28) = acmctrl.XI_Rct3Ph*10.0;
+	*(XintfZone7 + 0x27) = acmctrl.acrd.Ref*10.0;
+	*(XintfZone7 + 0x28) = acmctrl.acrd.Fbk*10.0;
 	*(XintfZone7 + 0x29) = acmctrl.acrd.Out*10.0;
 	*(XintfZone7 + 0x2A) = acmctrl.XX_M*100.0;
 	/*DA输出*/
@@ -401,9 +401,9 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.XI_Act3Ph*100.0;
-	DA[4] = acmctrl.XI_Act3PhFlt*100.0;
-	DA[5] = acmctrl.acrq.Out*100.0;
+	DA[3] = acmctrl.XI_Rct3Ph*100.0;
+	DA[4] = acmctrl.XI_Rct3PhFlt*100.0;
+	DA[5] = acmctrl.acrq.Ref*100.0;
 	DA[6] = acmctrl.acrq.Fbk*100.0;
 	DA[7] = acmctrl.XI_PhA*100.0;
 
