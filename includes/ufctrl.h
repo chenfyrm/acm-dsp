@@ -15,7 +15,9 @@
 #include "ipark.h"
 #include "pi_ctrl.h"
 #include "svgen.h"
-
+/*
+ * LPFILTER
+ * */
 typedef struct LPFILTER
 {
 	float32	XX_In;
@@ -36,6 +38,32 @@ extern "C" {
 #endif /* extern "C" */
 
 extern void LPFILTER(TYPE_LPFILTER *interface);
+
+#ifdef __cplusplus
+}
+#endif
+
+/*
+ * RAMP
+ * */
+typedef struct RAMP
+{
+	float32	XX_In;
+	float32 XX_Out;
+	float32	XX_Step;
+}TYPE_RAMP;
+
+#define RAMP_DEFAULTS {\
+	0.0,\
+	0.0,\
+	0.1,\
+	}
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void RAMP(TYPE_RAMP *interface);
 
 #ifdef __cplusplus
 }
@@ -76,6 +104,8 @@ typedef struct UFCTRL_IF
 	float32 XU_Rct3PhFlt;
 	CLARKE	clarke;
 	PARK	park;
+	TYPE_RAMP rampId;
+	TYPE_RAMP rampIq;
 	TYPE_LPFILTER	LpFilterId;
 	TYPE_LPFILTER	LpFilterIq;
 	TYPE_LPFILTER	LpFilterUd;
@@ -117,6 +147,8 @@ typedef struct UFCTRL_IF
 	0.0,\
 	CLARKE_DEFAULTS,/**/\
 	PARK_DEFAULTS,\
+	RAMP_DEFAULTS,\
+	RAMP_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	LPFILTER_DEFAULTS,\

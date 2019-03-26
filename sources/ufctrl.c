@@ -74,12 +74,33 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 		//---------------------------------------
 		data->XI_Act3Ph = data->park.Ds;
 		data->LpFilterId.XX_In = data->park.Ds;
+		data->LpFilterId.XX_T = 1.0/2900.0;
 		LPFILTER(&data->LpFilterId);
 		data->XI_Act3PhFlt = data->LpFilterId.XX_Out;
 		data->XI_Rct3Ph = data->park.Qs;
 		data->LpFilterIq.XX_In = data->park.Qs;
+		data->LpFilterIq.XX_T = 1.0/2900.0;
 		LPFILTER(&data->LpFilterIq);
 		data->XI_Rct3PhFlt = data->LpFilterIq.XX_Out;
+
+		//--------------------------------------------------
+			data->park.Alpha = data->XU_PhAl/1.732;
+			data->park.Beta = data->XU_PhBe/1.732;
+			data->park.Sine = sin(data->XX_Theta-3.1415926/6.0);
+			data->park.Cosine = cos(data->XX_Theta-3.1415926/6.0);
+			PARK_MACRO(data->park);
+
+		//---------------------------------------
+			data->XU_Act3Ph = data->park.Ds;
+			data->LpFilterUd.XX_In = data->park.Ds;
+			data->LpFilterUd.XX_T = 1.0/300.0;
+			LPFILTER(&data->LpFilterUd);
+			data->XU_Act3PhFlt = data->LpFilterUd.XX_Out;
+			data->XU_Rct3Ph = data->park.Qs;
+			data->LpFilterUq.XX_In = data->park.Qs;
+			data->LpFilterUq.XX_T = 1.0/300.0;
+			LPFILTER(&data->LpFilterUq);
+			data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
 
 //----------------------------------------------------------
 	data->ipark.Ds = data->XU_3PhPek;
@@ -122,7 +143,8 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 
 void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 {
-	data->WF_3PhDsp = 50.0;
+//	data->WF_3PhDsp = 50.0;
+	data->WF_3PhDsp = 0.0;
 //--------------------------------------
 	if(data->XF_3Ph<data->WF_3PhDsp)
 	{
@@ -181,31 +203,41 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 		LPFILTER(&data->LpFilterUq);
 		data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
 
+		/**/
+		data->rampId.XX_In = 10.0;
+		data->rampId.XX_Step = 0.01;
+		RAMP(&data->rampId);
+
 //--------------------------------------------------------
-	data->acrd.Ref = 5.0;
+	data->acrd.Ref = data->rampId.XX_Out;
 	data->acrd.Fbk = data->XI_Act3Ph;
 //	data->acrd.Fbk = data->XI_Act3PhFlt;
 	data->acrd.Kp = KP;
 	data->acrd.Ki = KI*data->XX_Ts;
-	data->acrd.Umax = 100;
-	data->acrd.Umin = -100;
+	data->acrd.Umax = 50;
+	data->acrd.Umin = -50;
 	PI_MACRO(data->acrd);
 
+	/**/
+	data->rampIq.XX_In = 0.0;
+	data->rampIq.XX_Step = 0.01;
+	RAMP(&data->rampIq);
+
 //--------------------------------------------------------
-	data->acrq.Ref = 3.0;
+	data->acrq.Ref = data->rampIq.XX_Out;
 	data->acrq.Fbk = data->XI_Rct3Ph;
 //	data->acrq.Fbk = data->XI_Rct3PhFlt;
 	data->acrq.Kp = KP;
 	data->acrq.Ki = KI*data->XX_Ts;
-	data->acrq.Umax = 100;
-	data->acrq.Umin = -100;
+	data->acrq.Umax = 50;
+	data->acrq.Umin = -50;
 	PI_MACRO(data->acrq);
 
 //----------------------------------------------------------
-	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs + data->XU_Act3PhFlt;
-	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds + data->XU_Rct3PhFlt;
-//	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs;
-//	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds;
+//	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs + data->XU_Act3PhFlt;
+//	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds + data->XU_Rct3PhFlt;
+	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs;
+	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds;
 //	data->ipark.Ds = data->acrd.Out;
 //	data->ipark.Qs = data->acrq.Out;
 	data->ipark.Sine = sin(data->XX_Theta + 2.0*3.1415926*data->XF_3Ph*data->XX_Ts);
@@ -318,4 +350,21 @@ void LPFILTER(TYPE_LPFILTER *data)
 	data->XX_Out = (data->XX_Out + data->XX_Ts/data->XX_T*data->XX_In)/(1.0 + data->XX_Ts/data->XX_T);
 }
 
+void RAMP(TYPE_RAMP *data)
+{
+	/**/
+	if(data->XX_Out<data->XX_In)
+		{
+			data->XX_Out += data->XX_Step;
+			if(data->XX_Out>data->XX_In)
+				data->XX_Out = data->XX_In;
+		}
+		if(data->XX_Out>data->XX_In)
+		{
+			data->XX_Out -= data->XX_Step;
+			if(data->XX_Out<data->XX_In)
+				data->XX_Out = data->XX_In;
+		}
+
+}
 

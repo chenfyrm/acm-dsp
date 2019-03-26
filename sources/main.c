@@ -68,7 +68,7 @@ struct PX_InPr
 };
 volatile struct PX_InPr PX_InPr_Spf = {
 		600.0,//直流母线电压上限
-		36.0,//直流母线电压下限
+		0.0,//直流母线电压下限
 		0,
 		0,
 		10.0,//直流母线电流上限
@@ -268,6 +268,16 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 
 	NX_Pr();
 
+	//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
+	//	SOGIOSGFLL(&sogiosgma);
+	//
+	//	srfpll.alpha = sogiosgma.alpha;
+	//	srfpll.beta = sogiosgma.beta;
+	//	SRFPLL(&srfpll);
+
+		dosgpll.phase = PX_In_Spf.XU_PhABGt;
+		DOSGPLL(&dosgpll);
+
 	/**/
 	if(PX_Out_Spf.SX_Run == 1)
 	{
@@ -276,8 +286,13 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
 		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
 //		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
+		acmctrl.XU_PhAl = dosgpll.alpha;
+		acmctrl.XU_PhBe =dosgpll.beta;
 //		UFCTRLOpenLoop(&acmctrl);
 		UFCTRLSingleLoop(&acmctrl);
+		acmctrl.XX_DutyA = 0.2;
+		acmctrl.XX_DutyB = 0.7;
+		acmctrl.XX_DutyC = 0.4;
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
@@ -285,20 +300,6 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
-//			//最小脉宽限制
-//			if(PX_Out_Spf.XX_Pwm1AVv < 300)
-//				PX_Out_Spf.XX_Pwm1AVv =0;
-//			if(PX_Out_Spf.XX_Pwm1AVv > (PX_Out_Spf.XT_PwmPdVv-300))
-//				PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv;
-//			if(PX_Out_Spf.XX_Pwm2AVv < 300)
-//				PX_Out_Spf.XX_Pwm2AVv =0;
-//			if(PX_Out_Spf.XX_Pwm2AVv > (PX_Out_Spf.XT_PwmPdVv-300))
-//				PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv;
-//			if(PX_Out_Spf.XX_Pwm3AVv < 300)
-//				PX_Out_Spf.XX_Pwm3AVv =0;
-//			if(PX_Out_Spf.XX_Pwm3AVv > (PX_Out_Spf.XT_PwmPdVv-300))
-//				PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv;
-
 		}
 		else
 		{
@@ -306,19 +307,6 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
-//			//最小脉宽限制
-//			if(PX_Out_Spf.XX_Pwm1AVv < 300)
-//				PX_Out_Spf.XX_Pwm1AVv =0;
-//			if(PX_Out_Spf.XX_Pwm1AVv > (PX_Out_Spf.XT_PwmPdVv-300))
-//				PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv;
-//			if(PX_Out_Spf.XX_Pwm2AVv < 300)
-//				PX_Out_Spf.XX_Pwm2AVv =0;
-//			if(PX_Out_Spf.XX_Pwm2AVv > (PX_Out_Spf.XT_PwmPdVv-300))
-//				PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv;
-//			if(PX_Out_Spf.XX_Pwm3AVv < 300)
-//				PX_Out_Spf.XX_Pwm3AVv =0;
-//			if(PX_Out_Spf.XX_Pwm3AVv > (PX_Out_Spf.XT_PwmPdVv-300))
-//				PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv;
 		}
 	}
 	else
@@ -327,16 +315,6 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		PX_Out_Spf.XX_Pwm2AVv =	PX_Out_Spf.XT_PwmPdVv*0.5;
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*0.5;
 	}
-
-//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
-//	SOGIOSGFLL(&sogiosgma);
-//
-//	srfpll.alpha = sogiosgma.alpha;
-//	srfpll.beta = sogiosgma.beta;
-//	SRFPLL(&srfpll);
-
-	dosgpll.phase = PX_In_Spf.XU_PhABGt;
-	DOSGPLL(&dosgpll);
 
 	DPRAM_WR();//写dsp交互信息
     PieCtrlRegs.PIEACK.all|=PIEACK_GROUP1;
@@ -423,8 +401,8 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.acrd.Out*100.0;
-	DA[4] = acmctrl.acrd.Fbk*100.0;
+	DA[3] = acmctrl.XI_Act3Ph*100.0;
+	DA[4] = acmctrl.XI_Act3PhFlt*100.0;
 	DA[5] = acmctrl.acrq.Out*100.0;
 	DA[6] = acmctrl.acrq.Fbk*100.0;
 	DA[7] = acmctrl.XI_PhA*100.0;
