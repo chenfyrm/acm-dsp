@@ -10,8 +10,10 @@
 
 /**/
 //#define	 TWObyTHREE	  0.66666666666667       /* 2/3 */
-#define  ONEbySQRT3   0.57735026918963    /* 1/sqrt(3) */
-#define  SQRT3byTWO   0.86602540378444    /* sqrt(3)/2 */
+#define  ONEbySQRT3		0.57735026918963    /* 1/sqrt(3) */
+#define  SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
+#define  SQRT3   		1.73205080756888    /* sqrt(3)/2 */
+#define	PI  		  	3.14159265358979
 
 /**/
 #ifndef DSP28_DATA_TYPES
