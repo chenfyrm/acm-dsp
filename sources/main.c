@@ -162,8 +162,6 @@ int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 //=======================================================================
 Uint16	GPIO_Temp181,GPIO_Temp182;
 TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
-//TYPE_SOGIOSGMA_IF sogiosgma = SOGIOSGMA_IF_DEFAULTS;
-//TYPE_SRFPLL_IF srfpll = SRFPLL_IF_DEFAULTS;
 TYPE_DOSGPLL_IF dosgpll = DOSGPLL_IF_DEFAULTS;
 //===========================================================================
 Uint16	Cnt_Period =0;
@@ -288,25 +286,28 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 //		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
 		acmctrl.XU_PhAl = dosgpll.alpha;
 		acmctrl.XU_PhBe =dosgpll.beta;
-//		UFCTRLOpenLoop(&acmctrl);
-		UFCTRLSingleLoop(&acmctrl);
+		UFCTRLOpenLoop(&acmctrl);
+//		UFCTRLSingleLoop(&acmctrl);
+		PX_Out_Spf.XX_PwmMo == acmctrl.XX_Mode;
+
 //		acmctrl.XX_DutyA = 0.2;
 //		acmctrl.XX_DutyB = 0.7;
 //		acmctrl.XX_DutyC = 0.4;
 
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
-			PX_Out_Spf.XX_PwmMo = 0; //FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
-			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
-			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
-			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
-		}
-		else
-		{
-			PX_Out_Spf.XX_PwmMo = 21;//FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
+			//PX_Out_Spf.XX_PwmMo == 21 FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
+
+		}
+		else
+		{
+			//PX_Out_Spf.XX_PwmMo == 0; FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
+			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
+			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
+			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
 		}
 	}
 	else

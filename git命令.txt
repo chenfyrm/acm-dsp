@@ -1,1 +1,4 @@
-1、合并
+1、移动head
+git reset “sha1值”
+
+2、合并
