@@ -10,9 +10,9 @@
 
 /**/
 //#define	 TWObyTHREE	  0.66666666666667       /* 2/3 */
-#define  ONEbySQRT3		0.57735026918963    /* 1/sqrt(3) */
-#define  SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
-#define  SQRT3   		1.73205080756888    /* sqrt(3)/2 */
+#define ONEbySQRT3		0.57735026918963    /* 1/sqrt(3) */
+#define SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
+#define SQRT3   		1.73205080756888    /* sqrt(3)/2 */
 #define	PI  		  	3.14159265358979
 
 /**/
@@ -302,6 +302,46 @@ extern void DOSGPLL_1(TYPE_DOSGPLL_IF *interface);
 }
 #endif
 
+/**/
+typedef struct
+{
+	float32	phase;//
+	float32	alpha;//
+	float32	w;//
+	float32	k;
+	float32	Tsc;
+	float32	oldPhase1;//
+	float32	oldPhase2;
+	float32	oldAlpha1;
+	float32	oldAlpha2;
+	float32	a;//
+	float32	b;
+}TYPE_BPFILTER;
+
+#define	BPFILTER_DEFAULTS	{\
+	0,\
+	0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+}
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void BPFILTER(TYPE_BPFILTER *data);
+
+#ifdef __cplusplus
+}
+#endif
+
 /*ËÀÇø²¹³¥*/
 typedef struct
 {
@@ -331,6 +371,7 @@ extern "C" {
 #endif /* extern "C" */
 
 extern void DEADTIMECOM(TYPE_DEADTIMECOM *data);
+extern void DEADTIMECOM_1(TYPE_DEADTIMECOM *data);
 
 #ifdef __cplusplus
 }
@@ -415,8 +456,13 @@ typedef struct UFCTRL_IF
 	TYPE_PI_CONTROLLER	aur;
 	TYPE_IPARK	ipark;
 	TYPE_SVGEN	svgen;
+	TYPE_BPFILTER		BpFilterIa;
+	TYPE_BPFILTER		BpFilterIb;
+	TYPE_BPFILTER		BpFilterIc;
 	TYPE_DEADTIMECOM	dtCom;
 	TYPE_MINPWLIM		minPwLim;
+	float32	RefId;
+	float32	RefIq;
 }TYPE_UFCTRL_IF;
 
 #define UFCTRL_IF_DEFAULTS {\
@@ -437,7 +483,7 @@ typedef struct UFCTRL_IF
 	1.0,\
 	0.0,\
 	0.0,/**/\
-	0.0,\
+	5.0,\
 	0.0,\
 	0.0,\
 	0.0,\
@@ -461,8 +507,13 @@ typedef struct UFCTRL_IF
 	PI_CONTROLLER_DEFAULTS,\
 	IPARK_DEFAULTS,\
 	SVGEN_DEFAULTS,\
+	BPFILTER_DEFAULTS,\
+	BPFILTER_DEFAULTS,\
+	BPFILTER_DEFAULTS,\
 	DEADTIMECOM_DEFAULTS,\
 	MINPWLIM_DEFAULTS,\
+	0.0,\
+	0.0,\
 	}
 
 #ifdef __cplusplus

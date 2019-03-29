@@ -168,6 +168,7 @@ Uint16	Cnt_Period =0;
 Uint16	Cnt_us = 0;
 Uint16 	Cnt_sec = 0;
 Uint16	Cnt_min = 0;
+Uint16	Sign = 0;
 float32 IOvA = 0;
 float32 IOvB = 0;
 float32 IOvC = 0;
@@ -241,25 +242,11 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	if(PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
-	Cnt_Period ++;
-	if(Cnt_Period>=2900)
-	{
-		Cnt_sec++;
-		Cnt_Period = 0;
-	}
-	if(Cnt_sec>=60)
-	{
-		Cnt_min++;
-		Cnt_sec = 0;
-	}
-	if(Cnt_min >=60)
-	{
-		Cnt_min = 60;
-	}
+
 
 	DIS_GPIO30();
 	DPRAM_RD(); //读MCU交互信息
-	PI_RmsClc();
+//	PI_RmsClc();
 	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
 	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
 	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
@@ -285,9 +272,47 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
 //		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
 		acmctrl.XU_PhAl = dosgpll.alpha;
-		acmctrl.XU_PhBe =dosgpll.beta;
-		UFCTRLOpenLoop(&acmctrl);
-//		UFCTRLSingleLoop(&acmctrl);
+		acmctrl.XU_PhBe = dosgpll.beta;
+
+		Cnt_Period ++;
+		if(Cnt_Period>=2900)
+		{
+			Cnt_sec++;
+			Cnt_Period = 0;
+		}
+		if(Cnt_sec>=60)
+		{
+			Cnt_min++;
+			Cnt_sec = 0;
+		}
+		if(Cnt_min >=60)
+		{
+			Cnt_min = 60;
+		}
+
+
+
+
+//		acmctrl.WF_3PhDsp = 50.0;
+//		acmctrl.WU_3PhDsp = 33.0;
+//		UFCTRLOpenLoop(&acmctrl);
+
+		acmctrl.WF_3PhDsp = 50.0;
+		acmctrl.RefId = 3.0;
+		acmctrl.RefIq = 5.0;
+//		if(Cnt_min>=5)
+//		{
+//			acmctrl.RefIq = 10.0;
+//			Sign = 100;
+//		}
+
+		UFCTRLSingleLoop(&acmctrl);
+
+//		acmctrl.WF_3PhDsp = 50.0;
+//		acmctrl.WU_3PhDsp = 33.0;
+//		UFCTRLDoubleLoop(&acmctrl);
+
+
 		PX_Out_Spf.XX_PwmMo == acmctrl.XX_Mode;
 
 //		acmctrl.XX_DutyA = 0.2;
@@ -384,10 +409,10 @@ void DPRAM_WR(void)//DSP-->MCU
 	/**/
 	*(XintfZone7 + 0x24) = acmctrl.ipark.Ds*10.0;
 	*(XintfZone7 + 0x25) = acmctrl.ipark.Qs*10.0;
-	*(XintfZone7 + 0x27) = acmctrl.acrd.Ref*10.0;
-	*(XintfZone7 + 0x28) = acmctrl.acrd.Fbk*10.0;
-	*(XintfZone7 + 0x29) = acmctrl.acrd.Out*10.0;
-	*(XintfZone7 + 0x2A) = acmctrl.XX_M*100.0;
+	*(XintfZone7 + 0x27) = acmctrl.acrd.Out*10.0;
+	*(XintfZone7 + 0x28) = acmctrl.acrq.Out*10.0;
+	*(XintfZone7 + 0x29) = acmctrl.XX_M*100.0;;
+	*(XintfZone7 + 0x2A) = Cnt_sec;
 	/*DA输出*/
 	/**/
 //	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
@@ -402,11 +427,11 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.XI_Rct3Ph*100.0;
-	DA[4] = acmctrl.XI_Rct3PhFlt*100.0;
+	DA[3] = acmctrl.acrd.Ref*100.0;
+	DA[4] = acmctrl.acrd.Fbk*100.0;
 	DA[5] = acmctrl.acrq.Ref*100.0;
 	DA[6] = acmctrl.acrq.Fbk*100.0;
-	DA[7] = acmctrl.XI_PhA*100.0;
+	DA[7] = (acmctrl.XX_DutyA-acmctrl.XX_DutyB)*1000.0;
 
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
