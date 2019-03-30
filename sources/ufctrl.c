@@ -191,6 +191,12 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 				data->XX_DutyB = data->minPwLim.Tb_out;
 				data->XX_DutyC = data->minPwLim.Tc_out;
 
+				data->XX_DutyA = data->svgen.Ta;
+				data->XX_DutyB = data->svgen.Tb;
+				data->XX_DutyC = data->svgen.Tc;
+
+
+
 //	//-----------
 //	data->dtCom.Ia = data->XI_PhA;
 //	data->dtCom.Ib = data->XI_PhB;

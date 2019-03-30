@@ -242,26 +242,24 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	if(PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
-
-
 	DIS_GPIO30();
 	DPRAM_RD(); //¶ÁMCU½»»¥ÐÅÏ¢
 //	PI_RmsClc();
-	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
-	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
-	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
+//	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
+//	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
+//	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
 
 	NX_Pr();
 
-	//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
-	//	SOGIOSGFLL(&sogiosgma);
-	//
-	//	srfpll.alpha = sogiosgma.alpha;
-	//	srfpll.beta = sogiosgma.beta;
-	//	SRFPLL(&srfpll);
+//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
+//	SOGIOSGFLL(&sogiosgma);
+//
+//	srfpll.alpha = sogiosgma.alpha;
+//	srfpll.beta = sogiosgma.beta;
+//	SRFPLL(&srfpll);
 
-		dosgpll.phase = PX_In_Spf.XU_PhABGt;
-		DOSGPLL(&dosgpll);
+//	dosgpll.phase = PX_In_Spf.XU_PhABGt;
+//	DOSGPLL(&dosgpll);
 
 	/**/
 	if(PX_Out_Spf.SX_Run == 1)
@@ -290,30 +288,26 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 			Cnt_min = 60;
 		}
 
-
-
+		acmctrl.WF_3PhDsp = 50.0;
+		acmctrl.WU_3PhDsp = 33.0;
+		UFCTRLOpenLoop(&acmctrl);
 
 //		acmctrl.WF_3PhDsp = 50.0;
-//		acmctrl.WU_3PhDsp = 33.0;
-//		UFCTRLOpenLoop(&acmctrl);
-
-		acmctrl.WF_3PhDsp = 50.0;
-		acmctrl.RefId = 3.0;
-		acmctrl.RefIq = 5.0;
-//		if(Cnt_min>=5)
-//		{
-//			acmctrl.RefIq = 10.0;
-//			Sign = 100;
-//		}
-
-		UFCTRLSingleLoop(&acmctrl);
+//		acmctrl.RefId = 3.0;
+//		acmctrl.RefIq = 5.0;
+////		if(Cnt_min>=5)
+////		{
+////			acmctrl.RefIq = 10.0;
+////			Sign = 100;
+////		}
+//
+//		UFCTRLSingleLoop(&acmctrl);
 
 //		acmctrl.WF_3PhDsp = 50.0;
 //		acmctrl.WU_3PhDsp = 33.0;
 //		UFCTRLDoubleLoop(&acmctrl);
 
-
-		PX_Out_Spf.XX_PwmMo == acmctrl.XX_Mode;
+		PX_Out_Spf.XX_PwmMo = acmctrl.XX_Mode;
 
 //		acmctrl.XX_DutyA = 0.2;
 //		acmctrl.XX_DutyB = 0.7;
@@ -427,11 +421,11 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.acrd.Ref*100.0;
-	DA[4] = acmctrl.acrd.Fbk*100.0;
-	DA[5] = acmctrl.acrq.Ref*100.0;
-	DA[6] = acmctrl.acrq.Fbk*100.0;
-	DA[7] = (acmctrl.XX_DutyA-acmctrl.XX_DutyB)*1000.0;
+	DA[3] = acmctrl.XX_DutyA*1000.0;
+	DA[4] = acmctrl.XX_DutyB*1000.0;
+	DA[5] = acmctrl.XX_DutyC*1000.0;
+	DA[6] = (acmctrl.XX_DutyA-acmctrl.XX_DutyB)*1000.0;
+	DA[7] = PX_Out_Spf.XX_PwmMo*1000.0;
 
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
