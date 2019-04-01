@@ -15,11 +15,19 @@
 #define DEADTIME	(0.0*0.000001)
 #define	MINPW		(10.0*0.000001)
 
-#define KP 0.3
-#define KI 100.0
+#define KP 2.167
+#define KI 243
+
+//#define KP 0.6767
+//#define KI 232
 
 //static float32 XF_3PhRef = 50.0;
 //static float32 XU_3PhPeakRef = 50.0;
+
+void UFCTRLINIT(TYPE_UFCTRL_IF *data)
+{
+
+}
 
 void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 {
@@ -30,6 +38,7 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 
 //	data->XX_UPeakCom = 0.97;
 //	data->XX_AngleCom = -0.7;
+
 //--------------------------------------
 //	if(data->XF_3Ph<data->WF_3PhDsp)
 //	{
@@ -61,49 +70,53 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 	}
 
 	/**/
-//	//----------------------------------------
-//		data->clarke.As = data->XI_PhA;
-//		data->clarke.Bs = data->XI_PhB;
-//		data->clarke.Cs = data->XI_PhC;
-//		CLARKE(&data->clarke);
-//
-//	//--------------------------------------------------
-//		data->park.Alpha = data->clarke.Alpha;
-//		data->park.Beta = data->clarke.Beta;
-//		data->park.Sine = sin(data->XX_Theta);
-//		data->park.Cosine = cos(data->XX_Theta);
-//		PARK(&data->park);
-//
-//		//---------------------------------------
-//		data->XI_Act3Ph = data->park.Ds;
-//		data->LpFilterId.XX_In = data->park.Ds;
-//		data->LpFilterId.XX_T = 1.0/2900.0;
-//		LPFILTER(&data->LpFilterId);
-//		data->XI_Act3PhFlt = data->LpFilterId.XX_Out;
-//		data->XI_Rct3Ph = data->park.Qs;
-//		data->LpFilterIq.XX_In = data->park.Qs;
-//		data->LpFilterIq.XX_T = 1.0/2900.0;
-//		LPFILTER(&data->LpFilterIq);
-//		data->XI_Rct3PhFlt = data->LpFilterIq.XX_Out;
-//
-//		//--------------------------------------------------
-//			data->park.Alpha = data->XU_PhAl/1.732;
-//			data->park.Beta = data->XU_PhBe/1.732;
-//			data->park.Sine = sin(data->XX_Theta-3.1415926/6.0);
-//			data->park.Cosine = cos(data->XX_Theta-3.1415926/6.0);
-//			PARK(&data->park);
-//
-//		//---------------------------------------
-//			data->XU_Act3Ph = data->park.Ds;
-//			data->LpFilterUd.XX_In = data->park.Ds;
-//			data->LpFilterUd.XX_T = 1.0/300.0;
-//			LPFILTER(&data->LpFilterUd);
-//			data->XU_Act3PhFlt = data->LpFilterUd.XX_Out;
-//			data->XU_Rct3Ph = data->park.Qs;
-//			data->LpFilterUq.XX_In = data->park.Qs;
-//			data->LpFilterUq.XX_T = 1.0/300.0;
-//			LPFILTER(&data->LpFilterUq);
-//			data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
+	//----------------------------------------
+		data->clarke.As = data->XI_PhA;
+		data->clarke.Bs = data->XI_PhB;
+		data->clarke.Cs = data->XI_PhC;
+		CLARKE(&data->clarke);
+
+	//--------------------------------------------------
+		data->park.Alpha = data->clarke.Alpha;
+		data->park.Beta = data->clarke.Beta;
+		data->park.Sine = sin(data->XX_Theta);
+		data->park.Cosine = cos(data->XX_Theta);
+		PARK(&data->park);
+
+		data->XI_Act3Ph = data->park.Ds;
+		data->XI_Rct3Ph = data->park.Qs;
+
+		//---------------------------------------
+		data->LpFilterId.XX_In = data->park.Ds;
+		data->LpFilterId.XX_T = 1.0/2900.0;
+		LPFILTER(&data->LpFilterId);
+		data->XI_Act3PhFlt = data->LpFilterId.XX_Out;
+		//--------------------------------------------
+		data->LpFilterIq.XX_In = data->park.Qs;
+		data->LpFilterIq.XX_T = 1.0/2900.0;
+		LPFILTER(&data->LpFilterIq);
+		data->XI_Rct3PhFlt = data->LpFilterIq.XX_Out;
+
+		//--------------------------------------------------
+			data->park.Alpha = data->XU_PhAl/1.732;
+			data->park.Beta = data->XU_PhBe/1.732;
+			data->park.Sine = sin(data->XX_Theta-PI/6.0);
+			data->park.Cosine = cos(data->XX_Theta-PI/6.0);
+			PARK(&data->park);
+
+			data->XU_Act3Ph = data->park.Ds;
+			data->XU_Rct3Ph = data->park.Qs;
+
+		//---------------------------------------
+			data->LpFilterUd.XX_In = data->park.Ds;
+			data->LpFilterUd.XX_T = 1.0/300.0;
+			LPFILTER(&data->LpFilterUd);
+			data->XU_Act3PhFlt = data->LpFilterUd.XX_Out;
+			//------------------------------------
+			data->LpFilterUq.XX_In = data->park.Qs;
+			data->LpFilterUq.XX_T = 1.0/300.0;
+			LPFILTER(&data->LpFilterUq);
+			data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
 
 //----------------------------------------------------------
 	data->ipark.Ds = data->XU_3PhPek;
@@ -117,16 +130,16 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 //-------------------------------------------------------------
 	data->svgen.Ualpha = data->ipark.Alpha/(data->XU_DcLk/SQRT3);
 	data->svgen.Ubeta = data->ipark.Beta/(data->XU_DcLk/SQRT3);
-//	data->XX_M = sqrt(data->svgen.Ualpha*data->svgen.Ualpha+data->svgen.Ubeta*data->svgen.Ubeta);
+	data->XX_M = sqrt(data->svgen.Ualpha*data->svgen.Ualpha+data->svgen.Ubeta*data->svgen.Ubeta);
 //	/*插入死区时间和最小脉宽限制减小线性调制区
 //	 * 死区5微妙，最小脉宽10微妙，调制周期1/2900=345微秒
 //	 * 线性调制比区[0.1,0.9]
 //	 * */
-//	if(data->XX_M>0.9)
+//	if(data->XX_M>0.85)
 //	{
-//		data->svgen.Ualpha /= data->XX_M*0.9;
-//		data->svgen.Ubeta /= data->XX_M*0.9;
-//		data->XX_M = 0.9;
+//		data->svgen.Ualpha /= data->XX_M*0.85;
+//		data->svgen.Ubeta /= data->XX_M*0.85;
+//		data->XX_M = 0.85;
 //	}
 	SVGEN(&data->svgen);
 
@@ -151,10 +164,10 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 
 //
 
-			data->XX_M = data->XU_3PhPek/(data->XU_DcLk/2.0);
-			data->svgen.Ta = data->XX_M*sin(data->XX_Theta)*0.5+0.5;
-			data->svgen.Tb = data->XX_M*sin(data->XX_Theta-PI/3.0*2.0)*0.5+0.5;
-			data->svgen.Tc = data->XX_M*sin(data->XX_Theta-PI/3.0*4.0)*0.5+0.5;
+//			data->XX_M = data->XU_3PhPek/(data->XU_DcLk/2.0);
+//			data->svgen.Ta = data->XX_M*sin(data->XX_Theta)*0.5+0.5;
+//			data->svgen.Tb = data->XX_M*sin(data->XX_Theta-PI/3.0*2.0)*0.5+0.5;
+//			data->svgen.Tc = data->XX_M*sin(data->XX_Theta-PI/3.0*4.0)*0.5+0.5;
 
 //------------------------
 			data->BpFilterIa.phase = data->XI_PhA;
@@ -176,8 +189,8 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 				data->dtCom.Ic = data->BpFilterIa.alpha;
 				data->dtCom.mode = data->XX_Mode;
 				data->dtCom.dt = DEADTIME/TSC; //10us
-//				DEADTIMECOM(&data->dtCom);
-				DEADTIMECOM_1(&data->dtCom);
+				DEADTIMECOM(&data->dtCom);
+//				DEADTIMECOM_1(&data->dtCom);
 
 				//---------------------
 				data->minPwLim.Ta_in = data->svgen.Ta + data->dtCom.TaCom;
@@ -191,9 +204,9 @@ void UFCTRLOpenLoop(TYPE_UFCTRL_IF *data)
 				data->XX_DutyB = data->minPwLim.Tb_out;
 				data->XX_DutyC = data->minPwLim.Tc_out;
 
-				data->XX_DutyA = data->svgen.Ta;
-				data->XX_DutyB = data->svgen.Tb;
-				data->XX_DutyC = data->svgen.Tc;
+//				data->XX_DutyA = data->svgen.Ta;
+//				data->XX_DutyB = data->svgen.Tb;
+//				data->XX_DutyC = data->svgen.Tc;
 
 
 
@@ -242,6 +255,19 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 //	}
 	data->XF_3Ph = data->WF_3PhDsp;
 
+	//------------------------------------------------
+	/**/
+//		data->rampId.XX_In = data->RefId;
+//		data->rampId.XX_Step = 0.01;
+//		RAMP(&data->rampId);
+
+	/**/
+//	data->rampIq.XX_In = data->RefIq;
+//	data->rampIq.XX_Step = 0.01;
+//	RAMP(&data->rampIq);
+
+
+
 //----------------------------------------
 	data->clarke.As = data->XI_PhA;
 	data->clarke.Bs = data->XI_PhB;
@@ -258,14 +284,24 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 //---------------------------------------
 	data->XI_Act3Ph = data->park.Ds;
 	data->LpFilterId.XX_In = data->park.Ds;
-	data->LpFilterId.XX_T = 1.0/2900.0;
+	data->LpFilterId.XX_T = 1.0/300.0;
 	LPFILTER(&data->LpFilterId);
 	data->XI_Act3PhFlt = data->LpFilterId.XX_Out;
+	//---------------------------------------------
 	data->XI_Rct3Ph = data->park.Qs;
 	data->LpFilterIq.XX_In = data->park.Qs;
-	data->LpFilterIq.XX_T = 1.0/2900.0;
+	data->LpFilterIq.XX_T = 1.0/300.0;
 	LPFILTER(&data->LpFilterIq);
 	data->XI_Rct3PhFlt = data->LpFilterIq.XX_Out;
+
+//---------------------------------------------
+	data->dosgpll.phase = data->XU_PhAB;
+	data->dosgpll.w0 = 2*PI*data->XF_3Ph;
+	DOSGPLL(&data->dosgpll);
+
+//------------------------------------------
+	data->XU_PhAl = data->dosgpll.alpha;
+	data->XU_PhBe = data->dosgpll.beta;
 
 	//--------------------------------------------------
 		data->park.Alpha = data->XU_PhAl/SQRT3;
@@ -280,52 +316,48 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 		data->LpFilterUd.XX_T = 1.0/300.0;
 		LPFILTER(&data->LpFilterUd);
 		data->XU_Act3PhFlt = data->LpFilterUd.XX_Out;
+		//------------------------------------------
 		data->XU_Rct3Ph = data->park.Qs;
 		data->LpFilterUq.XX_In = data->park.Qs;
 		data->LpFilterUq.XX_T = 1.0/300.0;
 		LPFILTER(&data->LpFilterUq);
 		data->XU_Rct3PhFlt = data->LpFilterUq.XX_Out;
 
-		/**/
-		data->rampId.XX_In = data->RefId;
-		data->rampId.XX_Step = 0.01;
-		RAMP(&data->rampId);
-
 //--------------------------------------------------------
-	data->acrd.Ref = data->rampId.XX_Out;
+//	data->acrd.Ref = data->rampId.XX_Out;
+	data->acrd.Ref = data->RefId;
 	data->acrd.Fbk = data->XI_Act3Ph;
 //	data->acrd.Fbk = data->XI_Act3PhFlt;
 	data->acrd.Kp = KP;
 	data->acrd.Ki = KI*data->XX_Ts;
-	data->acrd.Umax = 550;
-	data->acrd.Umin = -550;
+	data->acrd.Umax = 55;
+	data->acrd.Umin = -55;
 	PI_CONTROLLER(&data->acrd);
 
-	/**/
-//	data->rampIq.XX_In = data->RefIq;
-//	data->rampIq.XX_Step = 0.01;
-//	RAMP(&data->rampIq);
+
 
 //--------------------------------------------------------
-	data->acrq.Ref = data->rampIq.XX_Out;
+//	data->acrq.Ref = data->rampIq.XX_Out;
 	data->acrq.Ref = data->RefIq;
 	data->acrq.Fbk = data->XI_Rct3Ph;
 //	data->acrq.Fbk = data->XI_Rct3PhFlt;
 	data->acrq.Kp = KP;
 	data->acrq.Ki = KI*data->XX_Ts;
-	data->acrq.Umax = 550;
-	data->acrq.Umin = -550;
+	data->acrq.Umax = 55;
+	data->acrq.Umin = -55;
 	PI_CONTROLLER(&data->acrq);
 
 //----------------------------------------------------------
 //	data->ipark.Ds = data->acrd.Out - 2*3.1415926*data->XF_3Ph*0.0007*data->park.Qs + data->XU_Act3PhFlt;
 //	data->ipark.Qs = data->acrq.Out + 2*3.1415926*data->XF_3Ph*0.0007*data->park.Ds + data->XU_Rct3PhFlt;
-	data->ipark.Ds = data->acrd.Out - 2.0*PI*data->XF_3Ph*0.0007*data->park.Qs;
-	data->ipark.Qs = data->acrq.Out + 2.0*PI*data->XF_3Ph*0.0007*data->park.Ds;
-//	data->ipark.Ds = data->acrd.Out;
-//	data->ipark.Qs = data->acrq.Out;
-	data->ipark.Sine = sin(data->XX_Theta + 2.0*PI*data->XF_3Ph*data->XX_Ts);
-	data->ipark.Cosine = cos(data->XX_Theta + 2.0*PI*data->XF_3Ph*data->XX_Ts);
+//	data->ipark.Ds = data->acrd.Out - 2.0*PI*data->XF_3Ph*0.0007*data->XI_Rct3PhFlt;
+//	data->ipark.Qs = data->acrq.Out + 2.0*PI*data->XF_3Ph*0.0007*data->XI_Act3PhFlt;
+	data->ipark.Ds = data->acrd.Out + data->XU_Act3PhFlt;
+	data->ipark.Qs = data->acrq.Out + data->XU_Rct3PhFlt;
+//	data->ipark.Sine = sin(data->XX_Theta + 2.0*PI*data->XF_3Ph*data->XX_Ts);
+//	data->ipark.Cosine = cos(data->XX_Theta + 2.0*PI*data->XF_3Ph*data->XX_Ts);
+	data->ipark.Sine = sin(data->XX_Theta );
+	data->ipark.Cosine = cos(data->XX_Theta );
 	IPARK(&data->ipark);
 
 //-------------------------------------------------------------
@@ -336,12 +368,12 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 	 * 死区10微妙，最小脉宽10微妙，调制周期1/2900=345微秒
 	 * 线性调制比区[0,0.85]
 	 * */
-	if(data->XX_M>0.85)
-	{
-		data->svgen.Ualpha /= data->XX_M*0.85;
-		data->svgen.Ubeta /= data->XX_M*0.85;
-		data->XX_M = 0.85;
-	}
+//	if(data->XX_M>0.85)
+//	{
+//		data->svgen.Ualpha /= data->XX_M*0.85;
+//		data->svgen.Ubeta /= data->XX_M*0.85;
+//		data->XX_M = 0.85;
+//	}
 	SVGEN(&data->svgen);
 
 	//-----------------------------------
@@ -390,9 +422,6 @@ void UFCTRLSingleLoop(TYPE_UFCTRL_IF *data)
 					data->XX_DutyA = data->minPwLim.Ta_out;
 					data->XX_DutyB = data->minPwLim.Tb_out;
 					data->XX_DutyC = data->minPwLim.Tc_out;
-
-
-
 
 //-------------------------------------------------------------
 	data->XX_Theta += 2*PI*data->XF_3Ph*data->XX_Ts;
@@ -736,11 +765,11 @@ void DEADTIMECOM_1(TYPE_DEADTIMECOM *data)
 		{
 			if(data->Ia<=-1.0)
 			{
-				data->TaCom = data->dt;
+				data->TaCom = -data->dt;
 			}
 			else
 			{
-				data->TaCom = -data->dt/1.0*data->Ia;
+				data->TaCom = data->dt/1.0*data->Ia;
 			}
 		}
 		else
@@ -754,11 +783,11 @@ void DEADTIMECOM_1(TYPE_DEADTIMECOM *data)
 		{
 			if(data->Ib<=-1.0)
 			{
-				data->TbCom = data->dt;
+				data->TbCom = -data->dt;
 			}
 			else
 			{
-				data->TbCom = -data->dt/1.0*data->Ib;
+				data->TbCom = data->dt/1.0*data->Ib;
 			}
 		}
 		else
@@ -772,11 +801,11 @@ void DEADTIMECOM_1(TYPE_DEADTIMECOM *data)
 		{
 			if(data->Ic<=-1.0)
 			{
-				data->TcCom = data->dt;
+				data->TcCom = -data->dt;
 			}
 			else
 			{
-				data->TcCom = -data->dt/1.0*data->Ic;
+				data->TcCom = data->dt/1.0*data->Ic;
 			}
 		}
 		else
@@ -838,9 +867,6 @@ void RAMP(TYPE_RAMP *data)
 
 void DOSGPLL(TYPE_DOSGPLL_IF *data)
 {
-	data->Ts = 1.0/2900.0;
-	data->w0 = 100*3.1415926;
-	data->K = 0.05;
 	/**/
 	data->aqr.Kp = 2*100*3.1415926;
 	data->aqr.Ki = 100*3.1415926*100*3.1415926*data->Ts;

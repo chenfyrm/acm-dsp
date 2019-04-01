@@ -173,6 +173,7 @@ float32 IOvA = 0;
 float32 IOvB = 0;
 float32 IOvC = 0;
 float32 Theta = 0.0;
+//Uint16	sign = 0;
 
 int16 DA[8] = {0};
 
@@ -189,6 +190,7 @@ void PI_RmsClc(void);
 /* MAIN */
 void main(void)
 {
+
 	InitSysCtrl();
 	InitGpio();
 	InitXintf();
@@ -244,34 +246,36 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 
 	DIS_GPIO30();
 	DPRAM_RD(); //读MCU交互信息
+
+	acmctrl.XI_PhA = PX_In_Spf.XI_PhA;
+	acmctrl.XI_PhB = PX_In_Spf.XI_PhB;
+	acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
+	acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
+	acmctrl.XI_DcLk = PX_In_Spf.XI_DcLk;
+	acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
+
 //	PI_RmsClc();
 //	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
 //	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
 //	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
 
+	dosgpll.phase = PX_In_Spf.XU_PhABGt;
+	dosgpll.Ts = 1.0/2900.0;
+	dosgpll.w0 = 100*3.1415926;
+	dosgpll.K = 0.05;
+	DOSGPLL(&dosgpll);
+
+	acmctrl.XX_UPeakCom = 1.0;
+	acmctrl.XX_AngleCom = PI/2.0;
+//	acmctrl.XX_AngleCom = 0.0;
+	acmctrl.XU_PhAl = dosgpll.Upeak*acmctrl.XX_UPeakCom*cos(dosgpll.theta + acmctrl.XX_AngleCom);
+	acmctrl.XU_PhBe = dosgpll.Upeak*acmctrl.XX_UPeakCom*sin(dosgpll.theta + acmctrl.XX_AngleCom);
+
 	NX_Pr();
-
-//	sogiosgma.phase = PX_In_Spf.XU_PhABGt;
-//	SOGIOSGFLL(&sogiosgma);
-//
-//	srfpll.alpha = sogiosgma.alpha;
-//	srfpll.beta = sogiosgma.beta;
-//	SRFPLL(&srfpll);
-
-//	dosgpll.phase = PX_In_Spf.XU_PhABGt;
-//	DOSGPLL(&dosgpll);
 
 	/**/
 	if(PX_Out_Spf.SX_Run == 1)
 	{
-		acmctrl.XI_PhA = PX_In_Spf.XI_PhA;
-		acmctrl.XI_PhB = PX_In_Spf.XI_PhB;
-		acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
-		acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
-//		acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
-		acmctrl.XU_PhAl = dosgpll.alpha;
-		acmctrl.XU_PhBe = dosgpll.beta;
-
 		Cnt_Period ++;
 		if(Cnt_Period>=2900)
 		{
@@ -289,18 +293,17 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		}
 
 		acmctrl.WF_3PhDsp = 50.0;
-		acmctrl.WU_3PhDsp = 33.0;
+		acmctrl.WU_3PhDsp = 40.0;
 		UFCTRLOpenLoop(&acmctrl);
 
 //		acmctrl.WF_3PhDsp = 50.0;
 //		acmctrl.RefId = 3.0;
 //		acmctrl.RefIq = 5.0;
-////		if(Cnt_min>=5)
-////		{
-////			acmctrl.RefIq = 10.0;
-////			Sign = 100;
-////		}
-//
+//		if(Cnt_min>=5)
+//		{
+//			acmctrl.RefIq = 10.0;
+//			Sign = 100;
+//		}
 //		UFCTRLSingleLoop(&acmctrl);
 
 //		acmctrl.WF_3PhDsp = 50.0;
@@ -309,21 +312,16 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 
 		PX_Out_Spf.XX_PwmMo = acmctrl.XX_Mode;
 
-//		acmctrl.XX_DutyA = 0.2;
-//		acmctrl.XX_DutyB = 0.7;
-//		acmctrl.XX_DutyC = 0.4;
-
 		if(PX_Out_Spf.XX_PwmMo == 21)
 		{
-			//PX_Out_Spf.XX_PwmMo == 21 FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
+//			PX_Out_Spf.XX_PwmMo = 21;// FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
-
 		}
-		else
+		if(PX_Out_Spf.XX_PwmMo == 0)
 		{
-			//PX_Out_Spf.XX_PwmMo == 0; FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
+//			PX_Out_Spf.XX_PwmMo = 0;// FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
@@ -351,6 +349,7 @@ void DPRAM_RD(void)//MCU-->DSP
 //	PX_In_Spf.NX_McuVer = 0x10;
 	if(PX_Out_Spf.NX_DspOpSt == 0x11)						// DSP initializing
 	{
+		UFCTRLINIT(&acmctrl);
 		PX_Out_Spf.NX_DspOpSt = 0x33;
 	}
 	else
@@ -394,19 +393,19 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
 //	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
 	/**/
-//	*(XintfZone7 + 0x24) = acmctrl.WU_3PhDsp*10.0;
-//	*(XintfZone7 + 0x25) = dosgpll.Upeak*10.0;
-//	*(XintfZone7 + 0x27) = acmctrl.XF_3Ph*10.0;
-//	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
-//	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
-//	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
+	*(XintfZone7 + 0x24) = acmctrl.XI_Act3Ph*10.0;
+	*(XintfZone7 + 0x25) = acmctrl.XI_Rct3Ph*10.0;
+	*(XintfZone7 + 0x27) = acmctrl.XU_Act3Ph*10.0;
+	*(XintfZone7 + 0x28) = acmctrl.XU_Rct3Ph*10.0;
+	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
+	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
 	/**/
-	*(XintfZone7 + 0x24) = acmctrl.ipark.Ds*10.0;
-	*(XintfZone7 + 0x25) = acmctrl.ipark.Qs*10.0;
-	*(XintfZone7 + 0x27) = acmctrl.acrd.Out*10.0;
-	*(XintfZone7 + 0x28) = acmctrl.acrq.Out*10.0;
-	*(XintfZone7 + 0x29) = acmctrl.XX_M*100.0;;
-	*(XintfZone7 + 0x2A) = Cnt_sec;
+//	*(XintfZone7 + 0x24) = acmctrl.XU_3PhPek*10.0;
+//	*(XintfZone7 + 0x25) = acmctrl.XF_3Ph*10.0;
+//	*(XintfZone7 + 0x27) = dosgpll.Upeak*10.0;
+//	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
+//	*(XintfZone7 + 0x29) = (acmctrl.XX_Theta-(dosgpll.theta+acmctrl.XX_AngleCom))*100;
+//	*(XintfZone7 + 0x2A) = acmctrl.XX_M*100.0;
 	/*DA输出*/
 	/**/
 //	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
@@ -421,11 +420,11 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.XX_DutyA*1000.0;
-	DA[4] = acmctrl.XX_DutyB*1000.0;
-	DA[5] = acmctrl.XX_DutyC*1000.0;
-	DA[6] = (acmctrl.XX_DutyA-acmctrl.XX_DutyB)*1000.0;
-	DA[7] = PX_Out_Spf.XX_PwmMo*1000.0;
+	DA[3] = acmctrl.XU_PhAl*100.0;
+	DA[4] = acmctrl.XU_PhBe*100.0;
+	DA[5] = acmctrl.ipark.Alpha*100.0;
+	DA[6] = (acmctrl.XX_Theta-(dosgpll.theta+acmctrl.XX_AngleCom))*100;
+	DA[7] = 0.0;
 
 	if(DA[3] >= 4095)
 		DA[3] = 4095;
@@ -552,6 +551,7 @@ void NX_Pr(void)
 	if((PX_In_Spf.XI_PhC > PX_InPr_Spf.XI_PhABC_Max) || (PX_In_Spf.XI_PhC < -PX_InPr_Spf.XI_PhABC_Max))
 	{
 		PX_InPr_Spf.XI_PhCOvCn++;
+
 		if(PX_InPr_Spf.XI_PhCOvCn > 3)
 		{
 			PX_Out_Spf.SX_Run = 0;

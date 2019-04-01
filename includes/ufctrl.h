@@ -420,10 +420,9 @@ typedef struct UFCTRL_IF
 	float32	XI_PhA;
 	float32 XI_PhB;
 	float32 XI_PhC;
-	float32 XU_PhAl;
-	float32 XU_PhBe;
 	float32	XU_DcLk;
 	float32 XI_DcLk;
+	float32	XU_PhAB;
 	Uint16	XX_Mode;//output 0(0x000000):计数器值小于比较器值为高    21(0x010101):计数器值大于比较器值为高
 	float32	XX_DutyA;
 	float32 XX_DutyB;
@@ -439,12 +438,15 @@ typedef struct UFCTRL_IF
 	float32 XI_Rct3Ph;
 	float32 XI_Act3PhFlt;
 	float32 XI_Rct3PhFlt;
+	float32 XU_PhAl;
+	float32 XU_PhBe;
 	float32 XU_Act3Ph;
 	float32 XU_Rct3Ph;
 	float32 XU_Act3PhFlt;
 	float32 XU_Rct3PhFlt;
 	TYPE_CLARKE	clarke;
 	TYPE_PARK	park;
+	TYPE_DOSGPLL_IF	dosgpll;
 	TYPE_RAMP rampId;
 	TYPE_RAMP rampIq;
 	TYPE_LPFILTER	LpFilterId;
@@ -474,14 +476,13 @@ typedef struct UFCTRL_IF
 	0.0,\
 	0.0,\
 	0.0,\
-	0.0,\
 	0,/**/\
 	0.5,\
 	0.5,\
 	0.5,\
 	1.0/1450.0/2.0,/**/\
 	1.0,\
-	0.0,\
+	-3.1415926/2,\
 	0.0,/**/\
 	5.0,\
 	0.0,\
@@ -494,8 +495,11 @@ typedef struct UFCTRL_IF
 	0.0,\
 	0.0,\
 	0.0,\
+	0.0,\
+	0.0,\
 	CLARKE_DEFAULTS,/**/\
 	PARK_DEFAULTS,\
+	DOSGPLL_IF_DEFAULTS,\
 	RAMP_DEFAULTS,\
 	RAMP_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
@@ -520,6 +524,7 @@ typedef struct UFCTRL_IF
 extern "C" {
 #endif /* extern "C" */
 
+extern void UFCTRLINIT(TYPE_UFCTRL_IF *data);
 extern void UFCTRLOpenLoop(TYPE_UFCTRL_IF *interface);
 extern void UFCTRLSingleLoop(TYPE_UFCTRL_IF *interface);
 extern void UFCTRLDoubleLoop(TYPE_UFCTRL_IF *interface);
