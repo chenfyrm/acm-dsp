@@ -14,6 +14,9 @@
 #define SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
 #define SQRT3   		1.73205080756888    /* sqrt(3)/2 */
 #define	PI  		  	3.14159265358979
+#define	PI2  		  	6.28318530717959
+#define FALSE			0
+#define	TRUE			1
 
 /**/
 #ifndef DSP28_DATA_TYPES
@@ -534,6 +537,140 @@ extern void UFCTRLDoubleLoop(TYPE_UFCTRL_IF *interface);
 #ifdef __cplusplus
 }
 #endif
+
+
+typedef struct
+{
+	float32	XU_DcLk;//input
+	float32	XI_DcLk;
+	float32	XI_PhA;
+	float32	XI_PhB;
+	float32	XI_PhC;
+	float32	XU_PhABLk;
+	float32	XX_DutyA;//output
+	float32	XX_DutyB;
+	float32	XX_DutyC;
+	Uint16	XX_Mode;
+	float32	Tsc;//param
+	float32	M;//
+	float32	Theta;//state
+	TYPE_SVGEN Svgen;
+
+	float32	WU_3PhDsp;
+
+	/*F3PhRef*/
+	float32 WF_3PhDsp;
+	float32	WF_3PhU3PhRef;
+
+	/*U3PhRef*/
+	float32	WU_3PhUFRt;
+	float32	WU_3PhExt;
+	float32	PF_U3PhRef2;
+	float32	PF_U3PhRef3;
+	float32	PU_U3PhRef1;
+	float32	PU_U3PhRef2;
+	float32	PU_U3PhRef3;
+	float32	PU_U3PhRef4;
+	Uint16	L_ExtU3PhRef;
+	float32	PX_ExtU3PhRefRmp;
+	Uint16	L_EnRmpU3PhRef;
+	float32	PX_U3PhRefRmpSel;
+	float32	PX_U3PhRefRmp1;
+	float32	PX_U3PhRefRmp2;
+
+	/*U3PhCl*/
+	Uint16	L_En3PhCl;
+	float32	WU_3PhCl;
+
+	/*TFrefRmp*/
+	float32 PX_FRefRmpUp;
+	float32 PX_FRefRmpUpSlaveAcm;
+	float32	PX_FRefRmpDo1;
+	float32	PX_FRefRmpDo2;
+	float32	PX_FRefRmpDo3;
+	float32	PF_FRefRmpDo12;
+	float32	PF_FRefRmpDo23;
+
+	/**/
+	float32 WF_3PhUDcLk;
+
+	/*FrefRmp*/
+	float32	WF_3PhRmp;
+	float32	XX_FRefRmpUp;
+	float32	XX_FRefRmpDo;
+	float32	PF_3PhNom;
+	float32	PF_3PhMin;
+
+	/*UF3PhCmp*/
+	float32	XI_PhAct;//local
+	float32	XI_PhRct;
+	Uint16	A_CvOp;
+	Uint16	L_EnUF3PhCmp;
+	float32	PI_UF3PhCmpActHiLo;//param
+	float32	PF_UF3PhCmpActHiLo;
+	float32	PI_UF3PhCmpRctHiLo;
+	float32	PU_UF3PhCmpRctHiLo;
+	float32	WF_WF3PhCmp;
+	float32	WU_UF3PhCmp;
+
+	/*F3PhSz*/
+	float32	WF_UF3PhSz;
+
+	/*U3PhSz*/
+	float32	WU_UF3PhSz;
+
+	/**/
+	float32	WF_IPhCl;
+
+}TYPE_UFCOMA;
+
+#define UFCOMA_DEFAULTS	{\
+	0,/**/\
+	0,\
+	0,\
+	0,\
+	0,\
+	0,\
+	0.5,/**/\
+	0.5,\
+	0.5,\
+	0,\
+	1.0/2900.0,/**/\
+}
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void UFCOMAInit(TYPE_UFCOMA *data);
+extern void UFCOMAStep(TYPE_UFCOMA *data);
+extern void UFCOMATerm(TYPE_UFCOMA *data);
+
+void F3PhRef(TYPE_UFCOMA *data);
+void U3PhRef(TYPE_UFCOMA *data);
+void U3PhCl(TYPE_UFCOMA *data);
+
+void TFrefRmp(TYPE_UFCOMA *data);
+void FrefUDcLk(TYPE_UFCOMA *data);
+void FrefRmp(TYPE_UFCOMA *data);
+
+void UF3PhCmp(TYPE_UFCOMA *data);
+
+void F3PhSz(TYPE_UFCOMA *data);
+void U3PhSz(TYPE_UFCOMA *data);
+void UF3PhSz(TYPE_UFCOMA *data);
+
+void IPhClGenOvLd(TYPE_UFCOMA *data);
+void IPhClPsTrs(TYPE_UFCOMA *data);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
+
 
 
 #endif /* UFCTRL_H_ */
