@@ -160,8 +160,10 @@ volatile struct PI_Rms PI_PhCRms = {0, 0};
 int16	*XintfZone7=(int16 *)0x200000;//DP RAM
 //=======================================================================
 Uint16	GPIO_Temp181,GPIO_Temp182;
-TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
-TYPE_DOSGPLL_IF dosgpll = DOSGPLL_IF_DEFAULTS;
+//TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
+TYPE_UFCOMA acmctrl = UFCOMA_DEFAULTS;
+TYPE_DOSGPLL dosgpll = DOSGPLL_DEFAULTS;
+TYPE_SOGIOSGMA_IF sogiosg = SOGIOSGMA_IF_DEFAULTS;
 //===========================================================================
 Uint16	Cnt_Period =0;
 Uint16	Cnt_us = 0;
@@ -189,6 +191,7 @@ void PI_RmsClc(void);
 /* MAIN */
 void main(void)
 {
+
 
 	InitSysCtrl();
 	InitGpio();
@@ -251,24 +254,30 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	acmctrl.XI_PhC = PX_In_Spf.XI_PhC;
 	acmctrl.XU_DcLk = PX_In_Spf.XU_DcLk;
 	acmctrl.XI_DcLk = PX_In_Spf.XI_DcLk;
-	acmctrl.XU_PhAB = PX_In_Spf.XU_PhABGt;
+	acmctrl.XU_PhABLk = PX_In_Spf.XU_PhABGt;
 
 //	PI_RmsClc();
 //	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
 //	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
 //	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
 
-	dosgpll.phase = PX_In_Spf.XU_PhABGt;
-	dosgpll.Ts = 1.0/2900.0;
-	dosgpll.w0 = 100*3.1415926;
-	dosgpll.K = 0.05;
-	DOSGPLL(&dosgpll);
+
+//	dosgpll.phase = PX_In_Spf.XU_PhABGt;
+//	dosgpll.Ts = 1.0/2900.0;
+//	dosgpll.w0 = 100*3.1415926;
+//	dosgpll.K = 0.05;
+//	DOSGPLL(&dosgpll);
+
+	sogiosg.phase = PX_In_Spf.XU_PhABGt;
+	SOGIOSGFLL(&sogiosg);
+	acmctrl.XU_3PhAl = sogiosg.alpha;
+	acmctrl.XU_3PhBe = sogiosg.beta;
 
 	acmctrl.XX_UPeakCom = 1.0;
 	acmctrl.XX_AngleCom = PI/2.0;
 //	acmctrl.XX_AngleCom = 0.0;
-	acmctrl.XU_PhAl = dosgpll.Upeak*acmctrl.XX_UPeakCom*cos(dosgpll.theta + acmctrl.XX_AngleCom);
-	acmctrl.XU_PhBe = dosgpll.Upeak*acmctrl.XX_UPeakCom*sin(dosgpll.theta + acmctrl.XX_AngleCom);
+	acmctrl.XU_3PhAl = sogiosg.peak*acmctrl.XX_UPeakCom*cos(dosgpll.theta + acmctrl.XX_AngleCom);
+	acmctrl.XU_3PhBe = sogiosg.peak*acmctrl.XX_UPeakCom*sin(dosgpll.theta + acmctrl.XX_AngleCom);
 
 	NX_Pr();
 
@@ -291,36 +300,35 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 			Cnt_min = 60;
 		}
 
+
+		acmctrl.B_EnU3PhCl = FALSE;
+		UFCOMAStep(&acmctrl);
+
 		acmctrl.WF_3PhDsp = 50.0;
-		acmctrl.WU_3PhDsp = 40.0;
-		UFCTRLOpenLoop(&acmctrl);
-
-//		acmctrl.WF_3PhDsp = 50.0;
-//		acmctrl.RefId = 3.0;
-//		acmctrl.RefIq = 5.0;
-//		if(Cnt_min>=5)
-//		{
-//			acmctrl.RefIq = 10.0;
-//			Sign = 100;
-//		}
-//		UFCTRLSingleLoop(&acmctrl);
-
-//		acmctrl.WF_3PhDsp = 50.0;
-//		acmctrl.WU_3PhDsp = 33.0;
-//		UFCTRLDoubleLoop(&acmctrl);
-
-		PX_Out_Spf.XX_PwmMo = acmctrl.XX_Mode;
-
-		if(PX_Out_Spf.XX_PwmMo == 21)
+		if(acmctrl.WU_3PhDsp<50.0)
 		{
-//			PX_Out_Spf.XX_PwmMo = 21;// FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
+			acmctrl.WU_3PhDsp += 0.1;
+			if(acmctrl.WU_3PhDsp>50.0)
+				acmctrl.WU_3PhDsp = 50.0;
+		}
+		if(acmctrl.WU_3PhDsp>50.0)
+		{
+			acmctrl.WU_3PhDsp -= 0.1;
+			if(acmctrl.WU_3PhDsp<50.0)
+				acmctrl.WU_3PhDsp = 50.0;
+		}
+		DspStep(&acmctrl);
+
+		if(acmctrl.XX_Mode == 1)
+		{
+			PX_Out_Spf.XX_PwmMo = 21;// FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyA);
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyB);
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*(1.0-acmctrl.XX_DutyC);
 		}
-		if(PX_Out_Spf.XX_PwmMo == 0)
+		if(acmctrl.XX_Mode == 0)
 		{
-//			PX_Out_Spf.XX_PwmMo = 0;// FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
+			PX_Out_Spf.XX_PwmMo = 0;// FPGA逻辑：计数器值小于比较器值为高，加死区，取反，经光纤板再反向
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyA;
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyB;
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv*acmctrl.XX_DutyC;
@@ -348,7 +356,7 @@ void DPRAM_RD(void)//MCU-->DSP
 //	PX_In_Spf.NX_McuVer = 0x10;
 	if(PX_Out_Spf.NX_DspOpSt == 0x11)						// DSP initializing
 	{
-		UFCTRLINIT(&acmctrl);
+		UFCOMAInit(&acmctrl);
 		PX_Out_Spf.NX_DspOpSt = 0x33;
 	}
 	else
@@ -392,12 +400,12 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
 //	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
 	/**/
-	*(XintfZone7 + 0x24) = acmctrl.XI_Act3Ph*10.0;
-	*(XintfZone7 + 0x25) = acmctrl.XI_Rct3Ph*10.0;
-	*(XintfZone7 + 0x27) = acmctrl.XU_Act3Ph*10.0;
-	*(XintfZone7 + 0x28) = acmctrl.XU_Rct3Ph*10.0;
-	*(XintfZone7 + 0x29) = acmctrl.WU_3PhDsp/dosgpll.Upeak*100.0;
-	*(XintfZone7 + 0x2A) = fabs(acmctrl.XX_Theta - (dosgpll.theta + acmctrl.XX_AngleCom))*100.0;
+	*(XintfZone7 + 0x24) = acmctrl.WF_3PhDsp*10.0;
+	*(XintfZone7 + 0x25) = acmctrl.WU_3PhDsp*10.0;
+	*(XintfZone7 + 0x27) = acmctrl.XU_3PhRe*10.0;
+	*(XintfZone7 + 0x28) = acmctrl.XU_3PhIm*10.0;
+	*(XintfZone7 + 0x29) = acmctrl.XU_3PhPek*10.0;
+	*(XintfZone7 + 0x2A) = 0.0*100.0;
 	/**/
 //	*(XintfZone7 + 0x24) = acmctrl.XU_3PhPek*10.0;
 //	*(XintfZone7 + 0x25) = acmctrl.XF_3Ph*10.0;
@@ -419,10 +427,10 @@ void DPRAM_WR(void)//DSP-->MCU
 //		Theta += PI2;
 //	DA[7] = Theta*100.0;
 	/**/
-	DA[3] = acmctrl.XU_PhAl*100.0;
-	DA[4] = acmctrl.XU_PhBe*100.0;
-	DA[5] = acmctrl.ipark.Alpha*100.0;
-	DA[6] = (acmctrl.XX_Theta-(dosgpll.theta+acmctrl.XX_AngleCom))*100;
+	DA[3] = acmctrl.XU_3PhAl*100.0;
+	DA[4] = acmctrl.XU_3PhBe*100.0;
+	DA[5] = 0.0;
+	DA[6] = 0.0;
 	DA[7] = 0.0;
 
 	if(DA[3] >= 4095)

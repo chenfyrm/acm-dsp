@@ -21,6 +21,8 @@ void SOGIOSGMA(TYPE_SOGIOSGMA_IF *data)
 			-2.0*data->b/(data->a+data->K)*data->oldBeta1\
 			-(data->a-data->K)/(data->a+data->K)*data->oldBeta2;
 
+	data->peak = sqrt(data->alpha*data->alpha + data->beta*data->beta);
+
 	/*update*/
 	data->oldPhase2 = data->oldPhase1;
 	data->oldPhase1 = data->phase;

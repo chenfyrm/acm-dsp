@@ -949,7 +949,7 @@ void RAMP(TYPE_RAMP *data)
 
 }
 
-void DOSGPLL(TYPE_DOSGPLL_IF *data)
+void DOSGPLL(TYPE_DOSGPLL *data)
 {
 	/**/
 	data->aqr.Kp = 2*100*3.1415926;
@@ -997,7 +997,7 @@ void DOSGPLL(TYPE_DOSGPLL_IF *data)
 	data->beta = data->dFlt*sin(data->theta);
 }
 
-void DOSGPLL_1(TYPE_DOSGPLL_IF *data)
+void DOSGPLL_1(TYPE_DOSGPLL *data)
 {
 	data->Ts = 1.0/2900.0;
 	data->w0 = 100*3.1415926;
@@ -1075,20 +1075,91 @@ void BPFILTER(TYPE_BPFILTER *data)
 
 }
 
+void SOGIOSGMA(TYPE_SOGIOSGMA_IF *data)
+{
+	data->Ts = 1.0/2900.0;
+	data->w = 100*3.1415926;
+	data->K = sqrt(2);
+
+	/**/
+	data->a = data->Ts*data->w/2.0 + 2.0/data->Ts/data->w;
+	data->b = data->Ts*data->w/2.0 - 2.0/data->Ts/data->w;
+
+	data->alpha = data->K/(data->a+data->K)\
+			*(data->phase-data->oldPhase2)\
+			-2.0*data->b/(data->a+data->K)*data->oldAlpha1\
+			-(data->a-data->K)/(data->a+data->K)*data->oldAlpha2;
+	data->beta = data->K/(data->a+data->K)*(data->a+data->b)/2.0\
+			*(data->phase+2.0*data->oldPhase1+data->oldPhase2)\
+			-2.0*data->b/(data->a+data->K)*data->oldBeta1\
+			-(data->a-data->K)/(data->a+data->K)*data->oldBeta2;
+
+	/*update*/
+	data->oldPhase2 = data->oldPhase1;
+	data->oldPhase1 = data->phase;
+	data->oldAlpha2 = data->oldAlpha1;
+	data->oldAlpha1 = data->alpha;
+	data->oldBeta2 = data->oldBeta1;
+	data->oldBeta1 = data->beta;
+
+}
+
+void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *data)
+{
+	data->Ts = 1.0/2900.0;
+	data->w0 = 100*3.1415926;
+	data->K = sqrt(2);
+	data->Ki = 10000;
+
+	/**/
+	data->a = data->Ts*data->w/2.0 + 2.0/data->Ts/data->w;
+	data->b = data->Ts*data->w/2.0 - 2.0/data->Ts/data->w;
+
+	data->alpha = data->K/(data->a+data->K)\
+			*(data->phase-data->oldPhase2)\
+			-2.0*data->b/(data->a+data->K)*data->oldAlpha1\
+			-(data->a-data->K)/(data->a+data->K)*data->oldAlpha2;
+	data->beta = data->K/(data->a+data->K)*(data->a+data->b)/2.0\
+			*(data->phase+2.0*data->oldPhase1+data->oldPhase2)\
+			-2.0*data->b/(data->a+data->K)*data->oldBeta1\
+			-(data->a-data->K)/(data->a+data->K)*data->oldBeta2;
+
+	data->peak = sqrt(data->alpha*data->alpha + data->beta*data->beta);
+	if(data->peak <= 0.001)
+		data->peak = 0.001;
+/**/
+	data->ErrF = (data->phase-data->alpha)*data->beta/(data->peak*data->peak);
+	data->ComW +=data->ErrF*(-1.0)*data->Ki*data->Ts;
+	if (data->ComW > 30.0)
+		data->ComW = 30.0;
+	if (data->ComW <-30.0)
+		data->ComW = -30.0;
+
+
+	/*update*/
+	data->w = data->w0 + data->ComW;
+
+	data->oldPhase2 = data->oldPhase1;
+	data->oldPhase1 = data->phase;
+	data->oldAlpha2 = data->oldAlpha1;
+	data->oldAlpha1 = data->alpha;
+	data->oldBeta2 = data->oldBeta1;
+	data->oldBeta1 = data->beta;
+
+}
+
 
 void UFCOMAInit(TYPE_UFCOMA *data)
 {
 	data->Tsc = TSC;
-
-
 
 	/*U3PhRef*/
 	data->PF_U3PhRef2 = 6.0;
 	data->PF_U3PhRef3 = 50.0;
 	data->PU_U3PhRef1 = 0.0; //0Hz
 	data->PU_U3PhRef2 = 0.0;
-	data->PU_U3PhRef3 = 380.0;
-	data->PU_U3PhRef4 = 380.0;//100Hz
+	data->PU_U3PhRef3 = 30.0;
+	data->PU_U3PhRef4 = 30.0;//100Hz
 	data->L_ExtU3PhRef = FALSE;
 	data->PX_ExtU3PhRefRmp = 200.0;
 	data->L_EnRmpU3PhRef = FALSE;
@@ -1098,6 +1169,17 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 
 	/*U3PhCl*/
 	data->L_En3PhCl = TRUE;
+	data->L_EnU3PhOpLoCl = FALSE;
+	data->PX_KpU3PhCl = 0.8;
+	data->PT_U3PhCl = 50.0;//ms
+	data->PU_3PhClMax = 75.0;
+	data->PU_3PhClMin = -50.0;
+	data->PU_3PhClRefMax = 395.0;
+	data->PU_3PhClRefMin = 0.0;
+	data->U3PhCl.Kp = data->PX_KpU3PhCl;
+	data->U3PhCl.Ki = 1000.0/data->PT_U3PhCl*TSC;
+	data->U3PhCl.Umax = data->PU_3PhClMax;
+	data->U3PhCl.Umin = data->PU_3PhClMin;
 
 	/*TFrefRmp*/
 	data->PX_FRefRmpUp = 40.0;
@@ -1113,7 +1195,7 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->PF_3PhMin = 3.0;
 
 	/*COMPMA*/
-	data->L_EnUF3PhCmp = TRUE;
+	data->L_EnUF3PhCmp = FALSE;
 	data->PI_UF3PhCmpActHiLo = 4000.0;
 	data->PF_UF3PhCmpActHiLo = -10.0;
 	data->PI_UF3PhCmpRctHiLo = 4000.0;
@@ -1132,6 +1214,10 @@ void UFCOMAStep(TYPE_UFCOMA *data)
 	/**/
 	UF3PhCmp(data);
 	/**/
+	F3PhSz(data);
+	/**/
+	IPhClGenOvLd(data);
+	/**/
 	F3PhRef(data);
 	/**/
 	U3PhRef(data);
@@ -1141,7 +1227,15 @@ void UFCOMAStep(TYPE_UFCOMA *data)
 	{
 		data->WU_3PhDsp = data->WU_3PhCl;
 	}
+}
 
+void UFCOMATerm(TYPE_UFCOMA *data)
+{
+
+}
+
+void DspStep(TYPE_UFCOMA *data)
+{
 	/**/
 	data->M = data->WU_3PhDsp/data->XU_DcLk*SQRT3;
 
@@ -1152,6 +1246,36 @@ void UFCOMAStep(TYPE_UFCOMA *data)
 	data->XX_DutyA = data->Svgen.Ta;
 	data->XX_DutyB = data->Svgen.Tb;
 	data->XX_DutyC = data->Svgen.Tc;
+
+	/**/
+	data->XU_3PhPek = sqrt(data->XU_3PhAl*data->XU_3PhAl + data->XU_3PhBe*data->XU_3PhBe);
+
+	data->LpFilterU3PhPek.XX_In = data->XU_3PhPek;
+	data->LpFilterU3PhPek.XX_T = 1.0/10.0;
+	data->LpFilterU3PhPek.XX_Ts = 1.0/2900.0;
+	LPFILTER(&data->LpFilterU3PhPek);
+	data->XU_3PhPek = data->LpFilterU3PhPek.XX_Out;
+
+	data->park.Alpha = data->XU_3PhAl;
+	data->park.Beta = data->XU_3PhBe;
+	data->park.Sine = sin(data->Theta);
+	data->park.Cosine = cos(data->Theta);
+	PARK(&data->park);
+	data->XU_3PhRe = data->park.Ds;
+	data->XU_3PhIm = data->park.Qs;
+
+	data->clarke.As = data->XI_PhA;
+	data->clarke.Bs = data->XI_PhB;
+	data->clarke.Cs = data->XI_PhC;
+	CLARKE(&data->clarke);
+
+	data->park.Alpha = data->clarke.Alpha;
+	data->park.Beta = data->clarke.Beta;
+	data->park.Sine = sin(data->Theta);
+	data->park.Cosine = cos(data->Theta);
+	PARK(&data->park);
+	data->XI_PhAct = data->park.Ds;
+	data->XI_PhRct = data->park.Qs;
 
 	//update
 	data->Theta += PI2*data->WF_3PhDsp*data->Tsc;
@@ -1168,12 +1292,6 @@ void UFCOMAStep(TYPE_UFCOMA *data)
 	{
 		data->XX_Mode = 0;
 	}
-
-}
-
-void UFCOMATerm(TYPE_UFCOMA *data)
-{
-
 }
 
 void F3PhRef(TYPE_UFCOMA *data)
@@ -1188,27 +1306,44 @@ void U3PhRef(TYPE_UFCOMA *data)
 	if(!data->L_ExtU3PhRef)
 	{
 		if(data->WF_3PhU3PhRef < 0.0)
-			temp = 0.0;
-		if(data->WF_3PhU3PhRef >= 0.0 && data->WF_3PhU3PhRef < 6.0)
-			temp = 0.0;
-		if(data->WF_3PhU3PhRef >= 6.0 && data->WF_3PhU3PhRef < 50.0)
-			temp = 0.0 + (data->WF_3PhU3PhRef - 6.0)/(50.0 - 6.0)*380.0;
-		if(data->WF_3PhU3PhRef >= 50.0 && data->WF_3PhU3PhRef < 100.0)
-			temp = 380.0;
+			temp = data->PU_U3PhRef1;
+		if(data->WF_3PhU3PhRef >= 0.0 && data->WF_3PhU3PhRef < data->PF_U3PhRef2)
+			temp = data->PU_U3PhRef1 + (data->WF_3PhU3PhRef - 0.0)/(data->PF_U3PhRef2 - 0.0)*(data->PU_U3PhRef2 - data->PU_U3PhRef1);
+		if(data->WF_3PhU3PhRef >= data->PF_U3PhRef2 && data->WF_3PhU3PhRef < data->PF_U3PhRef3)
+			temp = data->PU_U3PhRef2 + (data->WF_3PhU3PhRef - data->PF_U3PhRef2)/(data->PF_U3PhRef3 - data->PF_U3PhRef2)*(data->PU_U3PhRef3 - data->PU_U3PhRef2);
+		if(data->WF_3PhU3PhRef >= data->PF_U3PhRef3 && data->WF_3PhU3PhRef < 100.0)
+			temp = data->PU_U3PhRef3 + (data->WF_3PhU3PhRef - data->PF_U3PhRef3)/(100.0 - data->PF_U3PhRef3)*(data->PU_U3PhRef4 - data->PU_U3PhRef3);
 		if(data->WF_3PhU3PhRef >= 100.0)
-			temp = 380.0;
+			temp = data->PU_U3PhRef4;
 	}
 
 	if(!data->L_EnRmpU3PhRef)
 	{
-		data->WU_3PhUFRt = temp;
+		data->WU_3PhUFRt = temp*SQRT2;
 	}
 }
 
 void U3PhCl(TYPE_UFCOMA *data)
 {
-	data->WU_3PhCl = data->WU_3PhUFRt;
+	data->WU_3PhClIn = data->WU_3PhUFRt;
 
+	data->U3PhCl.Ref = data->WU_3PhClIn + data->WU_UF3PhCmp + data->WU_UF3PhSz;
+
+	if(data->U3PhCl.Ref < data->PU_3PhClRefMin)
+		data->U3PhCl.Ref = data->PU_3PhClRefMin;
+	if(data->U3PhCl.Ref > data->PU_3PhClRefMax)
+		data->U3PhCl.Ref = data->PU_3PhClRefMax;
+
+	data->U3PhCl.Fbk = data->XU_3PhPek;
+	PI_CONTROLLER(&data->U3PhCl);
+	if(data->B_EnU3PhCl)
+	{
+		data->WU_3PhCl = data->U3PhCl.Ref + data->U3PhCl.Out;
+	}
+	else
+	{
+		data->WU_3PhCl = data->U3PhCl.Ref;
+	}
 }
 
 void TFrefRmp(TYPE_UFCOMA *data)
@@ -1256,10 +1391,20 @@ void UF3PhCmp(TYPE_UFCOMA *data)
 
 void F3PhSz(TYPE_UFCOMA *data)
 {
-
+	data->WF_UF3PhSz = 0.0;
 }
 
 void U3PhSz(TYPE_UFCOMA *data)
+{
+	data->WU_UF3PhSz = 0.0;
+}
+
+void IPhClGenOvLd(TYPE_UFCOMA *data)
+{
+	data->WF_IPhCl = 0.0;
+}
+
+void IPhClPsTrs(TYPE_UFCOMA *data)
 {
 
 }

@@ -13,6 +13,7 @@
 #define ONEbySQRT3		0.57735026918963    /* 1/sqrt(3) */
 #define SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
 #define SQRT3   		1.73205080756888    /* sqrt(3)/2 */
+#define	SQRT2			1.414
 #define	PI  		  	3.14159265358979
 #define	PI2  		  	6.28318530717959
 #define FALSE			0
@@ -269,9 +270,9 @@ typedef struct{
 	float32 b;
 	TYPE_PARK	park;
 	TYPE_PI_CONTROLLER	aqr;
-}TYPE_DOSGPLL_IF;
+}TYPE_DOSGPLL;
 
-#define DOSGPLL_IF_DEFAULTS {\
+#define DOSGPLL_DEFAULTS {\
 	0.0,\
 	0.0,\
 	1.0,\
@@ -298,8 +299,8 @@ typedef struct{
 extern "C" {
 #endif /* extern "C" */
 
-extern void DOSGPLL(TYPE_DOSGPLL_IF *interface);
-extern void DOSGPLL_1(TYPE_DOSGPLL_IF *interface);
+extern void DOSGPLL(TYPE_DOSGPLL *interface);
+extern void DOSGPLL_1(TYPE_DOSGPLL *interface);
 
 #ifdef __cplusplus
 }
@@ -449,7 +450,7 @@ typedef struct UFCTRL_IF
 	float32 XU_Rct3PhFlt;
 	TYPE_CLARKE	clarke;
 	TYPE_PARK	park;
-	TYPE_DOSGPLL_IF	dosgpll;
+	TYPE_DOSGPLL	dosgpll;
 	TYPE_RAMP rampId;
 	TYPE_RAMP rampIq;
 	TYPE_LPFILTER	LpFilterId;
@@ -503,7 +504,7 @@ typedef struct UFCTRL_IF
 	0.0,\
 	CLARKE_DEFAULTS,/**/\
 	PARK_DEFAULTS,\
-	DOSGPLL_IF_DEFAULTS,\
+	DOSGPLL_DEFAULTS,\
 	RAMP_DEFAULTS,\
 	RAMP_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
@@ -539,6 +540,64 @@ extern void UFCTRLDoubleLoop(TYPE_UFCTRL_IF *interface);
 #endif
 
 
+typedef struct{
+	float32 phase;//input
+	float32 alpha;//output
+	float32 beta;
+	float32	Ts;//param
+	float32	w0;
+	float32 K;
+	float32	Ki;
+	float32 oldPhase1;//state
+	float32 oldPhase2;
+	float32 oldAlpha1;
+	float32 oldAlpha2;
+	float32 oldBeta1;
+	float32 oldBeta2;
+	float32 a;//local
+	float32 b;
+	float32 w;
+	float32 peak;
+	float32 ErrF;
+	float32 ComW;
+}TYPE_SOGIOSGMA_IF;
+
+#define SOGIOSGMA_IF_DEFAULTS {\
+	0.0,\
+	0.0,\
+	0.0,\
+	1.0/1450.0/2.0,\
+	100*3.1415926,\
+	1.4142135,\
+	10000,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	100*3.1415926,\
+	0.0,\
+	0.0,\
+	0.0,\
+	}
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void SOGIOSGMA(TYPE_SOGIOSGMA_IF *interface);
+extern void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *interface);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
 typedef struct
 {
 	float32	XU_DcLk;//input
@@ -555,8 +614,42 @@ typedef struct
 	float32	M;//
 	float32	Theta;//state
 	TYPE_SVGEN Svgen;
+	TYPE_DOSGPLL dosgpll;
+	TYPE_SOGIOSGMA_IF sogiosg;
+	TYPE_CLARKE	clarke;
+	TYPE_PARK park;
+	TYPE_LPFILTER	LpFilterU3PhPek;
 
-	float32	WU_3PhDsp;
+	float32	XX_UPeakCom;
+	float32 XX_AngleCom;
+
+	float32	XU_3PhAl;
+	float32	XU_3PhBe;
+	float32	XU_3PhPek;/*3-phase output load voltage, phase-phase, peak value*/
+	float32 XU_3PhRe;/*3-phase output load voltage, phase-phase, real part*/
+	float32 XU_3PhIm;/*3-phase output load voltage, phase-phase, imaginary part*/
+	float32 XU_3PhRms;/*3-phase output load voltage, phase-phase, RMS value*/
+	float32	XI_PhPek;/*Phase current, peak value*/
+	float32	XI_PhAct;/*Active phase current*/
+	float32	XI_PhRct;/*Reactive phase current*/
+	float32 XI_Ph1Rms;/*Phase current 1, RMS value*/
+	float32 XI_Ph2Rms;/*Phase current 2, RMS value*/
+	float32 XI_Ph3Rms;/*Phase current 3, RMS value*/
+	float32 XI_PhReFix;/*Phase current, real part of fix projection*/
+	float32 XI_PhImFix;/*Phase current, imaginary part of fix projection*/
+
+	float32 XT_U3Ph;/*Period time of measured 3-phase output load voltage*/
+
+	float32 XP_3Ph;/*3-phase output power*/
+	float32 XQ_3Ph;/*3-phase output reactive power*/
+
+	float32 XP_Ovp;/*OVP power*/
+	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
+//	float32 WU_IPhClTrs;/*3-phase output load voltage reference manipulation,transient phase current control*/
+//	float32 WU_IBtCgCl;/*3-Phase output load voltage manipulation from battery charger current control*/
+//	float32 WU_OvMd;/*3-phase output load voltage manipulation due to over modulation*/
+//	float32 WU_IPhClRms;/*3-phase output load voltage manipulation,RMS phase current limitation*/
+//	float32 WU_Flt;/*Filtered voltage reference*/
 
 	/*F3PhRef*/
 	float32 WF_3PhDsp;
@@ -580,7 +673,18 @@ typedef struct
 
 	/*U3PhCl*/
 	Uint16	L_En3PhCl;
+	Uint16	L_EnU3PhOpLoCl;
+	Uint16	B_EnU3PhCl;
+	float32	WU_3PhClIn;
 	float32	WU_3PhCl;
+	float32	WU_3PhDsp;
+	float32	PX_KpU3PhCl;
+	float32	PT_U3PhCl;
+	float32	PU_3PhClMax;
+	float32	PU_3PhClMin;
+	float32	PU_3PhClRefMax;
+	float32	PU_3PhClRefMin;
+	TYPE_PI_CONTROLLER U3PhCl;
 
 	/*TFrefRmp*/
 	float32 PX_FRefRmpUp;
@@ -602,8 +706,8 @@ typedef struct
 	float32	PF_3PhMin;
 
 	/*UF3PhCmp*/
-	float32	XI_PhAct;//local
-	float32	XI_PhRct;
+//	float32	XI_PhAct;//local
+//	float32	XI_PhRct;
 	Uint16	A_CvOp;
 	Uint16	L_EnUF3PhCmp;
 	float32	PI_UF3PhCmpActHiLo;//param
@@ -636,6 +740,10 @@ typedef struct
 	0.5,\
 	0,\
 	1.0/2900.0,/**/\
+	0.0,\
+	0.0,\
+	SVGEN_DEFAULTS,\
+	DOSGPLL_DEFAULTS,\
 }
 
 
@@ -646,6 +754,8 @@ extern "C" {
 extern void UFCOMAInit(TYPE_UFCOMA *data);
 extern void UFCOMAStep(TYPE_UFCOMA *data);
 extern void UFCOMATerm(TYPE_UFCOMA *data);
+
+extern void DspStep(TYPE_UFCOMA *data);
 
 void F3PhRef(TYPE_UFCOMA *data);
 void U3PhRef(TYPE_UFCOMA *data);
@@ -669,6 +779,17 @@ void IPhClPsTrs(TYPE_UFCOMA *data);
 #endif
 
 
+
+//#ifdef __cplusplus
+//extern "C" {
+//#endif /* extern "C" */
+//
+//void LimitMaxMin(float32 );
+//
+//
+//#ifdef __cplusplus
+//}
+//#endif
 
 
 
