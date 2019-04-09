@@ -1205,27 +1205,41 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 
 void UFCOMAStep(TYPE_UFCOMA *data)
 {
-	/**/
-	TFrefRmp(data);
-	/**/
-	FrefUDcLk(data);
-	/**/
-	FrefRmp(data);
-	/**/
-	UF3PhCmp(data);
-	/**/
-	F3PhSz(data);
-	/**/
-	IPhClGenOvLd(data);
-	/**/
-	F3PhRef(data);
-	/**/
-	U3PhRef(data);
-	U3PhCl(data);
+//	/**/
+//	TFrefRmp(data);
+//	/**/
+//	FrefUDcLk(data);
+//	/**/
+//	FrefRmp(data);
+//	/**/
+//	UF3PhCmp(data);
+//	/**/
+//	F3PhSz(data);
+//	/**/
+//	IPhClGenOvLd(data);
+//	/**/
+//	F3PhRef(data);
+//	/**/
+//	U3PhRef(data);
+//	U3PhCl(data);
+//
+//	if(data->L_En3PhCl)
+//	{
+//		data->WU_3PhDsp = data->WU_3PhCl;
+//	}
 
-	if(data->L_En3PhCl)
+	data->WF_3PhDsp = 50.0;
+	if(data->WU_3PhDsp<50.0)
 	{
-		data->WU_3PhDsp = data->WU_3PhCl;
+		data->WU_3PhDsp += 0.1;
+		if(data->WU_3PhDsp>50.0)
+			data->WU_3PhDsp = 50.0;
+	}
+	if(data->WU_3PhDsp>50.0)
+	{
+		data->WU_3PhDsp -= 0.1;
+		if(data->WU_3PhDsp<50.0)
+			data->WU_3PhDsp = 50.0;
 	}
 }
 
@@ -1239,17 +1253,28 @@ void DspStep(TYPE_UFCOMA *data)
 	/**/
 	data->M = data->WU_3PhDsp/data->XU_DcLk*SQRT3;
 
-	data->Svgen.Ualpha = data->M*sin(data->Theta);
-	data->Svgen.Ubeta = data->M*cos(data->Theta);
-	SVGEN(&data->Svgen);
+	data->svgen.Ualpha = data->M*cos(data->Theta);
+	data->svgen.Ubeta = data->M*sin(data->Theta);
+	SVGEN(&data->svgen);
 
-	data->XX_DutyA = data->Svgen.Ta;
-	data->XX_DutyB = data->Svgen.Tb;
-	data->XX_DutyC = data->Svgen.Tc;
+//	data->XX_DutyA = data->svgen.Ta;
+//	data->XX_DutyB = data->svgen.Tb;
+//	data->XX_DutyC = data->svgen.Tc;
+
+	//---------------------
+	data->minPwLim.Ta_in = data->svgen.Ta ;
+	data->minPwLim.Tb_in = data->svgen.Tb ;
+	data->minPwLim.Tc_in = data->svgen.Tc ;
+	data->minPwLim.Tmin = MINPW/TSC; //5us
+	MINPWLIM(&data->minPwLim);
+
+	//-------------------------
+	data->XX_DutyA = data->minPwLim.Ta_out;
+	data->XX_DutyB = data->minPwLim.Tb_out;
+	data->XX_DutyC = data->minPwLim.Tc_out;
 
 	/**/
 	data->XU_3PhPek = sqrt(data->XU_3PhAl*data->XU_3PhAl + data->XU_3PhBe*data->XU_3PhBe);
-
 	data->LpFilterU3PhPek.XX_In = data->XU_3PhPek;
 	data->LpFilterU3PhPek.XX_T = 1.0/10.0;
 	data->LpFilterU3PhPek.XX_Ts = 1.0/2900.0;

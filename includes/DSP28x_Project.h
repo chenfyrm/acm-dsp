@@ -22,7 +22,7 @@
 #include "math.h"
 #include "C28X_FPU.h"
 #include "C28x_FPU_FastRTS.h"
-#include "ufctrl.h"
+#include "ufctrl_new.h"
 
 #endif  // end of DSP28x_PROJECT_H definition
 

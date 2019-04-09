@@ -5,8 +5,8 @@
  *      Author: 700363
  */
 
-#ifndef UFCTRL_H_
-#define UFCTRL_H_
+#ifndef UFCTRL_NEW_H_
+#define UFCTRL_NEW_H_
 
 /**/
 //#define	 TWObyTHREE	  0.66666666666667       /* 2/3 */
@@ -223,164 +223,6 @@ extern void LPFILTER(TYPE_LPFILTER *interface);
 }
 #endif
 
-/*
- * RAMP
- * */
-typedef struct RAMP
-{
-	float32	XX_In;
-	float32 XX_Out;
-	float32	XX_Step;
-}TYPE_RAMP;
-
-#define RAMP_DEFAULTS {\
-	0.0,\
-	0.0,\
-	0.1,\
-	}
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* extern "C" */
-
-extern void RAMP(TYPE_RAMP *interface);
-
-#ifdef __cplusplus
-}
-#endif
-
-/**/
-typedef struct{
-	float32 phase;//input
-	float32	theta;//output
-	float32	Upeak;
-	float32	w;
-	float32	Ts;//param
-	float32	w0;
-	float32 K;
-	float32 T_dFlt;
-	float32 oldPhase1;//state
-	float32 oldPhase2;
-	float32 oldAlpha1;
-	float32 oldAlpha2;
-	float32 alpha;//local
-	float32 beta;
-	float32 dFlt;
-	float32 a;
-	float32 b;
-	TYPE_PARK	park;
-	TYPE_PI_CONTROLLER	aqr;
-}TYPE_DOSGPLL;
-
-#define DOSGPLL_DEFAULTS {\
-	0.0,\
-	0.0,\
-	1.0,\
-	1.0,\
-	1.0/1450.0/2.0,\
-	100*3.1415926,\
-	1.4142135,\
-	0.003,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	PARK_DEFAULTS,\
-	PI_CONTROLLER_DEFAULTS,\
-	}
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* extern "C" */
-
-extern void DOSGPLL(TYPE_DOSGPLL *interface);
-extern void DOSGPLL_1(TYPE_DOSGPLL *interface);
-
-#ifdef __cplusplus
-}
-#endif
-
-/**/
-typedef struct
-{
-	float32	phase;//
-	float32	alpha;//
-	float32	w;//
-	float32	k;
-	float32	Tsc;
-	float32	oldPhase1;//
-	float32	oldPhase2;
-	float32	oldAlpha1;
-	float32	oldAlpha2;
-	float32	a;//
-	float32	b;
-}TYPE_BPFILTER;
-
-#define	BPFILTER_DEFAULTS	{\
-	0,\
-	0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-}
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* extern "C" */
-
-extern void BPFILTER(TYPE_BPFILTER *data);
-
-#ifdef __cplusplus
-}
-#endif
-
-/*死区补偿*/
-typedef struct
-{
-	float32	Ia;//input
-	float32	Ib;
-	float32 Ic;
-	Uint16	mode;
-	float32	TaCom;//output
-	float32	TbCom;
-	float32	TcCom;
-	float32	dt;//param
-}TYPE_DEADTIMECOM;
-
-#define	DEADTIMECOM_DEFAULTS	{\
-	0,\
-	0,\
-	0,\
-	0,\
-	0,\
-	0,\
-	0,\
-	0.0,\
-	}
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* extern "C" */
-
-extern void DEADTIMECOM(TYPE_DEADTIMECOM *data);
-extern void DEADTIMECOM_1(TYPE_DEADTIMECOM *data);
-
-#ifdef __cplusplus
-}
-#endif
-
 /**/
 typedef struct
 {
@@ -413,133 +255,6 @@ extern void MINPWLIM(TYPE_MINPWLIM *data);
 }
 #endif
 
-/*
- *
- * */
-
-typedef struct UFCTRL_IF
-{
-	float32 WU_3PhDsp;//input
-	float32	WF_3PhDsp;
-	float32	XI_PhA;
-	float32 XI_PhB;
-	float32 XI_PhC;
-	float32	XU_DcLk;
-	float32 XI_DcLk;
-	float32	XU_PhABLk;
-	Uint16	XX_Mode;//output 0(0x000000):计数器值小于比较器值为高    21(0x010101):计数器值大于比较器值为高
-	float32	XX_DutyA;
-	float32 XX_DutyB;
-	float32	XX_DutyC;
-	float32 XX_Ts;//parameter
-	float32 XX_UPeakCom;//幅值补偿系数
-	float32 XX_AngleCom;//相位补偿系数
-	float32 XU_3PhPek;//local
-	float32	XF_3Ph;
-	float32 XX_Theta;
-	float32 XX_M;
-	float32 XI_Act3Ph;
-	float32 XI_Rct3Ph;
-	float32 XI_Act3PhFlt;
-	float32 XI_Rct3PhFlt;
-	float32 XU_PhAl;
-	float32 XU_PhBe;
-	float32 XU_Act3Ph;
-	float32 XU_Rct3Ph;
-	float32 XU_Act3PhFlt;
-	float32 XU_Rct3PhFlt;
-	TYPE_CLARKE	clarke;
-	TYPE_PARK	park;
-	TYPE_DOSGPLL	dosgpll;
-	TYPE_RAMP rampId;
-	TYPE_RAMP rampIq;
-	TYPE_LPFILTER	LpFilterId;
-	TYPE_LPFILTER	LpFilterIq;
-	TYPE_LPFILTER	LpFilterUd;
-	TYPE_LPFILTER	LpFilterUq;
-	TYPE_PI_CONTROLLER	acrd;
-	TYPE_PI_CONTROLLER	acrq;
-	TYPE_PI_CONTROLLER	aurd;
-	TYPE_PI_CONTROLLER	aurq;
-	TYPE_IPARK	ipark;
-	TYPE_SVGEN	svgen;
-	TYPE_BPFILTER		BpFilterIa;
-	TYPE_BPFILTER		BpFilterIb;
-	TYPE_BPFILTER		BpFilterIc;
-	TYPE_DEADTIMECOM	dtCom;
-	TYPE_MINPWLIM		minPwLim;
-	float32	RefId;
-	float32	RefIq;
-}TYPE_UFCTRL_IF;
-
-#define UFCTRL_IF_DEFAULTS {\
-	0.0,	/**/			\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0,/**/\
-	0.5,\
-	0.5,\
-	0.5,\
-	1.0/1450.0/2.0,/**/\
-	1.0,\
-	-3.1415926/2,\
-	0.0,/**/\
-	5.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	0.0,\
-	CLARKE_DEFAULTS,/**/\
-	PARK_DEFAULTS,\
-	DOSGPLL_DEFAULTS,\
-	RAMP_DEFAULTS,\
-	RAMP_DEFAULTS,\
-	LPFILTER_DEFAULTS,\
-	LPFILTER_DEFAULTS,\
-	LPFILTER_DEFAULTS,\
-	LPFILTER_DEFAULTS,\
-	PI_CONTROLLER_DEFAULTS,\
-	PI_CONTROLLER_DEFAULTS,\
-	PI_CONTROLLER_DEFAULTS,\
-	PI_CONTROLLER_DEFAULTS,\
-	IPARK_DEFAULTS,\
-	SVGEN_DEFAULTS,\
-	BPFILTER_DEFAULTS,\
-	BPFILTER_DEFAULTS,\
-	BPFILTER_DEFAULTS,\
-	DEADTIMECOM_DEFAULTS,\
-	MINPWLIM_DEFAULTS,\
-	0.0,\
-	0.0,\
-	}
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* extern "C" */
-
-extern void UFCTRLINIT(TYPE_UFCTRL_IF *data);
-extern void UFCTRLOpenLoop(TYPE_UFCTRL_IF *interface);
-extern void UFCTRLSingleLoop(TYPE_UFCTRL_IF *interface);
-extern void UFCTRLDoubleLoop(TYPE_UFCTRL_IF *interface);
-
-#ifdef __cplusplus
-}
-#endif
-
-
 typedef struct{
 	float32 phase;//input
 	float32 alpha;//output
@@ -560,9 +275,9 @@ typedef struct{
 	float32 peak;
 	float32 ErrF;
 	float32 ComW;
-}TYPE_SOGIOSGMA_IF;
+}TYPE_SOGIOSGMA;
 
-#define SOGIOSGMA_IF_DEFAULTS {\
+#define SOGIOSGMA_DEFAULTS {\
 	0.0,\
 	0.0,\
 	0.0,\
@@ -589,8 +304,8 @@ typedef struct{
 extern "C" {
 #endif /* extern "C" */
 
-extern void SOGIOSGMA(TYPE_SOGIOSGMA_IF *interface);
-extern void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *interface);
+extern void SOGIOSGMA(TYPE_SOGIOSGMA *interface);
+extern void SOGIOSGFLL(TYPE_SOGIOSGMA *interface);
 
 #ifdef __cplusplus
 }
@@ -610,14 +325,13 @@ typedef struct
 	float32	XX_DutyB;
 	float32	XX_DutyC;
 	Uint16	XX_Mode;
-	float32	Tsc;//param
-	float32	M;//
-	float32	Theta;//state
+	float32	PT_Tsc;//param
+	float32	XX_M;//
+	float32	XX_Theta;//state
 
 	TYPE_SVGEN svgen;
 	TYPE_MINPWLIM minPwLim;
-//	TYPE_DOSGPLL dosgpll;
-	TYPE_SOGIOSGMA_IF sogiosg;
+	TYPE_SOGIOSGMA sogiosg;
 	TYPE_CLARKE	clarke;
 	TYPE_PARK park;
 	TYPE_LPFILTER	LpFilterU3PhPek;
@@ -655,7 +369,7 @@ typedef struct
 //	float32 WU_Flt;/*Filtered voltage reference*/
 
 	/*F3PhRef*/
-	float32 WF_3PhDsp;
+	float32 WF_3PhDsp;/**/
 	float32	WF_3PhU3PhRef;
 
 	/*U3PhRef*/
@@ -675,12 +389,12 @@ typedef struct
 	float32	PX_U3PhRefRmp2;
 
 	/*U3PhCl*/
+	float32	WU_3PhDsp;/**/
 	Uint16	L_En3PhCl;
 	Uint16	L_EnU3PhOpLoCl;
 	Uint16	B_EnU3PhCl;
 	float32	WU_3PhClIn;
 	float32	WU_3PhCl;
-	float32	WU_3PhDsp;
 	float32	PX_KpU3PhCl;
 	float32	PT_U3PhCl;
 	float32	PU_3PhClMax;
@@ -747,11 +461,22 @@ typedef struct
 	0.0,\
 	SVGEN_DEFAULTS,\
 	MINPWLIM_DEFAULTS,\
-	SOGIOSGMA_IF_DEFAULTS,\
+	SOGIOSGMA_DEFAULTS,\
 	CLARKE_DEFAULTS,\
 	PARK_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
+	0,0,\
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
+	0,0,0,0,0,0,0,0,0,0,0,0,\
+	0,0,0,0,0,0,0,\
+	0,\
+	0,0,0,0,0,\
+	0,0,0,0,0,0,0,0,\
+	0,\
+	0,\
+	0,\
 	}
 
 
@@ -785,21 +510,5 @@ void IPhClPsTrs(TYPE_UFCOMA *data);
 #ifdef __cplusplus
 }
 #endif
-
-
-
-//#ifdef __cplusplus
-//extern "C" {
-//#endif /* extern "C" */
-//
-//void LimitMaxMin(float32 );
-//
-//
-//#ifdef __cplusplus
-//}
-//#endif
-
-
-
 
 #endif /* UFCTRL_H_ */
