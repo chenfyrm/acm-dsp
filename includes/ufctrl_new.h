@@ -336,6 +336,8 @@ typedef struct
 	TYPE_PARK park;
 	TYPE_LPFILTER	LpFilterU3PhPek;
 	TYPE_PI_CONTROLLER U3PhCl;
+	TYPE_PI_CONTROLLER F3PhSz;
+	TYPE_PI_CONTROLLER U3PhSz;
 
 	float32	XX_UPeakCom;
 	float32 XX_AngleCom;
@@ -401,6 +403,7 @@ typedef struct
 	float32	PU_3PhClMin;
 	float32	PU_3PhClRefMax;
 	float32	PU_3PhClRefMin;
+	float32	PX_TrfRtPr3Ph;
 
 
 	/*TFrefRmp*/
@@ -421,6 +424,7 @@ typedef struct
 	float32	XX_FRefRmpDo;
 	float32	PF_3PhNom;
 	float32	PF_3PhMin;
+	Uint16	A_FNom;
 
 	/*UF3PhCmp*/
 //	float32	XI_PhAct;//local
@@ -436,9 +440,18 @@ typedef struct
 
 	/*F3PhSz*/
 	float32	WF_UF3PhSz;
+	float32	PX_KpF3PhSzCl;
+	float32 PT_F3PhSzCl;
+	float32	PF_UF3PhSzClMaxMin;
+	float32	PF_UF3PhSzRdy;
+	float32	PT_UF3PhSzRmp;
+	Uint16	C_AuSz;
 
 	/*U3PhSz*/
 	float32	WU_UF3PhSz;
+	float32	PU_UF3PhSzClAdd;
+	float32	PU_UF3PhSzClMaxMin;
+	float32	PU_UF3PhSzRdy;
 
 	/**/
 	float32	WF_IPhCl;
@@ -466,16 +479,18 @@ typedef struct
 	PARK_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
+	PI_CONTROLLER_DEFAULTS,\
+	PI_CONTROLLER_DEFAULTS,\
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
 	0,0,\
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
-	0,0,0,0,0,0,0,0,0,0,0,0,\
+	0,0,0,0,0,0,0,0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,\
 	0,\
-	0,0,0,0,0,\
+	0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,0,\
-	0,\
-	0,\
+	0,0,0,0,0,0,0,\
+	0,0,0,0,\
 	0,\
 	}
 

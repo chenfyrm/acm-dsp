@@ -264,13 +264,11 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	sogiosg.phase = PX_In_Spf.XU_PhABGt;
 	SOGIOSGFLL(&sogiosg);
 
-	acmctrl.XX_UPeakCom = 1.0;
+	acmctrl.XX_UPeakCom = 1.03;
 	acmctrl.XX_AngleCom = PI/2.0;
 
 	acmctrl.XU_3PhAl = (sogiosg.alpha*cos(acmctrl.XX_AngleCom) - sogiosg.beta*sin(acmctrl.XX_AngleCom))*acmctrl.XX_UPeakCom;
 	acmctrl.XU_3PhBe = (sogiosg.alpha*sin(acmctrl.XX_AngleCom) + sogiosg.beta*cos(acmctrl.XX_AngleCom))*acmctrl.XX_UPeakCom;
-
-	acmctrl.XU_3PhPek = sogiosg.peak;
 
 	NX_Pr();
 
@@ -294,7 +292,15 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 		}
 
 
-		acmctrl.B_EnU3PhCl = FALSE;
+//		acmctrl.B_EnU3PhCl = FALSE;
+		acmctrl.B_EnU3PhCl = TRUE;
+		acmctrl.A_CvOp = TRUE;
+		acmctrl.C_AuSz = FALSE;
+	// if(acmctrl.A_FNom)
+	// {
+	//     acmctrl.C_AuSz = TRUE;
+	// }
+
 		UFCOMAStep(&acmctrl);
 		DspStep(&acmctrl);
 
@@ -379,8 +385,8 @@ void DPRAM_WR(void)//DSP-->MCU
 //	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
 //	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
 	/**/
-	*(XintfZone7 + 0x24) = acmctrl.WF_3PhDsp*10.0;
-	*(XintfZone7 + 0x25) = acmctrl.WU_3PhDsp*10.0;
+	*(XintfZone7 + 0x24) = acmctrl.WF_3PhDsp*100.0;
+	*(XintfZone7 + 0x25) = acmctrl.U3PhCl.Ref*100.0;
 	*(XintfZone7 + 0x27) = acmctrl.XU_3PhRe*10.0;
 	*(XintfZone7 + 0x28) = acmctrl.XU_3PhIm*10.0;
 	*(XintfZone7 + 0x29) = acmctrl.XU_3PhPek*10.0;
