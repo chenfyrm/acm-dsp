@@ -13,7 +13,7 @@
 #define ONEbySQRT3		0.57735026918963    /* 1/sqrt(3) */
 #define SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
 #define SQRT3   		1.73205080756888    /* sqrt(3)/2 */
-#define	SQRT2			1.414
+#define	SQRT2			1.41421356237310
 #define	PI  		  	3.14159265358979
 #define	PI2  		  	6.28318530717959
 #define FALSE			0
@@ -348,6 +348,8 @@ typedef struct
 	float32 XU_3PhRe;/*3-phase output load voltage, phase-phase, real part*/
 	float32 XU_3PhIm;/*3-phase output load voltage, phase-phase, imaginary part*/
 	float32 XU_3PhRms;/*3-phase output load voltage, phase-phase, RMS value*/
+	float32 XT_U3Ph;/*Period time of measured 3-phase output load voltage*/
+
 	float32	XI_PhPek;/*Phase current, peak value*/
 	float32	XI_PhAct;/*Active phase current*/
 	float32	XI_PhRct;/*Reactive phase current*/
@@ -356,8 +358,6 @@ typedef struct
 	float32 XI_Ph3Rms;/*Phase current 3, RMS value*/
 	float32 XI_PhReFix;/*Phase current, real part of fix projection*/
 	float32 XI_PhImFix;/*Phase current, imaginary part of fix projection*/
-
-	float32 XT_U3Ph;/*Period time of measured 3-phase output load voltage*/
 
 	float32 XP_3Ph;/*3-phase output power*/
 	float32 XQ_3Ph;/*3-phase output reactive power*/
@@ -446,15 +446,21 @@ typedef struct
 	float32	PF_UF3PhSzRdy;
 	float32	PT_UF3PhSzRmp;
 	Uint16	C_AuSz;
+	float32	PD_TrfSfPr3Ph;//变压器原边相电压与副边线电压相移
 
 	/*U3PhSz*/
 	float32	WU_UF3PhSz;
+	float32	WU_UF3PhSzErr;
 	float32	PU_UF3PhSzClAdd;
 	float32	PU_UF3PhSzClMaxMin;
 	float32	PU_UF3PhSzRdy;
 
 	/**/
 	float32	WF_IPhCl;
+
+	/**/
+	Uint16	C_CdAuLdCt;
+	Uint16	A_CdAuLdCt;
 
 }TYPE_UFCOMA;
 
@@ -481,7 +487,11 @@ typedef struct
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
+	0,0,\
+	0,0,0,0,0,0,0,\
+	0,0,0,0,0,0,0,0,\
+	0,0,\
+	0,0,\
 	0,0,\
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,0,0,0,0,0,0,\
@@ -489,9 +499,10 @@ typedef struct
 	0,\
 	0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,0,\
-	0,0,0,0,0,0,0,\
-	0,0,0,0,\
+	0,0,0,0,0,0,0,0,\
+	0,0,0,0,0,\
 	0,\
+	0,0,\
 	}
 
 

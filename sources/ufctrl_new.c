@@ -40,13 +40,13 @@ void UFCOMAStep(TYPE_UFCOMA *data)
 	/**/
 	F3PhSz(data);
 	/**/
-//	IPhClGenOvLd(data);
+	U3PhSz(data);
+	/**/
+	IPhClGenOvLd(data);
 	/**/
 	F3PhRef(data);
 	/**/
 	U3PhRef(data);
-	/**/
-	U3PhSz(data);
 	/**/
 	U3PhCl(data);
 
@@ -76,8 +76,8 @@ void DspStep(TYPE_UFCOMA *data)
 	/**/
 	data->XX_M = data->WU_3PhDsp/data->XU_DcLk*SQRT3;
 
-	data->svgen.Ualpha = data->XX_M*cos(data->XX_Theta + PI2*data->WF_3PhDsp*data->PT_Tsc);
-	data->svgen.Ubeta = data->XX_M*sin(data->XX_Theta + PI2*data->WF_3PhDsp*data->PT_Tsc);
+	data->svgen.Ualpha = data->XX_M*cos(data->XX_Theta + PI2*data->WF_3PhDsp*data->PT_Tsc*1.5);
+	data->svgen.Ubeta = data->XX_M*sin(data->XX_Theta + PI2*data->WF_3PhDsp*data->PT_Tsc*1.5);
 	SVGEN(&data->svgen);
 
 //	data->XX_DutyA = data->svgen.Ta;
@@ -106,8 +106,8 @@ void DspStep(TYPE_UFCOMA *data)
 
 	data->park.Alpha = data->XU_3PhAl;
 	data->park.Beta = data->XU_3PhBe;
-	data->park.Sine = sin(data->XX_Theta);
-	data->park.Cosine = cos(data->XX_Theta);
+	data->park.Sine = sin(data->XX_Theta + data->PD_TrfSfPr3Ph);
+	data->park.Cosine = cos(data->XX_Theta + data->PD_TrfSfPr3Ph);
 	PARK(&data->park);
 	data->XU_3PhRe = data->park.Ds;
 	data->XU_3PhIm = data->park.Qs;
@@ -179,8 +179,6 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->U3PhCl.Umax = data->PU_3PhClMax;
 	data->U3PhCl.Umin = data->PU_3PhClMin;
 
-
-
 	/*TFrefRmp*/
 	data->PX_FRefRmpUp = 40.0;
 	data->PX_FRefRmpUpSlaveAcm = 100.0;
@@ -215,6 +213,8 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->F3PhSz.Ki = 1000.0/data->PT_F3PhSzCl*data->PT_Tsc;
 	data->F3PhSz.Umax = data->PF_UF3PhSzClMaxMin/(16.0*2.9);
 	data->F3PhSz.Umin = -data->PF_UF3PhSzClMaxMin/(16.0*2.9);
+	data->PD_TrfSfPr3Ph = PI/3.0 - PI/29.0;
+//	data->PD_TrfSfPr3Ph = 0.0;
 
 	/*U3PhSz*/
 	data->PU_UF3PhSzClAdd = 0.0;
@@ -227,11 +227,6 @@ void UFCOMATerm(TYPE_UFCOMA *data)
 {
 
 }
-
-
-
-
-
 
 void F3PhRef(TYPE_UFCOMA *data)
 {
@@ -316,7 +311,6 @@ void FrefRmp(TYPE_UFCOMA *data)
 		data->A_FNom = TRUE;
 	else
 		data->A_FNom = FALSE;
-
 }
 
 void UF3PhCmp(TYPE_UFCOMA *data)
@@ -362,6 +356,7 @@ void U3PhSz(TYPE_UFCOMA *data)
 	if(data->C_AuSz)
 	{
 		float32 temp = data->XU_3PhPek/SQRT3*data->PX_TrfRtPr3Ph - data->WU_3PhDsp;
+
 		if(data->WU_UF3PhSz < temp )
 		{
 			data->WU_UF3PhSz += 1.0;
@@ -374,6 +369,8 @@ void U3PhSz(TYPE_UFCOMA *data)
 			if(data->WU_UF3PhSz < temp)
 				data->WU_UF3PhSz = temp;
 		}
+		data->WU_UF3PhSz += data->PU_UF3PhSzClAdd;
+		data->WU_UF3PhSzErr = -temp;
 	}
 	else
 	{
