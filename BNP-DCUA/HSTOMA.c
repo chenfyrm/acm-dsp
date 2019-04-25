@@ -10,8 +10,8 @@ XX_IPhClTrsKpActDsp;
 XX_IPhClTrsKpRctDsp;
 XX_IPhClTrsKpAbsDsp;/**/
 WI_BtCgLim;/*Battery charger current limit*/
-WU_3PhReDsp;/*Voltage reference from PCT,real part,to the DSP*/
-WU_3PhImDsp;/*Voltage reference from PCT,imaginary part,to the DSP*/
+//WU_3PhReDsp;/*Voltage reference from PCT,real part,to the DSP*/
+//WU_3PhImDsp;/*Voltage reference from PCT,imaginary part,to the DSP*/
 WI_PctParSelTrp;/*Phase overcurrent trip level in PCT*/
 XX_DdCmpFa;/*Dead time compensation factor*/
 
@@ -40,6 +40,7 @@ Z_Fpga203;
 //62-64
 Z_Fpga205;
 Z_Fpga206;
+
 WU_BtDsp; /*Battery voltage reference to DSP for BtCp control*/
 
 

@@ -335,6 +335,7 @@ typedef struct
 	TYPE_CLARKE	clarke;
 	TYPE_PARK park;
 	TYPE_LPFILTER	LpFilterU3PhPek;
+	TYPE_LPFILTER	LpFilterU3PhIm;
 	TYPE_PI_CONTROLLER U3PhCl;
 	TYPE_PI_CONTROLLER F3PhSz;
 	TYPE_PI_CONTROLLER U3PhSz;
@@ -462,6 +463,9 @@ typedef struct
 	Uint16	C_CdAuLdCt;
 	Uint16	A_CdAuLdCt;
 
+	/**/
+	Uint16	S_PaOp;
+
 }TYPE_UFCOMA;
 
 #define UFCOMA_DEFAULTS	{\
@@ -475,7 +479,7 @@ typedef struct
 	0.5,\
 	0.5,\
 	0,\
-	1.0/2900.0,/**/\
+	1.0/2700.0,/**/\
 	0.0,\
 	0.0,\
 	SVGEN_DEFAULTS,\
@@ -483,6 +487,7 @@ typedef struct
 	SOGIOSGMA_DEFAULTS,\
 	CLARKE_DEFAULTS,\
 	PARK_DEFAULTS,\
+	LPFILTER_DEFAULTS,\
 	LPFILTER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
@@ -503,6 +508,7 @@ typedef struct
 	0,0,0,0,0,\
 	0,\
 	0,0,\
+	0,\
 	}
 
 
@@ -536,5 +542,7 @@ void IPhClPsTrs(TYPE_UFCOMA *data);
 #ifdef __cplusplus
 }
 #endif
+
+
 
 #endif /* UFCTRL_H_ */

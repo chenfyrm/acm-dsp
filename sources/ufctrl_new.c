@@ -11,9 +11,9 @@
 //#define KP 0.3
 //#define KI 40
 
-#define TSC  		(1.0/1450.0/2.0)
+#define TSC  		(1.0/1350.0/2.0)
 #define DEADTIME	(0.0*0.000001)
-#define	MINPW		(10.0*0.000001)
+#define	MINPW		(16.0*0.000001)
 
 //#define KP 2.167
 //#define KI 243
@@ -100,7 +100,7 @@ void DspStep(TYPE_UFCOMA *data)
 	data->XU_3PhPek = sqrt(data->XU_3PhAl*data->XU_3PhAl + data->XU_3PhBe*data->XU_3PhBe);
 	data->LpFilterU3PhPek.XX_In = data->XU_3PhPek;
 	data->LpFilterU3PhPek.XX_T = 1.0/10.0;
-	data->LpFilterU3PhPek.XX_Ts = 1.0/2900.0;
+	data->LpFilterU3PhPek.XX_Ts = data->PT_Tsc;
 	LPFILTER(&data->LpFilterU3PhPek);
 	data->XU_3PhPek = data->LpFilterU3PhPek.XX_Out;
 
@@ -111,6 +111,12 @@ void DspStep(TYPE_UFCOMA *data)
 	PARK(&data->park);
 	data->XU_3PhRe = data->park.Ds;
 	data->XU_3PhIm = data->park.Qs;
+
+	data->LpFilterU3PhIm.XX_In = data->XU_3PhIm;
+	data->LpFilterU3PhIm.XX_T = 1.0/10.0;
+	data->LpFilterU3PhIm.XX_Ts = data->PT_Tsc;
+	LPFILTER(&data->LpFilterU3PhIm);
+	data->XU_3PhIm = data->LpFilterU3PhIm.XX_Out;
 
 	data->clarke.As = data->XI_PhA;
 	data->clarke.Bs = data->XI_PhB;
@@ -155,8 +161,8 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->PF_U3PhRef3 = 50.0;
 	data->PU_U3PhRef1 = 0.0; //0Hz
 	data->PU_U3PhRef2 = 0.0;
-	data->PU_U3PhRef3 = 30.0;
-	data->PU_U3PhRef4 = 30.0;//100Hz
+	data->PU_U3PhRef3 = 150.0;
+	data->PU_U3PhRef4 = 150.0;//100Hz
 	data->L_ExtU3PhRef = FALSE;
 	data->PX_ExtU3PhRefRmp = 200.0;
 	data->L_EnRmpU3PhRef = FALSE;
@@ -164,7 +170,7 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->PX_U3PhRefRmp2 = 50.0;
 	data->PX_U3PhRefRmpSel = 0.9;
 
-	/*U3PhCl*/
+	/*U3PhCl 4ms*/
 	data->L_En3PhCl = TRUE;
 	data->L_EnU3PhOpLoCl = FALSE;
 	data->PX_KpU3PhCl = 0.8;
@@ -192,18 +198,18 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->PF_3PhNom = 50.3;
 	data->PF_3PhMin = 3.0;
 
-	/*UF3PhCmp*/
+	/*UF3PhCmp 4ms*/
 	data->L_EnUF3PhCmp = TRUE;
 	data->PI_UF3PhCmpActHiLo = 4000.0;
 	data->PF_UF3PhCmpActHiLo = -10.0;
 	data->PI_UF3PhCmpRctHiLo = 4000.0;
 	data->PU_UF3PhCmpRctHiLo = -100.0;
 
-	/*F3PhSz*/
-//	data->PX_KpF3PhSzCl = 0.5;
-//	data->PT_F3PhSzCl = 800.0;//ms
-	data->PX_KpF3PhSzCl = 2.0;
-	data->PT_F3PhSzCl = 50.0;
+	/*F3PhSz 16ms*/
+	data->PX_KpF3PhSzCl = 0.5;
+	data->PT_F3PhSzCl = 800.0;//ms
+//	data->PX_KpF3PhSzCl = 2.0;
+//	data->PT_F3PhSzCl = 50.0;
 //	data->PX_KpF3PhSzCl = 2.0*100.0*3.1415926;
 //	data->PT_F3PhSzCl = 1000.0/(100.0*3.1415926*100.0*3.1415926);
 	data->PF_UF3PhSzClMaxMin = 50.0;
@@ -213,10 +219,10 @@ void UFCOMAInit(TYPE_UFCOMA *data)
 	data->F3PhSz.Ki = 1000.0/data->PT_F3PhSzCl*data->PT_Tsc;
 	data->F3PhSz.Umax = data->PF_UF3PhSzClMaxMin/(16.0*2.9);
 	data->F3PhSz.Umin = -data->PF_UF3PhSzClMaxMin/(16.0*2.9);
-	data->PD_TrfSfPr3Ph = PI/3.0 - PI/29.0;
+	data->PD_TrfSfPr3Ph = PI/3.0 - PI/27.0;
 //	data->PD_TrfSfPr3Ph = 0.0;
 
-	/*U3PhSz*/
+	/*U3PhSz 16ms*/
 	data->PU_UF3PhSzClAdd = 0.0;
 	data->PU_UF3PhSzClMaxMin = 100.0;
 	data->PU_UF3PhSzRdy = 20.0;
@@ -493,9 +499,9 @@ void LPFILTER(TYPE_LPFILTER *data)
 
 void SOGIOSGMA(TYPE_SOGIOSGMA *data)
 {
-	data->Ts = 1.0/2900.0;
-	data->w = 100*3.1415926;
-	data->K = sqrt(2);
+//	data->Ts = 1.0/2700.0;
+//	data->w = 100*3.1415926;
+//	data->K = sqrt(2);
 
 	/**/
 	data->a = data->Ts*data->w/2.0 + 2.0/data->Ts/data->w;
@@ -522,10 +528,10 @@ void SOGIOSGMA(TYPE_SOGIOSGMA *data)
 
 void SOGIOSGFLL(TYPE_SOGIOSGMA *data)
 {
-	data->Ts = 1.0/2900.0;
-	data->w0 = 100*3.1415926;
-	data->K = sqrt(2);
-	data->Ki = 10000;
+//	data->Ts = 1.0/2700.0;
+//	data->w0 = 100*3.1415926;
+//	data->K = sqrt(2);
+//	data->Ki = 10000;
 
 	/**/
 	data->a = data->Ts*data->w/2.0 + 2.0/data->Ts/data->w;

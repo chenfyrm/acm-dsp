@@ -66,7 +66,7 @@ struct PX_InPr
 	float32  XH_AmTp_Max;         		// ambient temperature, C
 };
 volatile struct PX_InPr PX_InPr_Spf = {
-		600.0,//直流母线电压上限
+		750.0,//直流母线电压上限
 		36.0,//直流母线电压下限
 		0,
 		0,
@@ -106,17 +106,19 @@ union WARN_REG
 //输出交互值
 struct PX_Out
 {
-	Uint16  		XX_PwmMo;			// PWM mode
+	Uint16  		XX_PwmMo;			// PWM mode  0x00  0x15
 	Uint16  		XT_PwmPdVv;   		// PWM period value,  for initialization
 	Uint16  		XX_Pwm1AVv;   		// PWM1A value
 	Uint16  		XX_Pwm2AVv;			// PWM2A value
 	Uint16  		XX_Pwm3AVv;			// PWM3A value
 	Uint16  		XX_Pwm4AVv;			// PWM4A value, chopper
+	Uint16  		XX_Pwm4BVv;			// PWM4B value, chopper
 	float32 		XP_Out;		    	// output power, kw
 	float32 		XX_PhUbl;			// phase unbalance
 	float32 		XI_PhA_Rms;		    // phase A current, RMS
 	float32 		XI_PhB_Rms;	    	// phase B current, RMS
 	float32 		XI_PhC_Rms;		    // phase C current, RMS
+	float32			XU_PhAB_Rms;
 	union WARN_REG	XX_Flt1;			// 16位故障字
 	Uint16			SX_Run;
 	Uint16 			NX_DspPlCn;			// DSP2 pulse(heartbeat) counter
@@ -125,10 +127,12 @@ struct PX_Out
 };
 volatile struct PX_Out PX_Out_Spf = {
 		21,
-		6465,
-		3232,
-		3232,
-		3232,
+		6944,//双采样：1450Hz:6465 1350Hz:6944
+		3472,
+		3472,
+		3472,
+		0,
+		0,
 		0,
 		0,
 		0,
@@ -149,6 +153,7 @@ struct PI_Rms
 volatile struct PI_Rms PI_PhARms = {0, 0};
 volatile struct PI_Rms PI_PhBRms = {0, 0};
 volatile struct PI_Rms PI_PhCRms = {0, 0};
+volatile struct PI_Rms PU_PhABRms = {0, 0};
 //======================================================================
 /* GLOBALS */
 
@@ -256,12 +261,16 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	acmctrl.XI_DcLk = PX_In_Spf.XI_DcLk;
 	acmctrl.XU_PhABLk = PX_In_Spf.XU_PhABGt;
 
-//	PI_RmsClc();
-//	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
-//	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
-//	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
+	PI_RmsClc();
+	PX_Out_Spf.XI_PhA_Rms = PI_PhARms.Rms;
+	PX_Out_Spf.XI_PhB_Rms = PI_PhBRms.Rms;
+	PX_Out_Spf.XI_PhC_Rms = PI_PhCRms.Rms;
+	PX_Out_Spf.XU_PhAB_Rms = PU_PhABRms.Rms;
 
 	sogiosg.phase = PX_In_Spf.XU_PhABGt;
+	sogiosg.Ts = 1.0/2700.0;
+	sogiosg.w = 100*3.1415926;
+	sogiosg.K = sqrt(2);
 	SOGIOSGFLL(&sogiosg);
 
 	acmctrl.XX_UPeakCom = 1.04;
@@ -274,13 +283,36 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 
 	NX_Pr();
 
+	acmctrl.S_PaOp = FALSE;
+
+	/*均流*/
+	acmctrl.L_EnUF3PhCmp = TRUE;
+
+
+	if(acmctrl.S_PaOp)
+	{
+		/*同步*/
+		if(acmctrl.A_FNom)
+		{
+			acmctrl.C_AuSz = TRUE;
+		}
+		/*电压闭环*/
+		acmctrl.B_EnU3PhCl = FALSE;//
+	}
+	else
+	{
+		acmctrl.C_AuSz = FALSE;
+		acmctrl.B_EnU3PhCl = TRUE;
+	}
+
+
 	/**/
 	if(PX_Out_Spf.SX_Run == 1)
 	{
 		acmctrl.A_CvOp = TRUE;
 
 		Cnt_Period ++;
-		if(Cnt_Period>=2900)
+		if(Cnt_Period>=2700)
 		{
 			Cnt_sec++;
 			Cnt_Period = 0;
@@ -295,17 +327,6 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 			Cnt_min = 60;
 		}
 
-		/*均流*/
-		acmctrl.L_EnUF3PhCmp = TRUE;
-		/*同步*/
-//		acmctrl.C_AuSz = FALSE;
-		if(acmctrl.A_FNom)
-		{
-			acmctrl.C_AuSz = TRUE;
-		}
-		/*电压闭环*/
-		acmctrl.B_EnU3PhCl = FALSE;//
-//		acmctrl.B_EnU3PhCl = TRUE;
 
 		UFCOMAStep(&acmctrl);
 		DspStep(&acmctrl);
@@ -384,27 +405,22 @@ void DPRAM_WR(void)//DSP-->MCU
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// ACM故障状态
 	/*上位机*/
-	/**/
-//	*(XintfZone7 + 0x24) = sogiosgma.w/PI2*10.0;
-//	*(XintfZone7 + 0x25) = fabs(sogiosgma.ErrF)*1000.0;
-//	*(XintfZone7 + 0x27) = fabs(srfpll.aqr.Ref)*1000.0;
-//	*(XintfZone7 + 0x28) = fabs(srfpll.aqr.Out)/PI2*10.0;
-//	*(XintfZone7 + 0x29) = srfpll.Upeak*10.0;
-//	*(XintfZone7 + 0x2A) = srfpll.w/PI2*10.0;
-	/**/
+	/*电压闭环*/
 	*(XintfZone7 + 0x24) = acmctrl.WF_3PhDsp*100.0;
 	*(XintfZone7 + 0x25) = acmctrl.WU_3PhDsp*100.0;
-	*(XintfZone7 + 0x27) = acmctrl.WF_UF3PhSz*100.0;
-	*(XintfZone7 + 0x28) = acmctrl.XU_3PhIm*10.0;
-	*(XintfZone7 + 0x29) = acmctrl.XU_3PhPek*10.0;
+	*(XintfZone7 + 0x27) = acmctrl.U3PhCl.Ref*100.0;
+	*(XintfZone7 + 0x28) = acmctrl.U3PhCl.Fbk*100.0;
+	*(XintfZone7 + 0x29) = acmctrl.U3PhCl.Out*100.0;
 	*(XintfZone7 + 0x2A) = acmctrl.XX_M*100.0;
-	/**/
-//	*(XintfZone7 + 0x24) = acmctrl.XU_3PhPek*10.0;
-//	*(XintfZone7 + 0x25) = acmctrl.XF_3Ph*10.0;
-//	*(XintfZone7 + 0x27) = dosgpll.Upeak*10.0;
-//	*(XintfZone7 + 0x28) = dosgpll.w/PI2*10.0;
-//	*(XintfZone7 + 0x29) = (acmctrl.XX_Theta-(dosgpll.theta+acmctrl.XX_AngleCom))*100;
-//	*(XintfZone7 + 0x2A) = acmctrl.XX_M*100.0;
+	/*同步*/
+//	*(XintfZone7 + 0x24) = acmctrl.WF_3PhDsp*100.0;
+//	*(XintfZone7 + 0x25) = acmctrl.WU_3PhDsp*100.0;
+//	*(XintfZone7 + 0x27) = PX_Out_Spf.XI_PhA_Rms*100.0;
+//	*(XintfZone7 + 0x28) = PX_Out_Spf.XU_PhAB_Rms*100.0;
+//	*(XintfZone7 + 0x29) = acmctrl.XU_3PhPek*100.0;
+//	*(XintfZone7 + 0x2A) = acmctrl.XU_3PhIm*100.0;
+
+
 	/*DA输出*/
 	/**/
 //	DA[3] = PX_In_Spf.XU_PhABGt*10.0;//
@@ -586,6 +602,7 @@ void PI_RmsClc(void)
 		PI_PhARms.Square += (PX_In_Spf.XI_PhA * PX_In_Spf.XI_PhA);
 		PI_PhBRms.Square += (PX_In_Spf.XI_PhB * PX_In_Spf.XI_PhB);
 		PI_PhCRms.Square += (PX_In_Spf.XI_PhC * PX_In_Spf.XI_PhC);
+		PU_PhABRms.Square += (PX_In_Spf.XU_PhABGt * PX_In_Spf.XU_PhABGt);
 		Cnt_Period++;
 	}
 	if(Cnt_Period>=256)
@@ -593,9 +610,11 @@ void PI_RmsClc(void)
 		PI_PhARms.Rms = __ffsqrtf(PI_PhARms.Square * 0.00390625);		// 0.00390625 = 1/256  square root function
 		PI_PhBRms.Rms = __ffsqrtf(PI_PhBRms.Square * 0.00390625);		// 0.00390625 = 1/256
 		PI_PhCRms.Rms = __ffsqrtf(PI_PhARms.Square * 0.00390625);		// 0.00390625 = 1/256
+		PU_PhABRms.Rms = __ffsqrtf(PU_PhABRms.Square * 0.00390625);		// 0.00390625 = 1/256
 		PI_PhARms.Square = 0;
 		PI_PhBRms.Square = 0;
 		PI_PhCRms.Square = 0;
+		PU_PhABRms.Square = 0;
 		Cnt_Period=0;
 	}
 }

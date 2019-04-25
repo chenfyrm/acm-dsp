@@ -10,7 +10,7 @@ XI_PhRct;/*Reactive phase current*/
 //XU_PhInRms;/*AC input phase voltage RMS value*/
 //XI_PhInRms;/*AC input phase current RMS value*/
 WU_IPhClTrs;/*3-phase output load voltage reference manipulation,transient phase current control*/
-WU_IBtCgCl;/*3-Phase output load voltage manipulation from battery charger current control*/
+//WU_IBtCgCl;/*3-Phase output load voltage manipulation from battery charger current control*/
 WU_OvMd;/*3-phase output load voltage manipulation due to over modulation*/
 WU_IPhClRms;/*3-phase output load voltage manipulation,RMS phase current limitation*/
 //XU_Bt;/*Battery voltage*/
@@ -34,7 +34,7 @@ WU_Flt;/*Filtered voltage reference*/
 //XU_DcLk2;/*DC-link voltage 2*/
 XH_Ovp_Est;/*Estimated OVP temperature*/
 //XI_Rct1_Rms;/*Rectifier current 1 RMS value*/
-//XI_BtCp;
+XI_BtCp;
 //XI_Rct2_Rms;/*Rectifier current 2 RMS value*/
 //XI_Rct3_Rms;/*Rectifier current 3 RMS value*/
 //XI_BtCgEst;/*Estimated battery charger current(BtCp operation)*/
@@ -55,11 +55,11 @@ Z_BtCpPrBc_PmFl;
 Z_CalFl;
 Z_Dsp122;
 
-Z_Fpga203;
-Z_Fpga205;
-Z_Fpga208;
-Z_Fpga210;
-Z_Fpga211;
+//Z_Fpga203;
+//Z_Fpga205;
+//Z_Fpga208;
+//Z_Fpga210;
+//Z_Fpga211;
 
 B_DspOvLdFl;/*DSP overload failure*/
 S_DspWdAlm;/*(*Status DSP Watchdog alarm*/
