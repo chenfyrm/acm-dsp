@@ -34,17 +34,20 @@ void InitGpio(void)
 //	GpioCtrlRegs.GPBCTRL.bit.QUALPRD2 = 0x0A;//GPIO48-55
 //	GpioCtrlRegs.GPBCTRL.bit.QUALPRD3 = 0x0A;//GPIO56-63
 
+	GpioCtrlRegs.GPAMUX2.bit.GPIO30=0;		//GPIO30用于输出DSP2和DSP1标志信号 GPIO30复用为GPIO功能
+	GpioCtrlRegs.GPADIR.bit.GPIO30=1;      //output
 	GpioCtrlRegs.GPAPUD.bit.GPIO30=1;		//Disable pull-up
-	GpioCtrlRegs.GPAMUX2.bit.GPIO30=0;		//GPIO30用于输出DSP2和DSP1标志信号
-	GpioCtrlRegs.GPADIR.bit.GPIO30=1;	
 
+
+	GpioCtrlRegs.GPAMUX2.bit.GPIO18=0;		//GPIO18用于DSP2外部中断输入标志信号   GPIO18复用为GPIO功能
+	GpioCtrlRegs.GPADIR.bit.GPIO18=0;       //input
 	GpioCtrlRegs.GPAPUD.bit.GPIO18=0;		//Enable pull-up
-	GpioCtrlRegs.GPAMUX2.bit.GPIO18=0;		//GPIO18用于DSP2外部中断输入标志信号
-	GpioCtrlRegs.GPADIR.bit.GPIO18=0;
+
 	
+	GpioCtrlRegs.GPAMUX2.bit.GPIO19=0;		//GPIO19用于DSP2获知RAM状态的标志信号  GPIO19复用为GPIO功能
+	GpioCtrlRegs.GPADIR.bit.GPIO19=0;       //input
 	GpioCtrlRegs.GPAPUD.bit.GPIO19=0;		//Enable pull-up
-	GpioCtrlRegs.GPAMUX2.bit.GPIO19=0;		//GPIO19用于DSP2获知RAM状态的标志信号
-	GpioCtrlRegs.GPADIR.bit.GPIO19=0;  
+
 
 	EDIS;
 }
