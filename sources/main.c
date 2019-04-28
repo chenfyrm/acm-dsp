@@ -424,6 +424,8 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 
 	else if(PX_Out_Spf.oldDspSt.all == 0x0130)
 	{
+		//
+		//
 		PX_Out_Spf.NX_DspOpSt.all = 0x0230;
 		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 1;
 	}
