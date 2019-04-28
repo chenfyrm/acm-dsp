@@ -474,19 +474,19 @@ void MINPWLIM(TYPE_MINPWLIM *data)
 	data->Tc_out = data->Tc_in;
 
 	if(data->Ta_in <= data->Tmin)
-		data->Ta_out = 0.0;
+		data->Ta_out = data->Tmin;
 	if(data->Ta_in >= (1.0-data->Tmin))
-		data->Ta_out = 1.0;
+		data->Ta_out = (1.0-data->Tmin);
 
 	if(data->Tb_in <= data->Tmin)
-		data->Tb_out = 0.0;
+		data->Tb_out = data->Tmin;
 	if(data->Tb_in >= (1.0-data->Tmin))
-		data->Tb_out = 1.0;
+		data->Tb_out = (1.0-data->Tmin);
 
 	if(data->Tc_in <= data->Tmin)
-		data->Tc_out = 0.0;
+		data->Tc_out = data->Tmin;
 	if(data->Tc_in >= (1.0-data->Tmin))
-		data->Tc_out = 1.0;
+		data->Tc_out = (1.0-data->Tmin);
 
 }
 
