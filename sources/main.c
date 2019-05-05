@@ -371,6 +371,9 @@ interrupt void DPRAM_isr(void)   					//after DSP1 has written to DPRAM, trigger
 	{
 		UFCOMAStep(&acmctrl);
 		DspStep(&acmctrl);
+		acmctrl.XX_DutyA = 0.5;
+		acmctrl.XX_DutyB = 0.5;
+		acmctrl.XX_DutyC = 0.5;
 
 		if(acmctrl.XX_Mode == 1)
 		{
@@ -747,7 +750,6 @@ void DspStCl(void)
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x50;
 			}
 		}
-
 		//--------------------------------------------------------
 		//ֹͣ
 		else if(PX_Out_Spf.oldDspSt.bit.CvSt == 0x50)
@@ -813,7 +815,6 @@ void DspStCl(void)
 		}
 		else if(PX_Out_Spf.oldDspSt.bit.OvpCp == 0x6)
 		{
-
 			//
 			acmctrl.A_OvpCpOp = 0;
 		}
