@@ -447,7 +447,9 @@ typedef struct
 	float32	PF_UF3PhSzRdy;
 	float32	PT_UF3PhSzRmp;
 	Uint16	C_AuSz;
+	Uint16	A_AuSz;
 	float32	PD_TrfSfPr3Ph;//变压器原边相电压与副边线电压相移
+
 
 	/*U3PhSz*/
 	float32	WU_UF3PhSz;
@@ -465,6 +467,8 @@ typedef struct
 
 	/**/
 	Uint16	S_PaOp;
+	Uint16	A_OvpCpOp;
+	Uint16	A_BtCpOp;
 
 }TYPE_UFCOMA;
 
@@ -504,11 +508,11 @@ typedef struct
 	0,\
 	0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,0,\
-	0,0,0,0,0,0,0,0,\
+	0,0,0,0,0,0,0,0,0,\
 	0,0,0,0,0,\
 	0,\
 	0,0,\
-	0,\
+	0,0,0,\
 	}
 
 
