@@ -264,14 +264,41 @@ struct Dsp_Param
 
 extern volatile struct Dsp_Param DspParam;
 
+/*IRQ*/
 extern void DspStep(void);
 
+extern void ANINDA(void);
+extern void CSIVDA(void);
+extern void MEMSDA(void);
+extern void POCPDA(void);
+extern void CALIDA(void);
 extern void SIPRDA(void);
 extern void ACCLDA(void);
+extern void BACCDA(void);
 extern void UFCODA(void);
+extern void PPG3DA(void);
+extern void LOGBDA(void);
+
 extern void OvMd(void);
 extern void SVPWM(void);
 //extern void LimPulse();
+
+/*200us*/
+
+
+/*1ms*/
+extern void HSTIDA(void);
+extern void OVPTDA(void);
+extern void HSTODA(void);
+
+
+/*100ms*/
+extern void SFSUDA(void);
+extern void DIAGDA(void);
+extern void DCUIDA(void);
+extern void HSTPDA(void);
+extern void HWSSDA(void);
+
 
 struct Mcu_Data
 {
