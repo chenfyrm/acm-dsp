@@ -562,6 +562,5 @@ void SOGIOSGFLL(TYPE_SOGIOSGMA *data) {
 	data->oldAlpha1 = data->alpha;
 	data->oldBeta2 = data->oldBeta1;
 	data->oldBeta1 = data->beta;
-
 }
 

@@ -314,8 +314,10 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 
 	/**/
 	if (PX_Out_Spf.SX_Run == 1) {
+
 		UFCOMAStep(&acmctrl);
 		DspStep(&acmctrl);
+
 		acmctrl.XX_DutyA = 0.5;
 		acmctrl.XX_DutyB = 0.5;
 		acmctrl.XX_DutyC = 0.5;
@@ -377,18 +379,15 @@ void DPRAM_WR(void)			//DSP-->MCU
 
 	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_DspFlag1.all;
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// DSP故障状态
+
 	/*上位机*/
-	/*电压闭环*/
 	*(XintfZone7 + 0x24) = PX_Out_Spf.NX_DspOpSt.bit.CvSt;
 	*(XintfZone7 + 0x27) = PX_Out_Spf.NX_DspOpSt.bit.OvpCp;
 	*(XintfZone7 + 0x28) = PX_Out_Spf.XX_DspFlag1.all;
 	*(XintfZone7 + 0x29) = PX_In_Spf.NX_McuOpSt;
 	*(XintfZone7 + 0x2A) = PX_In_Spf.XX_McuFlag1.all;
-	/*同步*/
 
 	/*DA输出*/
-
-	/**/
 	DA[3] = acmctrl.XU_3PhAl * 10.0;
 	DA[4] = acmctrl.XU_3PhBe * 10.0;
 	DA[5] = 0.0;
@@ -420,7 +419,6 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x2D) = DA[5];
 	*(XintfZone7 + 0x2E) = DA[6];
 	*(XintfZone7 + 0x2F) = DA[7];
-	/*DA测试*/
 
 //---------------------------------------------------
 	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		//此行最后写，DPRAM产生中断源
@@ -912,9 +910,10 @@ void DspStCl(void) {
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x60) {
 		PX_Out_Spf.SX_Run = 0;
 	}
-	if (PX_Out_Spf.SX_Run == 0) {
-		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x60;
-	}
+
+//	if (PX_Out_Spf.SX_Run == 0) {
+//		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x60;
+//	}
 	//---------------------------------------
 	//OvpCp
 	/**/
