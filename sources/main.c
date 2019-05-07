@@ -78,7 +78,7 @@ struct PX_InPr {
 	float32 XH_AmTp_Max;         		// ambient temperature, C
 };
 volatile struct PX_InPr PX_InPr_Spf = { 1800.0,         		//直流母线电压上限
-		36.0,         		//直流母线电压下限
+		0.0,         		//直流母线电压下限
 		0, 0, 10.0,         		//直流母线电流上限
 		0, 300.0,         		//逆变器输出电流上限
 		0, 0, 0, 0.0, };         		//环境温度上限
@@ -164,12 +164,11 @@ struct PX_Out {
 	union DSPST_REG oldDspSt;
 	Uint16 NX_DspVer;			// DSP2 version
 	union DSPFLAG1_REG XX_DspFlag1;
-
 };
 volatile struct PX_Out PX_Out_Spf = { 21,
 		6944,			//双采样：1450Hz:6465 1350Hz:6944
-		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0x0000, 0x10,
-		0x00, };
+		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000, 0x0000, 0x10,
+		0x0000, };
 //========================================================
 struct PI_Rms {
 	float32 Square;
@@ -221,6 +220,7 @@ void BtCp(void);
 //=================================================================================
 /* MAIN */
 void main(void) {
+
 	InitSysCtrl();
 	InitGpio();
 	InitXintf();
@@ -252,7 +252,7 @@ void main(void) {
 		//主要是为了判断是否长时间未进入中断复位，此处可采用无效延时，或者插入其他有效的执行任务
 		GPIO_Temp182 = GpioDataRegs.GPADAT.bit.GPIO18;
 		if ((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0)) {
-			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//INTR复位语句,SDRAM读操作,SDRAM产生中断源
+			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//外部中断复位语句,SDRAM读操作
 		}
 	}
 }
@@ -377,13 +377,13 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x19) = PX_Out_Spf.XX_Pwm3AVv;			// PWM3A value
 	*(XintfZone7 + 0x1A) = PX_Out_Spf.XX_Pwm4AVv;		// PWM4A value, chopper
 
+	*(XintfZone7 + 0x24) = PX_Out_Spf.NX_DspOpSt.all;
 	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_DspFlag1.all;
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// DSP故障状态
 
 	/*上位机*/
-	*(XintfZone7 + 0x24) = PX_Out_Spf.NX_DspOpSt.bit.CvSt;
-	*(XintfZone7 + 0x27) = PX_Out_Spf.NX_DspOpSt.bit.OvpCp;
-	*(XintfZone7 + 0x28) = PX_Out_Spf.XX_DspFlag1.all;
+	*(XintfZone7 + 0x27) = PX_Out_Spf.NX_DspOpSt.bit.CvSt;
+	*(XintfZone7 + 0x28) = PX_Out_Spf.NX_DspOpSt.bit.OvpCp;
 	*(XintfZone7 + 0x29) = PX_In_Spf.NX_McuOpSt;
 	*(XintfZone7 + 0x2A) = PX_In_Spf.XX_McuFlag1.all;
 
@@ -420,9 +420,25 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x2E) = DA[6];
 	*(XintfZone7 + 0x2F) = DA[7];
 
+//	int16 *ptr;
+//	ptr = XintfZone7;
+//
+//	*(ptr+2) = 0x5432;
+//	*(ptr+3) = 0x5432;
+//	int i;
+//
+//	for(i=21;i<48;i++)
+//	{
+//		*(ptr+i) = 0x5432;
+//	}
+
+//	*(ptr+0x7FFE) = 0x5432;
+
+
 //---------------------------------------------------
 	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		//此行最后写，DPRAM产生中断源
 //------------------------------------------------------------
+
 }
 //==============================================================================
 /* 保护 */
@@ -738,6 +754,11 @@ void DspStCl(void) {
 //		14	预留
 //		15	预留
 
+//	if (PX_In_Spf.XX_McuFlag1.bit.RstSa == 1)
+//		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x00;
+	if (PX_In_Spf.XX_McuFlag1.bit.RstFlt == 1)
+		PX_Out_Spf.XX_Flt1.all = 0x0000;
+
 	//-------------------------------------------
 	//初始化
 	if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x00) {
@@ -910,10 +931,6 @@ void DspStCl(void) {
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x60) {
 		PX_Out_Spf.SX_Run = 0;
 	}
-
-//	if (PX_Out_Spf.SX_Run == 0) {
-//		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x60;
-//	}
 	//---------------------------------------
 	//OvpCp
 	/**/
@@ -924,13 +941,16 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x1;
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x1) {
 		//
-		PX_Out_Spf.NX_DspOpSt.bit.OvpCp == 0x2;
+		PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x2;
 
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x2) {
 		//
 		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 1;
 		if (PX_In_Spf.NX_McuOpSt == 0x404)
+		{
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x0;
+			PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 0;
+		}
 		if (PX_In_Spf.NX_McuOpSt == 0x40C) {
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
 			acmctrl.A_OvpCpOp = 1;
