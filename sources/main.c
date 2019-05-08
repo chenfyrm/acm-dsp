@@ -26,12 +26,12 @@
 //采样、指令
 struct MCUFLAG1_BITS {
 	Uint16 RstSa :1;
-	Uint16 OvpAv :1;
+	Uint16 OvpFcTsAv :1;
 	Uint16 CdAuLdCt :1;
 	Uint16 RstFlt :1;
 	Uint16 BtCpAv :1;
 	Uint16 CvOp :1;
-	Uint16 TA6 :1;
+	Uint16 OvpCpAv :1;
 	Uint16 TA7 :1;
 	Uint16 TA8 :1;
 	Uint16 TA9 :1;
@@ -111,7 +111,7 @@ struct DSPFLAG1_BITS {
 	Uint16 CdAuLdCt :1;
 	Uint16 CvOp :1;
 	Uint16 OvpFcTs :1;
-	Uint16 OvpAv :1;
+	Uint16 OvpFcTsAv :1;
 	Uint16 IPhClTrsAv :1;
 	Uint16 OvMdAv :1;
 	Uint16 BtCpAv :1;
@@ -167,8 +167,8 @@ struct PX_Out {
 };
 volatile struct PX_Out PX_Out_Spf = { 21,
 		6944,			//双采样：1450Hz:6465 1350Hz:6944
-		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000, 0x0000, 0x10,
-		0x0000, };
+		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000, 0x0000,
+		0x10, 0x0000, };
 //========================================================
 struct PI_Rms {
 	float32 Square;
@@ -252,7 +252,7 @@ void main(void) {
 		//主要是为了判断是否长时间未进入中断复位，此处可采用无效延时，或者插入其他有效的执行任务
 		GPIO_Temp182 = GpioDataRegs.GPADAT.bit.GPIO18;
 		if ((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0)) {
-			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//外部中断复位语句,SDRAM读操作
+			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);	//外部中断复位语句,SDRAM读操作
 		}
 	}
 }
@@ -433,7 +433,6 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	}
 
 //	*(ptr+0x7FFE) = 0x5432;
-
 
 //---------------------------------------------------
 	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		//此行最后写，DPRAM产生中断源
@@ -754,10 +753,69 @@ void DspStCl(void) {
 //		14	预留
 //		15	预留
 
-//	if (PX_In_Spf.XX_McuFlag1.bit.RstSa == 1)
-//		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x00;
-	if (PX_In_Spf.XX_McuFlag1.bit.RstFlt == 1)
+	if (PX_In_Spf.XX_McuFlag1.bit.RstSa == 1) {
+		PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0000;
+	}
+
+	if (PX_In_Spf.XX_McuFlag1.bit.RstFlt == 1) {
 		PX_Out_Spf.XX_Flt1.all = 0x0000;
+	}
+
+	//PrBc
+	if (PX_In_Spf.NX_McuOpSt == 0x417) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
+			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
+		}
+		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
+			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
+		}
+	}
+
+	//PrSd
+	if (PX_In_Spf.NX_McuOpSt == 0x41C) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
+		}
+		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
+			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
+		}
+	}
+
+	//SfSd
+	if (PX_In_Spf.NX_McuOpSt == 0x41A) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
+		}
+		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
+			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
+		}
+	}
+
+	//FsSd
+	if (PX_In_Spf.NX_McuOpSt == 0x426) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
+		}
+		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
+			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
+		}
+	}
+
+	//Inso
+	if (PX_In_Spf.NX_McuOpSt == 0x41E) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
+		}
+		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
+			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
+		}
+	}
 
 	//-------------------------------------------
 	//初始化
@@ -802,8 +860,8 @@ void DspStCl(void) {
 
 	//------------------------------------------------------------
 	//启动
-	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x40)		//启动
-			{
+	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x40)
+	{
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			if (acmctrl.XU_3PhRms < 10.0) {
@@ -816,7 +874,6 @@ void DspStCl(void) {
 		} else {
 			//PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x60;
 		}
-
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x41) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
@@ -895,7 +952,6 @@ void DspStCl(void) {
 		if (PX_In_Spf.NX_McuOpSt == 0x40A) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x50;
 		} else {
-			//PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
 		}
 	}
 	//--------------------------------------------------------
@@ -936,18 +992,16 @@ void DspStCl(void) {
 	/**/
 	if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x0) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x405)
-				&& (PX_In_Spf.XX_McuFlag1.bit.OvpAv == 1)
+				&& (PX_In_Spf.XX_McuFlag1.bit.OvpFcTsAv == 1)
 				&& (PX_Out_Spf.oldDspSt.bit.CvSt == 0x30))
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x1;
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x1) {
 		//
 		PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x2;
-
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x2) {
 		//
 		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 1;
-		if (PX_In_Spf.NX_McuOpSt == 0x404)
-		{
+		if (PX_In_Spf.NX_McuOpSt == 0x404) {
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x0;
 			PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 0;
 		}
@@ -955,23 +1009,20 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
 			acmctrl.A_OvpCpOp = 1;
 		}
-
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x4) {
 		//
-		PX_Out_Spf.XX_DspFlag1.bit.OvpAv = 1;
+		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTsAv = 1;
 		if (PX_In_Spf.NX_McuOpSt == 0x40C) {
-
 			if (PX_In_Spf.XU_DcLk < 36.0) {
 				PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x6;
 				acmctrl.A_OvpCpOp = 0;
 			}
 		}
-
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x6) {
 		//
-		PX_Out_Spf.XX_DspFlag1.bit.OvpAv = 0;
-		if (PX_In_Spf.NX_McuOpSt == 0x40C) {
-			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x2;
+		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTsAv = 0;
+		if (PX_In_Spf.NX_McuOpSt == 0x404) {
+			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x0;
 		}
 	}
 	//---------------------------------------------

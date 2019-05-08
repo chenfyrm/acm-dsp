@@ -264,7 +264,8 @@ struct Dsp_Param
 
 extern volatile struct Dsp_Param DspParam;
 
-/*IRQ*/
+/*IRQB*/
+//Дж±д
 extern void DspStep(void);
 
 extern void ANINDA(void);
