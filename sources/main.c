@@ -189,7 +189,7 @@ int16 *XintfZone7 = (int16 *) 0x200000;			//DP RAM
 Uint16 GPIO_Temp181, GPIO_Temp182;
 //TYPE_UFCTRL_IF acmctrl = UFCTRL_IF_DEFAULTS;
 //TYPE_DOSGPLL dosgpll = DOSGPLL_DEFAULTS;
-TYPE_UFCOMA acmctrl = UFCOMA_DEFAULTS;
+
 TYPE_SOGIOSGMA sogiosg = SOGIOSGMA_DEFAULTS;
 //===========================================================================
 Uint16 Cnt_Period = 0;
@@ -315,12 +315,12 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	/**/
 	if (PX_Out_Spf.SX_Run == 1) {
 
-		UFCOMAStep(&acmctrl);
-		DspStep(&acmctrl);
+		UFCOMAStep();
+		DspStep();
 
-		acmctrl.XX_DutyA = 0.5;
-		acmctrl.XX_DutyB = 0.5;
-		acmctrl.XX_DutyC = 0.5;
+//		acmctrl.XX_DutyA = 0.5;
+//		acmctrl.XX_DutyB = 0.5;
+//		acmctrl.XX_DutyC = 0.5;
 
 		if (acmctrl.XX_Mode == 1) {
 			PX_Out_Spf.XX_PwmMo = 21; // FPGA逻辑：计数器值大于比较器值为高，加死区，取反，经光纤板再反向
@@ -382,10 +382,10 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// DSP故障状态
 
 	/*上位机*/
-	*(XintfZone7 + 0x27) = PX_Out_Spf.NX_DspOpSt.bit.CvSt;
-	*(XintfZone7 + 0x28) = PX_Out_Spf.NX_DspOpSt.bit.OvpCp;
-	*(XintfZone7 + 0x29) = PX_In_Spf.NX_McuOpSt;
-	*(XintfZone7 + 0x2A) = PX_In_Spf.XX_McuFlag1.all;
+	*(XintfZone7 + 0x27) = acmctrl.WU_3PhDsp;
+	*(XintfZone7 + 0x28) = acmctrl.WF_3PhDsp;
+	*(XintfZone7 + 0x29) = acmctrl.XU_3PhPek;
+	*(XintfZone7 + 0x2A) = acmctrl.XX_M;
 
 	/*DA输出*/
 	DA[3] = acmctrl.XU_3PhAl * 10.0;
@@ -775,7 +775,7 @@ void DspStCl(void) {
 
 	//PrSd
 	if (PX_In_Spf.NX_McuOpSt == 0x41C) {
-		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
 			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
 		}
@@ -786,7 +786,7 @@ void DspStCl(void) {
 
 	//SfSd
 	if (PX_In_Spf.NX_McuOpSt == 0x41A) {
-		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
 			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
 		}
@@ -797,7 +797,7 @@ void DspStCl(void) {
 
 	//FsSd
 	if (PX_In_Spf.NX_McuOpSt == 0x426) {
-		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
 			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
 		}
@@ -808,7 +808,7 @@ void DspStCl(void) {
 
 	//Inso
 	if (PX_In_Spf.NX_McuOpSt == 0x41E) {
-		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt  == 0) {
+		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
 			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0030;
 		}
@@ -839,7 +839,7 @@ void DspStCl(void) {
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x20) {
 		//参数初始化
-		UFCOMAInit(&acmctrl);
+		UFCOMAInit();
 
 		if (PX_In_Spf.NX_McuOpSt == 0x403) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x30;
@@ -860,15 +860,14 @@ void DspStCl(void) {
 
 	//------------------------------------------------------------
 	//启动
-	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x40)
-	{
+	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x40) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
-			if (acmctrl.XU_3PhRms < 10.0) {
+			if (acmctrl.XU_3PhRms < 50.0) {
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x41;
 				PX_Out_Spf.XX_DspFlag1.bit.CdAuLdCt = 1;
 			}
-			if (acmctrl.XU_3PhRms > 50.0) {
+			if (acmctrl.XU_3PhRms > 370.0) {
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x42;
 			}
 		} else {
@@ -1012,7 +1011,11 @@ void DspStCl(void) {
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x4) {
 		//
 		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTsAv = 1;
-		if (PX_In_Spf.NX_McuOpSt == 0x40C) {
+		if ((PX_In_Spf.NX_McuOpSt == 0x40C) || (PX_In_Spf.NX_McuOpSt == 0x417)
+				|| (PX_In_Spf.NX_McuOpSt == 0x41C)
+				|| (PX_In_Spf.NX_McuOpSt == 0x41A)
+				|| (PX_In_Spf.NX_McuOpSt == 0x426)
+				|| (PX_In_Spf.NX_McuOpSt == 0x41E)) {
 			if (PX_In_Spf.XU_DcLk < 36.0) {
 				PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x6;
 				acmctrl.A_OvpCpOp = 0;
@@ -1021,7 +1024,11 @@ void DspStCl(void) {
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x6) {
 		//
 		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTsAv = 0;
-		if (PX_In_Spf.NX_McuOpSt == 0x404) {
+		if ((PX_In_Spf.NX_McuOpSt == 0x404)|| (PX_In_Spf.NX_McuOpSt == 0x418)
+				|| (PX_In_Spf.NX_McuOpSt == 0x41D)
+				|| (PX_In_Spf.NX_McuOpSt == 0x41B)
+				|| (PX_In_Spf.NX_McuOpSt == 0x427)
+				|| (PX_In_Spf.NX_McuOpSt == 0x41F)) {
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x0;
 		}
 	}

@@ -327,6 +327,7 @@ typedef struct
 	Uint16	XX_Mode;
 	float32	PT_Tsc;//param
 	float32	XX_M;//
+	float32 XX_MOvMd;
 	float32	XX_Theta;//state
 
 	TYPE_SVGEN svgen;
@@ -470,6 +471,9 @@ typedef struct
 	Uint16	A_OvpCpOp;
 	Uint16	A_BtCpOp;
 
+	float32 PU_3PhBusAct;
+	float32 PU_3PhBusIdle;
+
 }TYPE_UFCOMA;
 
 #define UFCOMA_DEFAULTS	{\
@@ -484,6 +488,7 @@ typedef struct
 	0.5,\
 	0,\
 	1.0/2700.0,/**/\
+	0.0,\
 	0.0,\
 	0.0,\
 	SVGEN_DEFAULTS,\
@@ -515,33 +520,41 @@ typedef struct
 	0,0,0,\
 	}
 
+extern TYPE_UFCOMA acmctrl;
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* extern "C" */
 
-extern void UFCOMAInit(TYPE_UFCOMA *data);
-extern void UFCOMAStep(TYPE_UFCOMA *data);
-extern void UFCOMATerm(TYPE_UFCOMA *data);
+extern void UFCOMAInit(void);
+extern void UFCOMAStep(void);
+extern void UFCOMATerm(void);
 
-extern void DspStep(TYPE_UFCOMA *data);
+extern void DspStep(void);
 
-void F3PhRef(TYPE_UFCOMA *data);
-void U3PhRef(TYPE_UFCOMA *data);
-void U3PhCl(TYPE_UFCOMA *data);
+void F3PhRef(void);
+void U3PhRef(void);
+void U3PhCl(void);
 
-void TFrefRmp(TYPE_UFCOMA *data);
-void FrefUDcLk(TYPE_UFCOMA *data);
-void FrefRmp(TYPE_UFCOMA *data);
+void TFrefRmp(void);
+void FrefUDcLk(void);
+void FrefRmp(void);
 
-void UF3PhCmp(TYPE_UFCOMA *data);
+void UF3PhCmp(void);
 
-void F3PhSz(TYPE_UFCOMA *data);
-void U3PhSz(TYPE_UFCOMA *data);
-void UF3PhSz(TYPE_UFCOMA *data);
+void F3PhSz(void);
+void U3PhSz(void);
+void UF3PhSz(void);
 
-void IPhClGenOvLd(TYPE_UFCOMA *data);
-void IPhClPsTrs(TYPE_UFCOMA *data);
+void IPhClGenOvLd(void);
+void IPhClPsTrs(void);
+
+extern void OvMd(void);
+extern void SVPWM(void);
+
+extern float32	Min(float32	a,float32 b);
+extern float32	Max(float32	a,float32 b);
+extern float32	Limit(float32 x,float32 low,float32 up);
 
 #ifdef __cplusplus
 }
