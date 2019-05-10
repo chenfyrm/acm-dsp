@@ -78,9 +78,7 @@ void DspStep(void) {
 	//-------------------------
 	acmctrl.XX_DutyA = Limit(acmctrl.XX_DutyA, 0.1, 0.9);
 	acmctrl.XX_DutyB = Limit(acmctrl.XX_DutyB, 0.1, 0.9);
-	;
 	acmctrl.XX_DutyC = Limit(acmctrl.XX_DutyC, 0.1, 0.9);
-	;
 
 	/**/
 	acmctrl.XU_3PhPek = sqrt(
@@ -384,11 +382,28 @@ void IPhClPsTrs(void) {
 
 }
 
-/**/
-void CLARKE(TYPE_CLARKE *data) {
-	data->Alpha = (data->As - 0.5 * (data->Bs + data->Cs)) * 2.0 / 3.0;
-	data->Beta = (data->Bs - data->Cs) * ONEbySQRT3;
+void ACCL_B(void) {
+
+	float32 PU_PhclTrsMax = 75.0;
+	float32 PI_PhclTrsAbsLim = 600.0;
+
+	float32 PX_IPhClTrsKpAct = 0.005;
+	float32 PX_IPhClTrsKpRct = 0.03;
+	float32 PX_IPhClTrsKpAbs = 0.0;
+
+//	float32 act,rct,abs;
+//	act =
 }
+void Clarke(float32 *alpha,float32 *beta,float32 a,float32 b,float32 c)
+{
+	*alpha = (a - 0.5*(b + c))*2.0/3.0;
+	*beta = (b-c)*ONEbySQRT3;
+}
+///**/
+//void CLARKE(TYPE_CLARKE *data) {
+//	data->Alpha = (data->As - 0.5 * (data->Bs + data->Cs)) * 2.0 / 3.0;
+//	data->Beta = (data->Bs - data->Cs) * ONEbySQRT3;
+//}
 
 /**/
 void PARK(TYPE_PARK *data) {
@@ -417,62 +432,62 @@ void PI_CONTROLLER(TYPE_PI_CONTROLLER *data) {
 	data->Out = (data->Out < data->Umin) ? data->Umin : data->Out;
 }
 /**/
-void SVGEN(TYPE_SVGEN *data) {
-	data->tmp1 = data->Ubeta;
-	data->tmp2 = data->Ubeta * 0.5 + data->Ualpha * SQRT3byTWO;
-	data->tmp3 = data->tmp2 - data->tmp1;
-
-	data->VecSector = 3;
-	data->VecSector =
-			(data->tmp2 > 0) ? (data->VecSector - 1) : data->VecSector;
-	data->VecSector =
-			(data->tmp3 > 0) ? (data->VecSector - 1) : data->VecSector;
-	data->VecSector =
-			(data->tmp1 < 0) ? (7 - data->VecSector) : data->VecSector;
-
-	if (data->VecSector == 1 || data->VecSector == 4) {
-		data->Ta = data->tmp2;
-		data->Tb = data->tmp1 - data->tmp3;
-		data->Tc = -data->tmp2;
-	} else if (data->VecSector == 2 || data->VecSector == 5) {
-		data->Ta = data->tmp3 + data->tmp2;
-		data->Tb = data->tmp1;
-		data->Tc = -data->tmp1;
-	} else {
-		data->Ta = data->tmp3;
-		data->Tb = -data->tmp3;
-		data->Tc = -(data->tmp1 + data->tmp2);
-	}
-
-	/*从[-1 1]变换[0 1]*/
-	data->Ta = data->Ta * 0.5 + 0.5;
-	data->Tb = data->Tb * 0.5 + 0.5;
-	data->Tc = data->Tc * 0.5 + 0.5;
-
-}
-
-/**/
-void MINPWLIM(TYPE_MINPWLIM *data) {
-	data->Ta_out = data->Ta_in;
-	data->Tb_out = data->Tb_in;
-	data->Tc_out = data->Tc_in;
-
-	if (data->Ta_in <= data->Tmin)
-		data->Ta_out = data->Tmin;
-	if (data->Ta_in >= (1.0 - data->Tmin))
-		data->Ta_out = (1.0 - data->Tmin);
-
-	if (data->Tb_in <= data->Tmin)
-		data->Tb_out = data->Tmin;
-	if (data->Tb_in >= (1.0 - data->Tmin))
-		data->Tb_out = (1.0 - data->Tmin);
-
-	if (data->Tc_in <= data->Tmin)
-		data->Tc_out = data->Tmin;
-	if (data->Tc_in >= (1.0 - data->Tmin))
-		data->Tc_out = (1.0 - data->Tmin);
-
-}
+//void SVGEN(TYPE_SVGEN *data) {
+//	data->tmp1 = data->Ubeta;
+//	data->tmp2 = data->Ubeta * 0.5 + data->Ualpha * SQRT3byTWO;
+//	data->tmp3 = data->tmp2 - data->tmp1;
+//
+//	data->VecSector = 3;
+//	data->VecSector =
+//			(data->tmp2 > 0) ? (data->VecSector - 1) : data->VecSector;
+//	data->VecSector =
+//			(data->tmp3 > 0) ? (data->VecSector - 1) : data->VecSector;
+//	data->VecSector =
+//			(data->tmp1 < 0) ? (7 - data->VecSector) : data->VecSector;
+//
+//	if (data->VecSector == 1 || data->VecSector == 4) {
+//		data->Ta = data->tmp2;
+//		data->Tb = data->tmp1 - data->tmp3;
+//		data->Tc = -data->tmp2;
+//	} else if (data->VecSector == 2 || data->VecSector == 5) {
+//		data->Ta = data->tmp3 + data->tmp2;
+//		data->Tb = data->tmp1;
+//		data->Tc = -data->tmp1;
+//	} else {
+//		data->Ta = data->tmp3;
+//		data->Tb = -data->tmp3;
+//		data->Tc = -(data->tmp1 + data->tmp2);
+//	}
+//
+//	/*从[-1 1]变换[0 1]*/
+//	data->Ta = data->Ta * 0.5 + 0.5;
+//	data->Tb = data->Tb * 0.5 + 0.5;
+//	data->Tc = data->Tc * 0.5 + 0.5;
+//
+//}
+//
+///**/
+//void MINPWLIM(TYPE_MINPWLIM *data) {
+//	data->Ta_out = data->Ta_in;
+//	data->Tb_out = data->Tb_in;
+//	data->Tc_out = data->Tc_in;
+//
+//	if (data->Ta_in <= data->Tmin)
+//		data->Ta_out = data->Tmin;
+//	if (data->Ta_in >= (1.0 - data->Tmin))
+//		data->Ta_out = (1.0 - data->Tmin);
+//
+//	if (data->Tb_in <= data->Tmin)
+//		data->Tb_out = data->Tmin;
+//	if (data->Tb_in >= (1.0 - data->Tmin))
+//		data->Tb_out = (1.0 - data->Tmin);
+//
+//	if (data->Tc_in <= data->Tmin)
+//		data->Tc_out = data->Tmin;
+//	if (data->Tc_in >= (1.0 - data->Tmin))
+//		data->Tc_out = (1.0 - data->Tmin);
+//
+//}
 
 /**/
 void LPFILTER(TYPE_LPFILTER *data) {
@@ -582,8 +597,10 @@ void OvMd(void) {
 		acmctrl.XX_MOvMd = 0.6389
 				+ (0.6667 - 0.6389) / (0.6057 - 0.6038)
 						* (acmctrl.XX_M - 0.6038);
-	else
+	else {
 		acmctrl.XX_MOvMd = 0.6667;
+		acmctrl.WU_OvMd = (acmctrl.XX_M - 0.6057) * acmctrl.XU_DcLk;
+	}
 }
 
 void SVPWM(void) {

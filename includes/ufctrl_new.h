@@ -31,6 +31,12 @@ typedef unsigned long long Uint64;
 typedef float              float32;
 #endif
 
+typedef struct
+{
+	float32	re;
+	float32 im;
+}cfloat32;
+
 /**/
 typedef struct CLARKE
 {
@@ -315,16 +321,20 @@ extern void SOGIOSGFLL(TYPE_SOGIOSGMA *interface);
 
 typedef struct
 {
+	/*HSTIDA*/
 	float32	XU_DcLk;//input
 	float32	XI_DcLk;
 	float32	XI_PhA;
 	float32	XI_PhB;
 	float32	XI_PhC;
 	float32	XU_PhABLk;
+
+	/*HSTODA*/
 	float32	XX_DutyA;//output
 	float32	XX_DutyB;
 	float32	XX_DutyC;
 	Uint16	XX_Mode;
+
 	float32	PT_Tsc;//param
 	float32	XX_M;//
 	float32 XX_MOvMd;
@@ -340,37 +350,6 @@ typedef struct
 	TYPE_PI_CONTROLLER U3PhCl;
 	TYPE_PI_CONTROLLER F3PhSz;
 	TYPE_PI_CONTROLLER U3PhSz;
-
-	float32	XX_UPeakCom;
-	float32 XX_AngleCom;
-
-	float32	XU_3PhAl;
-	float32	XU_3PhBe;
-	float32	XU_3PhPek;/*3-phase output load voltage, phase-phase, peak value*/
-	float32 XU_3PhRe;/*3-phase output load voltage, phase-phase, real part*/
-	float32 XU_3PhIm;/*3-phase output load voltage, phase-phase, imaginary part*/
-	float32 XU_3PhRms;/*3-phase output load voltage, phase-phase, RMS value*/
-	float32 XT_U3Ph;/*Period time of measured 3-phase output load voltage*/
-
-	float32	XI_PhPek;/*Phase current, peak value*/
-	float32	XI_PhAct;/*Active phase current*/
-	float32	XI_PhRct;/*Reactive phase current*/
-	float32 XI_Ph1Rms;/*Phase current 1, RMS value*/
-	float32 XI_Ph2Rms;/*Phase current 2, RMS value*/
-	float32 XI_Ph3Rms;/*Phase current 3, RMS value*/
-	float32 XI_PhReFix;/*Phase current, real part of fix projection*/
-	float32 XI_PhImFix;/*Phase current, imaginary part of fix projection*/
-
-	float32 XP_3Ph;/*3-phase output power*/
-	float32 XQ_3Ph;/*3-phase output reactive power*/
-
-	float32 XP_Ovp;/*OVP power*/
-	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
-//	float32 WU_IPhClTrs;/*3-phase output load voltage reference manipulation,transient phase current control*/
-//	float32 WU_IBtCgCl;/*3-Phase output load voltage manipulation from battery charger current control*/
-//	float32 WU_OvMd;/*3-phase output load voltage manipulation due to over modulation*/
-//	float32 WU_IPhClRms;/*3-phase output load voltage manipulation,RMS phase current limitation*/
-//	float32 WU_Flt;/*Filtered voltage reference*/
 
 	/*F3PhRef*/
 	float32 WF_3PhDsp;/**/
@@ -474,6 +453,51 @@ typedef struct
 	float32 PU_3PhBusAct;
 	float32 PU_3PhBusIdle;
 
+	/*ACCLDA*/
+	//IRQ
+	float32 WU_IPhClTrs;
+	Uint16  S_IPhClTrsAv:1;
+	float32 WU_IPhClTrs_Flt;
+	//1ms
+	float32 WU_IPhClRms;
+	Uint16	B_LimAct;
+
+	/*BACCDA*/
+	float32 WU_IBtCgCl;
+
+	/*UFCODA*/
+	float32 WU_OvMd;
+	float32 WU_IPhClRmsRed;
+	float32 WU_3PhAbs_Flt;
+
+	/*SIPRDA*/
+	float32	XX_UPeakCom;
+	float32 XX_AngleCom;
+
+	float32	XU_3PhAl;
+	float32	XU_3PhBe;
+	float32	XU_3PhPek;/*3-phase output load voltage, phase-phase, peak value*/
+	float32 XU_3PhRe;/*3-phase output load voltage, phase-phase, real part*/
+	float32 XU_3PhIm;/*3-phase output load voltage, phase-phase, imaginary part*/
+	float32 XU_3PhRms;/*3-phase output load voltage, phase-phase, RMS value*/
+	float32 XT_U3Ph;/*Period time of measured 3-phase output load voltage*/
+
+	float32	XI_PhPek;/*Phase current, peak value*/
+	float32	XI_PhAct;/*Active phase current*/
+	float32	XI_PhRct;/*Reactive phase current*/
+	float32 XI_Ph1Rms;/*Phase current 1, RMS value*/
+	float32 XI_Ph2Rms;/*Phase current 2, RMS value*/
+	float32 XI_Ph3Rms;/*Phase current 3, RMS value*/
+	float32 XI_PhReFix;/*Phase current, real part of fix projection*/
+	float32 XI_PhImFix;/*Phase current, imaginary part of fix projection*/
+
+	float32 XP_3Ph;/*3-phase output power*/
+	float32 XQ_3Ph;/*3-phase output reactive power*/
+
+	float32 XP_Ovp;/*OVP power*/
+	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
+
+
 }TYPE_UFCOMA;
 
 #define UFCOMA_DEFAULTS	{\
@@ -502,11 +526,6 @@ typedef struct
 	PI_CONTROLLER_DEFAULTS,\
 	PI_CONTROLLER_DEFAULTS,\
 	0,0,\
-	0,0,0,0,0,0,0,\
-	0,0,0,0,0,0,0,0,\
-	0,0,\
-	0,0,\
-	0,0,\
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,0,0,0,0,0,0,\
 	0,0,0,0,0,0,0,\
@@ -518,6 +537,15 @@ typedef struct
 	0,\
 	0,0,\
 	0,0,0,\
+	0,0,\
+	0,0,0,0,0,/*acclda*/\
+	0,\
+	0,0,0,\
+	0,0,\
+	0,0,0,0,0,0,0,\
+	0,0,0,0,0,0,0,0,\
+	0,0,\
+	0,0,\
 	}
 
 extern TYPE_UFCOMA acmctrl;
@@ -526,11 +554,7 @@ extern TYPE_UFCOMA acmctrl;
 extern "C" {
 #endif /* extern "C" */
 
-extern void UFCOMAInit(void);
-extern void UFCOMAStep(void);
-extern void UFCOMATerm(void);
-
-extern void DspStep(void);
+/**/
 
 void F3PhRef(void);
 void U3PhRef(void);
@@ -549,17 +573,32 @@ void UF3PhSz(void);
 void IPhClGenOvLd(void);
 void IPhClPsTrs(void);
 
+/**/
+extern void UFCOMAInit(void);
+extern void UFCOMAStep(void);
+extern void UFCOMATerm(void);
+
+extern void DspStep(void);
+
+
+
+/**/
+extern void ACCL_B(void);
+extern void ACCL_T21(void);
+extern void ACCL_T22(void);
+
 extern void OvMd(void);
 extern void SVPWM(void);
 
+/**/
 extern float32	Min(float32	a,float32 b);
 extern float32	Max(float32	a,float32 b);
 extern float32	Limit(float32 x,float32 low,float32 up);
+extern void Clarke(float32 *alpha,float32 *beta,float32 a,float32 b,float32 c);
+extern void Park(float32 *alpha,float32 *beta,float32 a,float32 b,float32 c);
 
 #ifdef __cplusplus
 }
 #endif
-
-
 
 #endif /* UFCTRL_H_ */
