@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /*DEFINES*/
-//#define	 TWObyTHREE	  0.66666666666667       /* 2/3 */
+#define	TWObyTHREE	  	0.66666666666667       /* 2/3 */
 #define ONEbySQRT3		0.57735026918963    /* 1/sqrt(3) */
 #define SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
 #define SQRT3   		1.73205080756888    /* sqrt(3)/2 */
@@ -42,6 +42,8 @@ struct Dsp_Data {
 	float32 XI_PhB;
 	float32 XI_PhC;
 	float32 XU_PhABLk;
+	float32 WF_3Ph;
+	float32 WU_3Ph;
 
 	/*HSTODA*/
 	float32 XX_DutyA; //output
@@ -93,7 +95,7 @@ struct Dsp_Data {
 	float32 XI_Ph3Rms;
 
 	float32 WU_IPhClRms;
-	Uint16 	B_LimAct;
+	Uint16 B_LimAct;
 
 	/*UFCODA*/
 	float32 WX_ThetaCv;
@@ -104,7 +106,7 @@ struct Dsp_Data {
 	float32 WU_3PhAbsOvMd;
 	float32 WU_IPhClRmsRed;
 	float32 WU_3PhAbs;
-	float32 WU_3PhAB;
+	cfloat32 WU_3PhAB;
 
 	float32 XX_CrU;
 	float32 XX_CrV;
@@ -112,6 +114,11 @@ struct Dsp_Data {
 
 	/*PPG3*/
 	float32 XT_Tsc;
+
+	/*SRTODA*/
+	Uint16 A_CvOp :1;
+	Uint16 A_OvpCpOp:1;
+	Uint16 A_BtCpOp:1;
 
 	/**/
 	float32 XP_Ovp;/*OVP power*/
@@ -122,10 +129,12 @@ struct Dsp_Data {
 };
 
 struct Dsp_Param {
-	float32 PT_Tsc; //param
+	float32 PN_IPhFixMcu_Flt;
 };
 
 struct Mcu_Data {
+	float32 PT_Tsc;
+
 	/*F3PhRef*/
 	float32 WF_3PhDsp;/**/
 	float32 WF_3PhU3PhRef;
@@ -150,7 +159,6 @@ struct Mcu_Data {
 	float32 WU_3PhDsp;/**/
 	Uint16 L_En3PhCl;
 	Uint16 L_EnU3PhOpLoCl;
-	Uint16 B_EnU3PhCl;
 	float32 WU_3PhClIn;
 	float32 WU_3PhCl;
 	float32 PX_KpU3PhCl;
@@ -179,12 +187,12 @@ struct Mcu_Data {
 	float32 XX_FRefRmpDo;
 	float32 PF_3PhNom;
 	float32 PF_3PhMin;
-	Uint16 A_FNom;
+
 
 	/*UF3PhCmp*/
 	//	float32	XI_PhAct;//local
 	//	float32	XI_PhRct;
-	Uint16 A_CvOp;
+
 	Uint16 L_EnUF3PhCmp;
 	float32 PI_UF3PhCmpActHiLo;	//param
 	float32 PF_UF3PhCmpActHiLo;
@@ -200,8 +208,6 @@ struct Mcu_Data {
 	float32 PF_UF3PhSzClMaxMin;
 	float32 PF_UF3PhSzRdy;
 	float32 PT_UF3PhSzRmp;
-	Uint16 C_AuSz;
-	Uint16 A_AuSz;
 	float32 PD_TrfSfPr3Ph;	//变压器原边相电压与副边线电压相移
 
 	/*U3PhSz*/
@@ -211,17 +217,29 @@ struct Mcu_Data {
 	float32 PU_UF3PhSzClMaxMin;
 	float32 PU_UF3PhSzRdy;
 
+	float32 PU_3PhBusAct;
+	float32 PU_3PhBusIdle;
+
+	float32 WF_IPhCl;
+
+	Uint16 A_CvOp:1;
+	Uint16 A_OvpCpOp:1;
+	Uint16 A_BtCpOp:1;
+	Uint16 A_FNom:1;
+	Uint16 C_AuSz:1;
+	Uint16 A_AuSz:1;
+	Uint16 B_EnU3PhCl:1;
 };
 
-struct Mcu_Param {
-
-};
+//struct Mcu_Param {
+//
+//};
 
 /**/
 extern volatile struct Dsp_Data DspData;
 extern volatile struct Dsp_Param DspParam;
 extern volatile struct Mcu_Data McuData;
-extern volatile struct Mcu_Param McuParam;
+//extern volatile struct Mcu_Param McuParam;
 
 /*DSP*/
 /*IRQB*/
@@ -242,7 +260,8 @@ extern void PPG3_B(void);
 extern void LOGB_B(void);
 
 extern float32 OvMd(float32 M1);
-extern void SVPWM(float32 *DutyA, float32 *DutyB, float32 *DutyC, cfloat32 _3PhAB);
+extern void SVPWM(float32 *DutyA, float32 *DutyB, float32 *DutyC,
+		cfloat32 _3PhAB);
 
 /*500us*/
 
@@ -281,7 +300,8 @@ void IPhClGenOvLd(void);
 void IPhClPsTrs(void);
 
 /*math*/
-extern void LowPass(float32 *Flt, float32 Src, float32 TsPerT1);
+extern void Delay(volatile float32 *Dy, float32 Src);
+extern void LowPass(volatile float32 *Flt, float32 Src, float32 TsPerT1);
 extern void CplxLowPass(cfloat32 *Flt, cfloat32 Src, float32 TsPerT1);
 
 extern float32 Min(float32 a, float32 b);
@@ -309,5 +329,104 @@ extern cfloat32 POL2CPLX(float32 r, float32 fi);
 #ifdef __cplusplus
 }
 #endif /* extern "C" */
+
+typedef struct {
+	float32 phase;	//input
+	float32 alpha;	//output
+	float32 beta;
+	float32 Ts;	//param
+	float32 w0;
+	float32 K;
+	float32 Ki;
+	float32 oldPhase1;	//state
+	float32 oldPhase2;
+	float32 oldAlpha1;
+	float32 oldAlpha2;
+	float32 oldBeta1;
+	float32 oldBeta2;
+	float32 a;	//local
+	float32 b;
+	float32 w;
+	float32 peak;
+	float32 ErrF;
+	float32 ComW;
+} TYPE_SOGIOSGMA;
+
+#define SOGIOSGMA_DEFAULTS {\
+	0.0,\
+	0.0,\
+	0.0,\
+	1.0/1350.0/2.0,\
+	100*3.1415926,\
+	1.4142135,\
+	10000,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	0.0,\
+	100*3.1415926,\
+	0.0,\
+	0.0,\
+	0.0,\
+	}
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void SOGIOSGFLL(TYPE_SOGIOSGMA *interface);
+
+#ifdef __cplusplus
+}
+#endif
+
+/**/
+typedef struct {  float32  Ref;   			// Input: reference set-point
+				  float32  Fbk;   			// Input: feedback
+				  float32  Out;   			// Output: controller output
+				  float32  Kp;				// Parameter: proportional loop gain
+				  float32  Ki;			    // Parameter: integral gain
+				  float32  Umax;			// Parameter: upper saturation limit
+				  float32  Umin;			// Parameter: lower saturation limit
+				  float32  up;				// Data: proportional term
+				  float32  ui;				// Data: integral term
+				  float32  v1;				// Data: pre-saturated controller output
+				  float32  i1;				// Data: integrator storage: ui(k-1)
+				  float32  w1;				// Data: saturation record: [u(k-1) - v(k-1)]
+				} TYPE_PI_CONTROLLER;
+
+
+/*-----------------------------------------------------------------------------
+Default initalisation values for the PI_GRANDO objects
+-----------------------------------------------------------------------------*/
+
+#define PI_CONTROLLER_DEFAULTS {		\
+	0, 			\
+	0, 			\
+	0, 			\
+	1.0,	\
+	0.0,	\
+	1.0,	\
+	-1.0, 	\
+	0.0,	\
+	0.0, 	\
+	0.0,	\
+	0.0,	\
+	1.0 	\
+	}
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void PI_CONTROLLER(TYPE_PI_CONTROLLER *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
