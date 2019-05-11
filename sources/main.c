@@ -261,6 +261,8 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	if (PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
+	Tsc = DspData.XT_Tsc;
+
 //	Cnt_Period++;
 //	if (Cnt_Period >= 2700) {
 //		Cnt_sec++;

@@ -35,24 +35,13 @@ typedef struct {
 
 /*STRUCTDEFS*/
 struct Dsp_Data {
-	/*HSTIDA*/
+	/*ANINDA*/
 	float32 XU_DcLk; //input
 	float32 XI_DcLk;
 	float32 XI_PhA;
 	float32 XI_PhB;
 	float32 XI_PhC;
 	float32 XU_PhABLk;
-	float32 WF_3Ph;
-	float32 WU_3Ph;
-
-	/*HSTODA*/
-	float32 XX_DutyA; //output
-	float32 XX_DutyB;
-	float32 XX_DutyC;
-	Uint16 XX_Mode;
-
-//	float32	XX_UPeakCom;
-//	float32 XX_AngleCom;
 
 	/*SIPRDA*/
 	float32 XI_PhReFix;
@@ -90,6 +79,12 @@ struct Dsp_Data {
 	Uint16 S_IPhClTrsAv :1;
 	float32 WU_IPhClTrs_Flt;
 
+	Uint16 XX_CntPh1Rms;
+	Uint16 XX_CntPh2Rms;
+	Uint16 XX_CntPh3Rms;
+	float32 XI_Ph1Squ;
+	float32 XI_Ph2Squ;
+	float32 XI_Ph3Squ;
 	float32 XI_Ph1Rms;
 	float32 XI_Ph2Rms;
 	float32 XI_Ph3Rms;
@@ -100,6 +95,7 @@ struct Dsp_Data {
 	/*UFCODA*/
 	float32 WX_ThetaCv;
 	float32 WU_Ref_Abs;
+	float32	XX_MRef;//base Udc
 
 	Uint16 S_3PhOvMd :1;
 	float32 WU_OvMd;/*3-phase output load voltage manipulation due to over modulation*/
@@ -111,9 +107,15 @@ struct Dsp_Data {
 	float32 XX_CrU;
 	float32 XX_CrV;
 	float32 XX_CrW;
+	Uint16 S_UDcLkLow:1;
 
 	/*PPG3*/
 	float32 XT_Tsc;
+	Uint16 XX_PwmPdVv;
+	float32 XX_DutyA; //output
+	float32 XX_DutyB;
+	float32 XX_DutyC;
+	Uint16 XX_Mode:1;
 
 	/*SRTODA*/
 	Uint16 A_CvOp :1;
@@ -124,17 +126,68 @@ struct Dsp_Data {
 	float32 XP_Ovp;/*OVP power*/
 	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
 
-//	float32 WU_IPhClRms;/*3-phase output load voltage manipulation,RMS phase current limitation*/
 //	float32 WU_Flt;/*Filtered voltage reference*/
 };
 
 struct Dsp_Param {
 	float32 PN_IPhFixMcu_Flt;
+
+	float32 PN_UDcLk_Flt;
+	float32 PN_URef_Flt;
+	float32 PN_IPhActRct_Flt;
+	float32 PN_IPhActRctMcu_Flt;
+	float32 PN_IPhAbs_Flt;
+	float32 PN_PQ3PhMcu_Flt;
+	float32 PN_IPhDQ_Flt;
+	float32 PN_URefIPhClTrs_Flt;
+
+	float32 PN_IPhRms_Flt;
+
+	float32 PU_PhClTrsMax;//	75
+	float32 PI_PhClTrsAbsLim;//	600
+
+	Uint32 PF_IRQBMax;//Dsp外部中断最大频率，计算最小间隔时间，计数单步时间
+
+	float32 PX_DdCmpFa;
+	float32 PI_DdCmpFu;
+	float32 PI_DdCmpDs;
+
+	float32 PX_3PhClRtHgh;
+	float32 PX_3PhClRtLow;
+
+	Uint16 L_EnIPhClRms:1;
+	Uint16 L_EnTPrDdCmp:1;
+	Uint16 L_DsPlElm3PhMod:1;
 };
 
 struct Mcu_Data {
 	float32 PT_Tsc;
 
+	/*ACCLMA*/
+	/*IPhClGenOvLd 4ms*/
+	float32 WF_IPhCl;
+	Uint16 S_IPhClGenOvLdAv:1;
+
+	/*IPhClPsTrs 4ms*/
+	float32 WI_PhActDsp;
+	float32 WI_PhRctDsp;
+
+	float32 XX_IPhClTrsKpActDsp;
+	float32 XX_IPhClTrsKpRctDsp;
+	float32 XX_IPhClTrsKpAbsDsp;
+
+	/*COMPMA*/
+	/*UF3PhCmp*/
+	float32 WF_WF3PhCmp;
+	float32 WU_UF3PhCmp;
+
+	Uint16 L_EnUF3PhCmp;
+	float32 PI_UF3PhCmpActHiLo;	//param
+	float32 PF_UF3PhCmpActHiLo;
+	float32 PI_UF3PhCmpRctHiLo;
+	float32 PU_UF3PhCmpRctHiLo;
+
+	/*UFCOMA*/
 	/*F3PhRef*/
 	float32 WF_3PhDsp;/**/
 	float32 WF_3PhU3PhRef;
@@ -142,6 +195,7 @@ struct Mcu_Data {
 	/*U3PhRef*/
 	float32 WU_3PhUFRt;
 	float32 WU_3PhExt;
+
 	float32 PF_U3PhRef2;
 	float32 PF_U3PhRef3;
 	float32 PU_U3PhRef1;
@@ -157,10 +211,12 @@ struct Mcu_Data {
 
 	/*U3PhCl*/
 	float32 WU_3PhDsp;/**/
-	Uint16 L_En3PhCl;
-	Uint16 L_EnU3PhOpLoCl;
+
 	float32 WU_3PhClIn;
 	float32 WU_3PhCl;
+
+	Uint16 L_En3PhCl;
+	Uint16 L_EnU3PhOpLoCl;
 	float32 PX_KpU3PhCl;
 	float32 PT_U3PhCl;
 	float32 PU_3PhClMax;
@@ -169,7 +225,10 @@ struct Mcu_Data {
 	float32 PU_3PhClRefMin;
 	float32 PX_TrfRtPr3Ph;
 
-	/*TFrefRmp*/
+	/*TFrefRmp 16ms*/
+	float32 XX_FRefRmpUp;
+	float32 XX_FRefRmpDo;
+
 	float32 PX_FRefRmpUp;
 	float32 PX_FRefRmpUpSlaveAcm;
 	float32 PX_FRefRmpDo1;
@@ -178,31 +237,22 @@ struct Mcu_Data {
 	float32 PF_FRefRmpDo12;
 	float32 PF_FRefRmpDo23;
 
-	/**/
+	/*FrefUDcLk 16ms*/
 	float32 WF_3PhUDcLk;
 
-	/*FrefRmp*/
+	/*FrefRmp 16ms*/
 	float32 WF_3PhRmp;
-	float32 XX_FRefRmpUp;
-	float32 XX_FRefRmpDo;
+	Uint16 A_FNom:1;
+
 	float32 PF_3PhNom;
 	float32 PF_3PhMin;
 
 
-	/*UF3PhCmp*/
-	//	float32	XI_PhAct;//local
-	//	float32	XI_PhRct;
-
-	Uint16 L_EnUF3PhCmp;
-	float32 PI_UF3PhCmpActHiLo;	//param
-	float32 PF_UF3PhCmpActHiLo;
-	float32 PI_UF3PhCmpRctHiLo;
-	float32 PU_UF3PhCmpRctHiLo;
-	float32 WF_WF3PhCmp;
-	float32 WU_UF3PhCmp;
-
-	/*F3PhSz*/
+	/*AUSZMA*/
+	/*F3PhSz 16ms*/
 	float32 WF_UF3PhSz;
+	float32 WF_UF3PhSzErr;
+
 	float32 PX_KpF3PhSzCl;
 	float32 PT_F3PhSzCl;
 	float32 PF_UF3PhSzClMaxMin;
@@ -210,9 +260,10 @@ struct Mcu_Data {
 	float32 PT_UF3PhSzRmp;
 	float32 PD_TrfSfPr3Ph;	//变压器原边相电压与副边线电压相移
 
-	/*U3PhSz*/
+	/*U3PhSz 16ms*/
 	float32 WU_UF3PhSz;
 	float32 WU_UF3PhSzErr;
+
 	float32 PU_UF3PhSzClAdd;
 	float32 PU_UF3PhSzClMaxMin;
 	float32 PU_UF3PhSzRdy;
@@ -220,26 +271,57 @@ struct Mcu_Data {
 	float32 PU_3PhBusAct;
 	float32 PU_3PhBusIdle;
 
-	float32 WF_IPhCl;
+	/*UF3PhSz 16ms*/
+	Uint16 A_AuSz:1;
 
+	/**/
 	Uint16 A_CvOp:1;
 	Uint16 A_OvpCpOp:1;
 	Uint16 A_BtCpOp:1;
-	Uint16 A_FNom:1;
-	Uint16 C_AuSz:1;
-	Uint16 A_AuSz:1;
-	Uint16 B_EnU3PhCl:1;
+
+	Uint16 C_AuSz:1;//开始同步
+	Uint16 B_EnU3PhCl:1;//开始闭环
 };
 
-//struct Mcu_Param {
-//
-//};
+struct Mcu_Param {
+	/*ACCLMA
+	PARTAP_PF_IPhClMin	50
+	PARTAP_PF_IPhClMinErr	25
+	PARTAP_PX_IPhClIntMax	20000
+	PARTAP_PX_IPhClIntMin	0
+	PARTAP_PT_IPhClInt	100
+	PARTAP_PI_IPhClActMax	400
+	PARTAP_PI_IPhClActMin	100
+	PARTAP_PI_IPhClActPsTrs	450
+	PARTAP_PI_IPhClActOs	100
+	PARTAP_PX_IPhClActDe	200
+	PARTAP_PI_IPhClRctMax	400
+	PARTAP_PI_IPhClRctMin	0
+	PARTAP_PI_IPhClRctPsTrs	300
+	PARTAP_PI_IPhClRctOs	100
+	PARTAP_PX_IPhClRctDePos	200
+	PARTAP_PX_IPhClRctDeNg	200
+	PARTAP_PI_IPhClPsTrsLim	600
+	PARTDP_PX_IPhClTrsKpAct	0,005
+	PARTDP_PX_IPhClTrsKpRct	0,03
+	PARTDP_PX_IPhClTrsKpAbs	0
+
+
+*/
+
+
+	float32 PX_IPhClTrsKpAct;
+	float32 PX_IPhClTrsKpRct;
+	float32 PX_IPhClTrsKpAbs;
+
+};
 
 /**/
+extern volatile float32 Tsc;
 extern volatile struct Dsp_Data DspData;
 extern volatile struct Dsp_Param DspParam;
 extern volatile struct Mcu_Data McuData;
-//extern volatile struct Mcu_Param McuParam;
+extern volatile struct Mcu_Param McuParam;
 
 /*DSP*/
 /*IRQB*/
@@ -260,7 +342,7 @@ extern void PPG3_B(void);
 extern void LOGB_B(void);
 
 extern float32 OvMd(float32 M1);
-extern void SVPWM(float32 *DutyA, float32 *DutyB, float32 *DutyC,
+extern void SVPWM(volatile float32 *DutyA,volatile float32 *DutyB,volatile float32 *DutyC,
 		cfloat32 _3PhAB);
 
 /*500us*/
@@ -302,7 +384,11 @@ void IPhClPsTrs(void);
 /*math*/
 extern void Delay(volatile float32 *Dy, float32 Src);
 extern void LowPass(volatile float32 *Flt, float32 Src, float32 TsPerT1);
-extern void CplxLowPass(cfloat32 *Flt, cfloat32 Src, float32 TsPerT1);
+extern void CplxLowPass(volatile cfloat32 *Flt, cfloat32 Src, float32 TsPerT1);
+extern float32 RmsClc(float32 Src,Uint16 N,volatile float32 *Square,volatile Uint16 *cnt);
+extern void RAMP2(float32 *Y,float32 X,float32 Dr,float32 Df,float32 Init,Uint16 Set,Uint16 Hold);
+extern float32 Cycle(void);
+extern void INTEGR(float32 *Y,float32 X,float32 T,float32 Init,float32 Max,float32 Min,Uint16 Set,Uint16 Hold);
 
 extern float32 Min(float32 a, float32 b);
 extern float32 Max(float32 a, float32 b);
