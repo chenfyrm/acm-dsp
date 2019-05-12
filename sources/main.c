@@ -169,15 +169,6 @@ volatile struct PX_Out PX_Out_Spf = { 21,
 		6944,			//鍙岄噰鏍凤細1450Hz:6465 1350Hz:6944
 		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000, 0x0000,
 		0x10, 0x0000, };
-//========================================================
-struct PI_Rms {
-	float32 Square;
-	float32 Rms;
-};
-volatile struct PI_Rms PI_PhARms = { 0, 0 };
-volatile struct PI_Rms PI_PhBRms = { 0, 0 };
-volatile struct PI_Rms PI_PhCRms = { 0, 0 };
-volatile struct PI_Rms PU_PhABRms = { 0, 0 };
 //======================================================================
 /* GLOBALS */
 
@@ -193,12 +184,6 @@ Uint16 Cnt_Period = 0;
 Uint16 Cnt_us = 0;
 Uint16 Cnt_sec = 0;
 Uint16 Cnt_min = 0;
-Uint16 Sign = 0;
-float32 IOvA = 0;
-float32 IOvB = 0;
-float32 IOvC = 0;
-float32 Theta = 0.0;
-//Uint16	sign = 0;
 
 int16 DA[8] = { 0 };
 
@@ -209,7 +194,6 @@ void NX_Pr(void);
 void EN_GPIO30(void);
 void DIS_GPIO30(void);
 interrupt void DPRAM_isr(void);
-void PI_RmsClc(void);
 void DspStCl(void);
 void OvpFcTsCp(void);
 void OvpCp(void);
@@ -243,6 +227,9 @@ void main(void) {
 	EINT;
 	ERTM;
 
+	DspInit();
+	McuInit();
+
 	while (1) {
 		//--------------------------------------------------------------------------------
 		GPIO_Temp181 = GpioDataRegs.GPADAT.bit.GPIO18;			//澶栭儴涓柇杈撳叆鏍囧織浣�
@@ -257,11 +244,17 @@ void main(void) {
 //==============================================================================
 interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the interrupt
 {
+	/*保护现场*/
+	float32 tmp = Tsc;
+
+
+	/**/
 	PX_Out_Spf.NX_DspPlCn++;
 	if (PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
 	Tsc = DspData.XT_Tsc;
+
 
 //	Cnt_Period++;
 //	if (Cnt_Period >= 2700) {
@@ -317,6 +310,9 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
 
 	EN_GPIO30();
+
+	/*恢复现场*/
+	Tsc = tmp;
 }
 //==============================================================================
 void DPRAM_RD(void) //MCU-->DSP
@@ -440,7 +436,6 @@ void NX_Pr(void) {
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA5 = 1;
 			PX_InPr_Spf.XI_PhAOvCn = 4;
-			IOvA = PX_In_Spf.XI_PhA;
 		}
 	} else
 		PX_InPr_Spf.XI_PhAOvCn = 0;
@@ -453,7 +448,6 @@ void NX_Pr(void) {
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA6 = 1;
 			PX_InPr_Spf.XI_PhBOvCn = 4;
-			IOvB = PX_In_Spf.XI_PhB;
 		}
 	} else
 		PX_InPr_Spf.XI_PhBOvCn = 0;
@@ -467,7 +461,6 @@ void NX_Pr(void) {
 			PX_Out_Spf.SX_Run = 0;
 			PX_Out_Spf.XX_Flt1.bit.TA7 = 1;
 			PX_InPr_Spf.XI_PhCOvCn = 4;
-			IOvC = PX_In_Spf.XI_PhC;
 		}
 	} else
 		PX_InPr_Spf.XI_PhCOvCn = 0;
@@ -583,7 +576,9 @@ void DspStCl(void) {
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x20) {
 		//鍙傛暟鍒濆鍖�
+
 		DspInit();
+		McuInit();
 
 		if (PX_In_Spf.NX_McuOpSt == 0x403) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x30;
@@ -629,7 +624,7 @@ void DspStCl(void) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x43;
-			DspData.A_CvOp = TRUE;
+			DspData.C_CvOp = TRUE;
 			PX_Out_Spf.SX_Run = 1;
 		} else {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
@@ -637,7 +632,7 @@ void DspStCl(void) {
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x43) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
-			if (DspData.A_CvOp == 1)
+			if (DspData.C_CvOp == 1)
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x44;
 		} else {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
@@ -645,7 +640,7 @@ void DspStCl(void) {
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x44) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
-			if (McuData.A_FNom == 1)
+			if (McuData.A_FRmp == 1)
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x45;
 		} else {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
@@ -715,7 +710,7 @@ void DspStCl(void) {
 		if (McuData.A_CvOp == 0)
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x53;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x53) {
-		if (McuData.A_FNom == 1)
+		if (McuData.A_FRmp == 1)
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x54;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x54) {
 		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x55;
@@ -800,27 +795,6 @@ void DspStCl(void) {
 	//------------------------------------------
 }
 
-//==============================================================================
-void PI_RmsClc(void) {
-	if (Cnt_Period < 256) {
-		PI_PhARms.Square += (PX_In_Spf.XI_PhA * PX_In_Spf.XI_PhA);
-		PI_PhBRms.Square += (PX_In_Spf.XI_PhB * PX_In_Spf.XI_PhB);
-		PI_PhCRms.Square += (PX_In_Spf.XI_PhC * PX_In_Spf.XI_PhC);
-		PU_PhABRms.Square += (PX_In_Spf.XU_PhABGt * PX_In_Spf.XU_PhABGt);
-		Cnt_Period++;
-	}
-	if (Cnt_Period >= 256) {
-		PI_PhARms.Rms = __ffsqrtf(PI_PhARms.Square * 0.00390625);// 0.00390625 = 1/256  square root function
-		PI_PhBRms.Rms = __ffsqrtf(PI_PhBRms.Square * 0.00390625);// 0.00390625 = 1/256
-		PI_PhCRms.Rms = __ffsqrtf(PI_PhARms.Square * 0.00390625);// 0.00390625 = 1/256
-		PU_PhABRms.Rms = __ffsqrtf(PU_PhABRms.Square * 0.00390625);	// 0.00390625 = 1/256
-		PI_PhARms.Square = 0;
-		PI_PhBRms.Square = 0;
-		PI_PhCRms.Square = 0;
-		PU_PhABRms.Square = 0;
-		Cnt_Period = 0;
-	}
-}
 
 //===============================================================================================
 //=========================================THE END===============================================
