@@ -89,6 +89,9 @@ struct Dsp_Data {
 	float32 XI_Ph1Rms;
 	float32 XI_Ph2Rms;
 	float32 XI_Ph3Rms;
+	float32 XI_Ph1Rms_Flt;
+	float32 XI_Ph2Rms_Flt;
+	float32 XI_Ph3Rms_Flt;
 
 	float32 WU_IPhClRms;
 	Uint16 B_LimAct;
@@ -127,8 +130,8 @@ struct Dsp_Data {
 
 	/*SRTODA*/
 	Uint16 C_CvOp :1;
-	Uint16 A_OvpCpOp:1;
-	Uint16 A_BtCpOp:1;
+	Uint16 C_OvpCpOp:1;
+	Uint16 C_BtCpOp:1;
 
 	/**/
 	float32 XP_Ovp;/*OVP power*/
@@ -301,10 +304,6 @@ struct Mcu_Data {
 	Uint16 A_AuSz:1;
 
 	/**/
-	Uint16 A_CvOp:1;
-	Uint16 A_OvpCpOp:1;
-	Uint16 A_BtCpOp:1;
-
 	Uint16 C_AuSz:1;//开始同步
 	Uint16 B_EnU3PhCl:1;//开始闭环
 };
