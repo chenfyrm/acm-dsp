@@ -2,7 +2,7 @@
 #include "acm_dsp.h"
 
 #define SIMULATION 0
-#define U3PHRMS 200.0
+#define U3PHRMS 350.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
 volatile Uint16 Cnt_1ms = 0;
@@ -145,7 +145,7 @@ void SIPR_B(void) {
 		//ต๗สิ
 		XU_3PhAB = CPLXSCA(
 				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
-						POL2CPLX(1.0, PI / 2.0)), 1.04);
+						POL2CPLX(1.0, PI / 2.0)), 1.1);
 	}
 
 	/**/
