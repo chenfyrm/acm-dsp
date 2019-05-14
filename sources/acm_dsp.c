@@ -359,7 +359,7 @@ void McuInit(void) {
 	McuData.WU_3PhDsp = 0.0;
 
 	/*TFrefRmp*/
-	McuData.PX_FRefRmpUp = 40.0;
+	McuData.PX_FRefRmpUp = 25.0;
 	McuData.PX_FRefRmpUpSlaveAcm = 100.0;
 	McuData.PX_FRefRmpDo1 = 40.0;
 	McuData.PX_FRefRmpDo2 = 40.0;
@@ -447,7 +447,7 @@ void McuStep(void) {
 
 /**/
 void TFrefRmp(void) {
-	McuData.XX_FRefRmpUp = 40.0;
+	McuData.XX_FRefRmpUp = 25.0;
 	McuData.XX_FRefRmpDo = 40.0;
 }
 
