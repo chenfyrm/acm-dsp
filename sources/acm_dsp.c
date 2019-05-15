@@ -1,7 +1,7 @@
 #include "math.h"
 #include "acm_dsp.h"
 
-#define SIMULATION 0
+#define SIMULATION 1
 #define U3PHRMS 300.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
@@ -14,6 +14,8 @@ volatile struct Mcu_Param McuParam;
 TYPE_SOGIOSGMA sogiosg = SOGIOSGMA_DEFAULTS;
 TYPE_PI_CONTROLLER PI_F3PhSz = PI_CONTROLLER_DEFAULTS;
 TYPE_PI_CONTROLLER PI_U3PhCl = PI_CONTROLLER_DEFAULTS;
+volatile float32 Ext_U = 0.0;
+volatile float32 Ext_F = 0.0;
 
 void DspInit(void) {
 	DspParam.PN_IPhFixMcu_Flt = 4.0; //rad/s
@@ -374,7 +376,7 @@ void McuInit(void) {
 	McuData.PF_FRefRmpDo23 = 30.0;
 
 	/*FrefRmp*/
-	McuData.PF_3PhNom = 50.3;
+	McuData.PF_3PhNom = 50.0;
 	McuData.PF_3PhMin = 3.0;
 
 	/*UF3PhCmp 4ms*/
@@ -438,6 +440,9 @@ void McuInit(void) {
 
 void McuStep(void) {
 	/**/
+	McuData.PF_3PhNom = Ext_F;
+	McuData.PU_U3PhRef3 = Ext_U;
+	McuData.PU_U3PhRef4 = Ext_U;
 	TFrefRmp();
 	FrefUDcLk();
 	FrefRmp();
@@ -454,7 +459,7 @@ void McuStep(void) {
 /**/
 void TFrefRmp(void) {
 	McuData.XX_FRefRmpUp = 25.0;
-	McuData.XX_FRefRmpDo = 40.0;
+	McuData.XX_FRefRmpDo = 25.0;
 }
 
 void FrefUDcLk(void) {

@@ -349,6 +349,8 @@ struct Mcu_Param {
 extern volatile float32 Tsc;
 extern volatile Uint16 Cnt_1ms;
 extern volatile Uint16 Cnt_4ms;
+extern volatile float32 Ext_U;
+extern volatile float32 Ext_F;
 extern volatile struct Dsp_Data DspData;
 extern volatile struct Dsp_Param DspParam;
 extern volatile struct Mcu_Data McuData;
