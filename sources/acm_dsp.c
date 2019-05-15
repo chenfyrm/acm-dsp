@@ -1,8 +1,8 @@
 #include "math.h"
 #include "acm_dsp.h"
 
-#define SIMULATION 0
-#define U3PHRMS 350.0
+#define SIMULATION 1
+#define U3PHRMS 300.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
 volatile Uint16 Cnt_1ms = 0;
