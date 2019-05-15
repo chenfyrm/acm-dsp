@@ -184,6 +184,7 @@ Uint16 Cnt_Period = 0;
 Uint16 Cnt_us = 0;
 Uint16 Cnt_sec = 0;
 Uint16 Cnt_min = 0;
+Uint16 Hold = 0;
 
 int16 DA[8] = { 0 };
 
@@ -272,32 +273,34 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	NX_Pr();
 
 	DspStCl();
-	DspStep();
 
-	Cnt_1ms++;
-	Cnt_4ms++;
+	if (!Hold) {
+		DspStep();
 
-	if (Cnt_1ms >= 3) {
-		float32 tmp = Tsc;
-		Tsc = tmp * 3.0;
+		Cnt_1ms++;
+		if (Cnt_1ms >= 3) {
+			float32 tmp = Tsc;
+			Tsc = tmp * 3.0;
 
 //		HSTI_T2();
-		ACCL_T2();
+			ACCL_T2();
 //		OVPT_T2();
 //		HSTO_T2();
 
-		Cnt_1ms = 0;
-		Tsc = tmp;
-	}
+			Cnt_1ms = 0;
+			Tsc = tmp;
+		}
 
-	if (Cnt_4ms >= 11) {
-		float32 tmp = Tsc;
-		Tsc = tmp * 11.0;
+		Cnt_4ms++;
+		if (Cnt_4ms >= 11) {
+			float32 tmp = Tsc;
+			Tsc = tmp * 11.0;
 
-		McuStep();
+			McuStep();
 
-		Cnt_4ms = 0;
-		Tsc = tmp;
+			Cnt_4ms = 0;
+			Tsc = tmp;
+		}
 	}
 
 	/**/
@@ -318,6 +321,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyC;
 		}
 	} else {
+		PX_Out_Spf.XX_PwmMo = 0;
 		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
 		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
@@ -370,10 +374,10 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x28) = McuData.WF_3PhDsp*10;
 //	*(XintfZone7 + 0x29) = DspData.XX_MRef*100;
 //	*(XintfZone7 + 0x2A) = DspData.XI_Ph1Rms_Flt*10;
-	*(XintfZone7 + 0x27) = (DspData.WU_3PhAbs / DspData.XU_DcLk) * 100;
-	*(XintfZone7 + 0x28) = PI_U3PhCl.Ref * 10;
-	*(XintfZone7 + 0x29) = PI_U3PhCl.Fbk * 10;
-	*(XintfZone7 + 0x2A) = DspData.XU_3PhRms * 10;
+	*(XintfZone7 + 0x27) = fabs((DspData.WU_3PhAbs / DspData.XU_DcLk) * 100);
+	*(XintfZone7 + 0x28) = fabs(DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt*100);
+	*(XintfZone7 + 0x29) = fabs(DspData.XP_3Ph_Flt / 1000.0);
+	*(XintfZone7 + 0x2A) = fabs(DspData.XQ_3Ph_Flt / 1000.0);
 	/*DA杈撳嚭*/
 	DA[3] = 0.0;
 	DA[4] = 0.0;
@@ -533,13 +537,14 @@ void DspStCl(void) {
 
 	//PrSd
 	if (PX_In_Spf.NX_McuOpSt == 0x41C) {
-		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
-			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
-			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0020;
-		}
-		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
-			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
-		}
+//		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
+//			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+//			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0020;
+//		}
+//		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
+//			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
+//		}
+		Hold = 1;
 	}
 
 	//SfSd

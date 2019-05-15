@@ -28,11 +28,11 @@ void DspInit(void) {
 	DspParam.PN_IPhRms_Flt = 30.0;
 	DspParam.PN_URefIPhClTrs_Flt = 20.0;
 
-	DspParam.PU_PhClTrsMax = 75; //	75
-	DspParam.PI_PhClTrsAbsLim = 600; //	600
+	DspParam.PU_PhClTrsMax = 75.0; //	75
+	DspParam.PI_PhClTrsAbsLim = 600.0; //	600
 
 	DspParam.PD_TrfThetaPr3Ph = PI / 3.0;
-	DspParam.PZ_3PhFiNdRe = 0.78; //	0,078 滤波电感电阻
+	DspParam.PZ_3PhFiNdRe = 0.078; //	0,078 滤波电感电阻
 	DspParam.PZ_3PhFiNdIm = 0.207; //	0,207滤波电感电抗
 	DspParam.PZ_3PhFiCaIm = -5.47; //	-5,47 滤波电容电抗折算到一次侧
 	DspParam.PZ_3PhTfRe = 0.0; //	0
