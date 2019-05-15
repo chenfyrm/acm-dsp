@@ -185,6 +185,10 @@ Uint16 Cnt_us = 0;
 Uint16 Cnt_sec = 0;
 Uint16 Cnt_min = 0;
 Uint16 Hold = 0;
+volatile Uint16 Cnt_1ms = 0;
+volatile Uint16 Cnt_4ms = 0;
+volatile float32 Ext_U = 0.0;
+volatile float32 Ext_F = 0.0;
 
 int16 DA[8] = { 0 };
 
@@ -296,6 +300,10 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 			float32 tmp = Tsc;
 			Tsc = tmp * 11.0;
 
+			McuData.PF_3PhNom = Limit(Ext_F,3.0,50.0);
+			McuData.PU_U3PhRef3 = Limit(Ext_U,0.0,380.0);
+			McuData.PU_U3PhRef4 = McuData.PU_U3PhRef3;
+
 			McuStep();
 
 			Cnt_4ms = 0;
@@ -351,6 +359,8 @@ void DPRAM_RD(void) //MCU-->DSP
 	DspData.XI_PhB = *(XintfZone7 + 0xA) * 0.1 / 2.0 * (-1.0);// phase B current, A
 	DspData.XI_PhC = *(XintfZone7 + 0x9) * 0.1 / 2.0 * (-1.0);// phase C current, A
 	DspData.XU_PhABLk = *(XintfZone7 + 0x7) * 0.1 * 2.0;// AB鐩歌緭鍑虹嚎鐢靛帇, V 閲囨牱婊ゆ尝瀵瑰箙鍊肩殑琛板噺 50Hz鏃惰“鍑忎负0.5
+	Ext_U = *(XintfZone7 + 0x12);
+	Ext_F = *(XintfZone7 + 0x13);
 }
 //==============================================================================
 void DPRAM_WR(void)			//DSP-->MCU

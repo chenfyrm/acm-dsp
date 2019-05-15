@@ -221,7 +221,8 @@ struct Mcu_Data {
 	float32 WF_3PhU3PhRef;
 
 	/*U3PhRef*/
-	float32 WU_3PhUFRt;
+	float32	WU_3PhU3PhRef;
+	float32 WU_3PhRmp;
 	float32 WU_3PhExt;
 
 	float32 PF_U3PhRef2;
@@ -347,10 +348,6 @@ struct Mcu_Param {
 
 /**/
 extern volatile float32 Tsc;
-extern volatile Uint16 Cnt_1ms;
-extern volatile Uint16 Cnt_4ms;
-extern volatile float32 Ext_U;
-extern volatile float32 Ext_F;
 extern volatile struct Dsp_Data DspData;
 extern volatile struct Dsp_Param DspParam;
 extern volatile struct Mcu_Data McuData;
