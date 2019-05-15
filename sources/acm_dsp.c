@@ -246,7 +246,13 @@ void UFCO_B(void) {
 			POL2CPLX(1.0, DspData.WX_Theta));//ipark
 	CPLX2POL(&DspData.WU_Ref_Abs, &DspData.WX_ThetaCv, DspData.WU_3PhPmAB);
 
-	/*直流母线电压振荡抑制*/
+	/*
+	 * 直流母线电压振荡抑制
+	 *
+	 *
+	 *
+	 *
+	 * */
 	LowPass(&DspData.XU_DcLkStbFltSli, DspData.XU_DcLk,
 			DspData.XT_Tsc * DspParam.PN_UDcLkStbSliSmt);
 	LowPass(&DspData.XU_DcLkStbFltHev, DspData.XU_DcLk,
