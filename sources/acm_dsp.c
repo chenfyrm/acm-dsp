@@ -1,7 +1,8 @@
 #include "math.h"
+#include "stdlib.h"
 #include "acm_dsp.h"
 
-#define SIMULATION 0
+#define SIMULATION 1
 #define U3PHRMS 300.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
@@ -14,6 +15,7 @@ TYPE_PI_CONTROLLER PI_F3PhSz = PI_CONTROLLER_DEFAULTS;
 TYPE_PI_CONTROLLER PI_U3PhCl = PI_CONTROLLER_DEFAULTS;
 
 void DspInit(void) {
+
 	DspParam.PN_IPhFixMcu_Flt = 4.0; //rad/s
 	DspParam.PN_U3PhRms_Flt = 5.0; //5
 	DspParam.PN_UDcLk_Flt = 100.0;
@@ -44,8 +46,16 @@ void DspInit(void) {
 	DspParam.PN_UDcLkStbSliSmt = 2200.0; //	2200
 	DspParam.PN_UDcLkStbHevSmt = 13.5; //	13,5
 	DspParam.PU_DcLkStbMaxMin = 100.0; //	100
-	DspParam.PX_KpUDcLkStb = 150.0; //需调试
+	DspParam.PX_KpUDcLkStb = 150.0; //150
 	DspParam.PX_KpUDcLkVoStbFb = 0.00002;
+
+	//	PARTDP_PT_PrDdPoa	6
+	//	PARTDP_PT_PoaOnMin	16
+	//	data->PARADP_PT_PoaOfMin = 2 * data->PARTDP_PT_PrDdPoa + data->PARTDP_PT_PoaOnMin
+//	data->PARADP_PX_3PhClRtMax = 1 - 0.00000025 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PX_3PhClRtHgh = 1 - 0.00000050 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PX_3PhClRtLow = 0.00000050 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PX_3PhClRtMin = 0.00000025 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
 
 	DspParam.PX_3PhClRtHgh = 0.94;
 	DspParam.PX_3PhClRtLow = 0.06;
@@ -142,7 +152,7 @@ void SIPR_B(void) {
 		//调试
 		XU_3PhAB = CPLXSCA(
 				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
-						POL2CPLX(1.0, PI / 2.0)), 1.1);
+						POL2CPLX(1.0, PI / 2.0)), 100.0*PI/(sqrt(sogiosg.w*sogiosg.w+1)));
 	}
 
 	/**/
@@ -291,8 +301,10 @@ void UFCO_B(void) {
 }
 
 void PPG3_B(void) {
-	DspData.XX_PwmPdVv = floor(0.5 * DspParam.PF_IRQBMax / DspParam.PF_3PhSg);
-	DspData.XT_Tsc = DspData.XX_PwmPdVv / DspParam.PF_IRQBMax; //开关频率1350Hz，波峰波谷双采样
+	DspData.XT_Tsc = (1.0+(rand()-16384)*0.3/16384)*0.5/DspParam.PF_3PhSg;
+	DspData.XX_PwmPdVv = floor(DspData.XT_Tsc * DspParam.PF_IRQBMax );
+//	DspData.XX_PwmPdVv = floor(0.5 * DspParam.PF_IRQBMax / DspParam.PF_3PhSg);
+//	DspData.XT_Tsc = DspData.XX_PwmPdVv / DspParam.PF_IRQBMax; //开关频率1350Hz，波峰波谷双采样
 	DspData.XX_DutyA = Limit(DspData.XX_CrU, DspParam.PX_3PhClRtLow,
 			DspParam.PX_3PhClRtHgh);
 	DspData.XX_DutyB = Limit(DspData.XX_CrV, DspParam.PX_3PhClRtLow,
@@ -356,6 +368,46 @@ void McuInit(void) {
 		}
 	}
 
+//	/*
+//	Calculation of 3-phase output load voltage reference
+//	conversion from phase-phase, RMS value to phase-neutral, peak value (sqrt(2/3) = 0.8165)
+//	*/
+//	data->PARAAP_PU_3PhClRefMax = data->PARTAP_PU_3PhClRefMax * 0.8165 ;
+//	data->PARAAP_PU_3PhClRefMin = data->PARTAP_PU_3PhClRefMin * 0.8165 ;
+//	data->PARAAP_PU_U3PhRef1 = data->PARTAP_PU_U3PhRef1 * 0.8165 ;
+//	data->PARAAP_PU_U3PhRef2 = data->PARTAP_PU_U3PhRef2 * 0.8165 ;
+//	data->PARAAP_PU_U3PhRef3 = data->PARTAP_PU_U3PhRef3 * 0.8165 ;
+//	data->PARAAP_PU_U3PhRef4 = data->PARTAP_PU_U3PhRef4 * 0.8165 ;
+//	data->PARAAP_PU_UF3PhSzRdy = data->PARTAP_PU_UF3PhSzRdy * 0.8165 ;
+//	/*
+//	Calculation of time constant for PI-controllers
+//	*/
+//	data->PARAAP_PX_U3PhCl = data->PARTAP_PT_U3PhCl / 4.0 ;
+//	data->PARAAP_PX_UBtCl = data->PARTAP_PT_UBtCl / 4.0 ;
+//	data->PARAAP_PX_IBtCl = data->PARTAP_PT_IBtCl / 4.0 ;
+//	data->PARAAP_PX_F3PhSzCl = data->PARTAP_PT_F3PhSzCl / 16.0 ;
+//	/*
+//	Calculation of transformer ratios
+//	*/
+//	if (data->PARTAP_PX_TrfRtBt3Ph == 0.0)
+//	{
+//	data->PARAAP_PX_TrfRt3PhBtU = 1.0;
+//	data->PARAAP_XN_ParErrCo |= MCU_PAR_ERR_BIT2 ;
+//	}
+//	else
+//	{
+//	data->PARAAP_PX_TrfRt3PhBtU = 1 / data->PARTAP_PX_TrfRtBt3Ph ;
+//	}
+//	if (data->PARTAP_PX_TrfRtPr3Ph == 0.0)
+//	{
+//	data->PARAAP_PX_TrfRt3PhPr = 1.0 ;
+//	data->PARAAP_XN_ParErrCo |= MCU_PAR_ERR_BIT3 ;
+//	}
+//	else
+//	{
+//	data->PARAAP_PX_TrfRt3PhPr = 1 / data->PARTAP_PX_TrfRtPr3Ph ;
+//	}
+
 	McuData.WF_3PhRmp = 0.0;
 	McuData.WF_3PhDsp = 0.0;
 	McuData.WU_3PhRmp = 0.0;
@@ -392,7 +444,7 @@ void McuInit(void) {
 	/*U3PhSz 16ms*/
 	McuData.PU_UF3PhSzClAdd = 0.0;
 	McuData.PU_UF3PhSzClMaxMin = 100.0;
-	McuData.PU_UF3PhSzRdy = 20.0;
+	McuData.PU_UF3PhSzRdy = 20.0*SQRT2bySQRT3;
 
 	McuData.PU_3PhBusAct = 370.0;
 	McuData.PU_3PhBusIdle = 50.0;
@@ -400,10 +452,10 @@ void McuInit(void) {
 	/*U3PhRef*/
 	McuData.PF_U3PhRef2 = 6.0;
 	McuData.PF_U3PhRef3 = 50.0;
-	McuData.PU_U3PhRef1 = 0.0; //0Hz
-	McuData.PU_U3PhRef2 = 0.0;  //6Hz
-	McuData.PU_U3PhRef3 = U3PHRMS;  //50Hz
-	McuData.PU_U3PhRef4 = U3PHRMS; //100Hz
+	McuData.PU_U3PhRef1 = 0.0*SQRT2bySQRT3; //0Hz
+	McuData.PU_U3PhRef2 = 0.0*SQRT2bySQRT3;  //6Hz
+	McuData.PU_U3PhRef3 = U3PHRMS*SQRT2bySQRT3;  //50Hz
+	McuData.PU_U3PhRef4 = U3PHRMS*SQRT2bySQRT3; //100Hz
 	McuData.L_ExtU3PhRef = FALSE;
 	McuData.PX_ExtU3PhRefRmp = 200.0;
 	McuData.L_EnRmpU3PhRef = FALSE;
@@ -419,8 +471,8 @@ void McuInit(void) {
 	McuData.PT_U3PhCl = 50.0; //ms
 	McuData.PU_3PhClMax = 75.0;
 	McuData.PU_3PhClMin = -50.0;
-	McuData.PU_3PhClRefMax = 395.0;
-	McuData.PU_3PhClRefMin = 0.0;
+	McuData.PU_3PhClRefMax = 395.0*SQRT2bySQRT3;
+	McuData.PU_3PhClRefMin = 0.0*SQRT2bySQRT3;
 	McuData.PX_TrfRtPr3Ph = 1.684;
 
 	McuParam.PX_IPhClTrsKpAct = 0.005;
@@ -590,8 +642,6 @@ void U3PhRef(void) {
 	RAMP2(&McuData.WU_3PhRmp, McuData.WU_3PhU3PhRef, McuData.PX_U3PhRefRmp1,
 			-McuData.PX_U3PhRefRmp1, 0.0, FALSE, FALSE);
 
-	McuData.WU_3PhRmp = McuData.WU_3PhRmp;
-
 	if (!McuData.L_EnRmpU3PhRef) {
 
 	} else {
@@ -600,7 +650,7 @@ void U3PhRef(void) {
 }
 
 void U3PhCl(void) {
-	McuData.WU_3PhClIn = McuData.WU_3PhRmp * SQRT2 / SQRT3 + McuData.WU_UF3PhCmp
+	McuData.WU_3PhClIn = McuData.WU_3PhRmp + McuData.WU_UF3PhCmp
 			+ McuData.WU_UF3PhSz;
 	McuData.WU_3PhClIn = Limit(McuData.WU_3PhClIn, McuData.PU_3PhClRefMin,
 			McuData.PU_3PhClRefMax);

@@ -11,6 +11,7 @@ extern "C" {
 #define SQRT3byTWO   	0.86602540378444    /* sqrt(3)/2 */
 #define SQRT3   		1.73205080756888    /* sqrt(3)/2 */
 #define	SQRT2			1.41421356237310
+#define SQRT2bySQRT3    0.816397228637413   /*sqrt(2/3)*/
 #define	PI  		  	3.14159265358979
 #define	PI2  		  	6.28318530717959
 #define FALSE			0

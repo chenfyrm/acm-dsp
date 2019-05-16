@@ -12,6 +12,7 @@
 
 /* INCLUDES */
 #include "DSP28x_Project.h"
+#include "time.h"
 
 /* EXTERNAL FUNCTION PROTOTYPES */
 
@@ -199,6 +200,7 @@ void NX_Pr(void);
 void EN_GPIO30(void);
 void DIS_GPIO30(void);
 interrupt void DPRAM_isr(void);
+interrupt void Timer0_isr(void);
 void DspStCl(void);
 void OvpFcTsCp(void);
 void OvpCp(void);
@@ -222,12 +224,18 @@ void main(void) {
 
 	EALLOW;
 	PieVectTable.XINT1 = &DPRAM_isr;
+	/**/
+	PieVectTable.TINT0 = &Timer0_isr;
 	EDIS;
 
-	InitCpuTimers();
 	InitXInterrupt();
+	InitCpuTimers();
+	ConfigCpuTimer(&CpuTimer0, 150, 1000000);
+	StartCpuTimer0();
+
 	IER = M_INT1;
 	PieCtrlRegs.PIEIER1.bit.INTx4 = 1;
+	PieCtrlRegs.PIEIER1.bit.INTx7 = 1;
 
 	EINT;
 	ERTM;
@@ -244,42 +252,18 @@ void main(void) {
 		if ((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0)) {
 			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//澶栭儴涓柇澶嶄綅璇彞,SDRAM璇绘搷浣�
 		}
-
-		float32 a=1.0e38;
-		float32 b=10.0;
-		float32 c=0.0;
-		float32 d =0.0;
-		c= a*b;
-		d = a*a;
-		c = a*1.2;
-		c=a*1.4;
-
 	}
 }
 //==============================================================================
 interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the interrupt
 {
 	/*保护现场*/
-	float32 tmp = Tsc;
 	Tsc = DspData.XT_Tsc;
 
 	/**/
 	PX_Out_Spf.NX_DspPlCn++;
 	if (PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
-
-//	Cnt_Period++;
-//	if (Cnt_Period >= 2700) {
-//		Cnt_sec++;
-//		Cnt_Period = 0;
-//	}
-//	if (Cnt_sec >= 60) {
-//		Cnt_min++;
-//		Cnt_sec = 0;
-//	}
-//	if (Cnt_min >= 60) {
-//		Cnt_min = 60;
-//	}
 
 	DIS_GPIO30();
 	DPRAM_RD(); //璇籑CU浜や簰淇℃伅
@@ -288,38 +272,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 
 	DspStCl();
 
-	if (!Hold) {
-		DspStep();
-
-		Cnt_1ms++;
-		if (Cnt_1ms >= 3) {
-			float32 tmp = Tsc;
-			Tsc = tmp * 3.0;
-
-//		HSTI_T2();
-			ACCL_T2();
-//		OVPT_T2();
-//		HSTO_T2();
-
-			Cnt_1ms = 0;
-			Tsc = tmp;
-		}
-
-		Cnt_4ms++;
-		if (Cnt_4ms >= 11) {
-			float32 tmp = Tsc;
-			Tsc = tmp * 11.0;
-
-			McuData.PF_3PhNom = Limit(Ext_F,3.0,50.0);
-			McuData.PU_U3PhRef3 = Limit(Ext_U,0.0,380.0);
-			McuData.PU_U3PhRef4 = McuData.PU_U3PhRef3;
-
-			McuStep();
-
-			Cnt_4ms = 0;
-			Tsc = tmp;
-		}
-	}
+	DspStep();
 
 	/**/
 	if (PX_Out_Spf.SX_Run == 1) {
@@ -346,12 +299,33 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	}
 
 	DPRAM_WR(); //鍐檇sp浜や簰淇℃伅
-	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
-
 	EN_GPIO30();
 
-	/*恢复现场*/
-	Tsc = tmp;
+	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
+}
+
+//=================================================================
+interrupt void Timer0_isr(void) {
+	Tsc = 0.001;
+	//		HSTI_T2();
+	ACCL_T2();
+	//		OVPT_T2();
+	//		HSTO_T2();
+
+	Cnt_4ms++;
+	if (Cnt_4ms >= 4) {
+		Tsc = 0.004;
+
+		McuData.PF_3PhNom = Limit(Ext_F, 3.0, 50.0);
+		McuData.PU_U3PhRef3 = Limit(Ext_U, 0.0, 380.0);
+		McuData.PU_U3PhRef4 = McuData.PU_U3PhRef3;
+
+		McuStep();
+
+		Cnt_4ms = 0;
+	}
+
+	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
 }
 //==============================================================================
 void DPRAM_RD(void) //MCU-->DSP
@@ -395,7 +369,7 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x29) = DspData.XX_MRef*100;
 //	*(XintfZone7 + 0x2A) = DspData.XI_Ph1Rms_Flt*10;
 	*(XintfZone7 + 0x27) = fabs((DspData.WU_3PhAbs / DspData.XU_DcLk) * 100);
-	*(XintfZone7 + 0x28) = fabs(DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt*100);
+	*(XintfZone7 + 0x28) = fabs(DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt * 100);
 	*(XintfZone7 + 0x29) = fabs(DspData.XP_3Ph_Flt / 1000.0);
 	*(XintfZone7 + 0x2A) = fabs(DspData.XQ_3Ph_Flt / 1000.0);
 	/*DA杈撳嚭*/
