@@ -5,8 +5,6 @@
 #define U3PHRMS 300.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
-volatile Uint16 Cnt_1ms = 0;
-volatile Uint16 Cnt_4ms = 0;
 volatile struct Dsp_Data DspData;
 volatile struct Dsp_Param DspParam;
 volatile struct Mcu_Data McuData;
@@ -14,8 +12,6 @@ volatile struct Mcu_Param McuParam;
 TYPE_SOGIOSGMA sogiosg = SOGIOSGMA_DEFAULTS;
 TYPE_PI_CONTROLLER PI_F3PhSz = PI_CONTROLLER_DEFAULTS;
 TYPE_PI_CONTROLLER PI_U3PhCl = PI_CONTROLLER_DEFAULTS;
-volatile float32 Ext_U = 0.0;
-volatile float32 Ext_F = 0.0;
 
 void DspInit(void) {
 	DspParam.PN_IPhFixMcu_Flt = 4.0; //rad/s
@@ -90,7 +86,6 @@ void DspInit(void) {
 	DspData.XX_CntPh3Rms = 0;
 
 	Tsc = 1.0 / 2700.0;
-	Cnt_1ms = 0;
 }
 
 void DspStep(void) {
@@ -216,9 +211,9 @@ void ACCL_T2(void) {
 	LowPass(&DspData.XI_Ph1Rms_Flt, DspData.XI_Ph1Rms,
 			Cycle() * DspParam.PN_IPhRms_Flt);
 	LowPass(&DspData.XI_Ph2Rms_Flt, DspData.XI_Ph2Rms,
-				Cycle() * DspParam.PN_IPhRms_Flt);
+			Cycle() * DspParam.PN_IPhRms_Flt);
 	LowPass(&DspData.XI_Ph3Rms_Flt, DspData.XI_Ph3Rms,
-				Cycle() * DspParam.PN_IPhRms_Flt);
+			Cycle() * DspParam.PN_IPhRms_Flt);
 
 	DspData.WU_IPhClRms = 0.0;
 	DspData.B_LimAct = 0;
@@ -245,7 +240,7 @@ void UFCO_B(void) {
 //	DspData.WU_3PhPm = DspData.WU_3PhSec;	//DQ
 	/**/
 	DspData.WU_3PhPmAB = CPLXMULT(DspData.WU_3PhPm,
-			POL2CPLX(1.0, DspData.WX_Theta));//ipark
+			POL2CPLX(1.0, DspData.WX_Theta)); //ipark
 	CPLX2POL(&DspData.WU_Ref_Abs, &DspData.WX_ThetaCv, DspData.WU_3PhPmAB);
 
 	/*
@@ -363,7 +358,7 @@ void McuInit(void) {
 
 	McuData.WF_3PhRmp = 0.0;
 	McuData.WF_3PhDsp = 0.0;
-	McuData.WU_3PhUFRt = 0.0;
+	McuData.WU_3PhRmp = 0.0;
 	McuData.WU_3PhDsp = 0.0;
 
 	/*TFrefRmp*/
@@ -432,7 +427,6 @@ void McuInit(void) {
 	McuParam.PX_IPhClTrsKpRct = 0.03;
 	McuParam.PX_IPhClTrsKpAbs = 0.0;
 
-	Cnt_4ms = 0;
 	PI_U3PhCl.i1 = 0.0;
 	PI_U3PhCl.ui = 0.0;
 	PI_U3PhCl.Out = 0.0;
@@ -440,9 +434,6 @@ void McuInit(void) {
 
 void McuStep(void) {
 	/**/
-	McuData.PF_3PhNom = Ext_F;
-	McuData.PU_U3PhRef3 = Ext_U;
-	McuData.PU_U3PhRef4 = Ext_U;
 	TFrefRmp();
 	FrefUDcLk();
 	FrefRmp();
@@ -576,27 +567,30 @@ void F3PhRef(void) {
 void U3PhRef(void) {
 	if (!McuData.L_ExtU3PhRef) {
 		if (McuData.WF_3PhU3PhRef <= 0.0)
-			McuData.WU_3PhUFRt = McuData.PU_U3PhRef1;
+			McuData.WU_3PhU3PhRef = McuData.PU_U3PhRef1;
 		else if (McuData.WF_3PhU3PhRef <= McuData.PF_U3PhRef2)
-			McuData.WU_3PhUFRt = McuData.PU_U3PhRef1
+			McuData.WU_3PhU3PhRef = McuData.PU_U3PhRef1
 					+ (McuData.WF_3PhU3PhRef - 0.0)
 							/ (McuData.PF_U3PhRef2 - 0.0)
 							* (McuData.PU_U3PhRef2 - McuData.PU_U3PhRef1);
 		else if (McuData.WF_3PhU3PhRef <= McuData.PF_U3PhRef3)
-			McuData.WU_3PhUFRt = McuData.PU_U3PhRef2
+			McuData.WU_3PhU3PhRef = McuData.PU_U3PhRef2
 					+ (McuData.WF_3PhU3PhRef - McuData.PF_U3PhRef2)
 							/ (McuData.PF_U3PhRef3 - McuData.PF_U3PhRef2)
 							* (McuData.PU_U3PhRef3 - McuData.PU_U3PhRef2);
 		else if (McuData.WF_3PhU3PhRef <= 100.0)
-			McuData.WU_3PhUFRt = McuData.PU_U3PhRef3
+			McuData.WU_3PhU3PhRef = McuData.PU_U3PhRef3
 					+ (McuData.WF_3PhU3PhRef - McuData.PF_U3PhRef3)
 							/ (100.0 - McuData.PF_U3PhRef3)
 							* (McuData.PU_U3PhRef4 - McuData.PU_U3PhRef3);
 		else
-			McuData.WU_3PhUFRt = McuData.PU_U3PhRef4;
+			McuData.WU_3PhU3PhRef = McuData.PU_U3PhRef4;
 	}
 
-	McuData.WU_3PhUFRt = McuData.WU_3PhUFRt * SQRT2 / SQRT3;
+	RAMP2(&McuData.WU_3PhRmp, McuData.WU_3PhU3PhRef, McuData.PX_U3PhRefRmp1,
+			-McuData.PX_U3PhRefRmp1, 0.0, FALSE, FALSE);
+
+	McuData.WU_3PhRmp = McuData.WU_3PhRmp;
 
 	if (!McuData.L_EnRmpU3PhRef) {
 
@@ -606,7 +600,7 @@ void U3PhRef(void) {
 }
 
 void U3PhCl(void) {
-	McuData.WU_3PhClIn = McuData.WU_3PhUFRt + McuData.WU_UF3PhCmp
+	McuData.WU_3PhClIn = McuData.WU_3PhRmp * SQRT2 / SQRT3 + McuData.WU_UF3PhCmp
 			+ McuData.WU_UF3PhSz;
 	McuData.WU_3PhClIn = Limit(McuData.WU_3PhClIn, McuData.PU_3PhClRefMin,
 			McuData.PU_3PhClRefMax);
