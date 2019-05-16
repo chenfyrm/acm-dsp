@@ -244,6 +244,16 @@ void main(void) {
 		if ((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0)) {
 			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//澶栭儴涓柇澶嶄綅璇彞,SDRAM璇绘搷浣�
 		}
+
+		float32 a=1.0e38;
+		float32 b=10.0;
+		float32 c=0.0;
+		float32 d =0.0;
+		c= a*b;
+		d = a*a;
+		c = a*1.2;
+		c=a*1.4;
+
 	}
 }
 //==============================================================================
