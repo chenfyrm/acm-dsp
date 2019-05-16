@@ -1,7 +1,7 @@
 #include "math.h"
 #include "acm_dsp.h"
 
-#define SIMULATION 1
+#define SIMULATION 0
 #define U3PHRMS 300.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
@@ -128,7 +128,7 @@ void SIPR_B(void) {
 
 	SOGIOSGFLL(&sogiosg);
 
-	DspData.XT_U3Ph = 2.0 * PI / sogiosg.w;
+	DspData.XF_U3Ph = 2.0 * PI / sogiosg.w;
 
 	cfloat32 XU_3PhAB;
 	/**/

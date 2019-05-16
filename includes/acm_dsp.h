@@ -54,7 +54,7 @@ struct Dsp_Data {
 	float32 XI_PhRct;
 	cfloat32 XI_PhDQ;
 	float32 WX_Theta;
-	float32 XT_U3Ph;/*Period time of measured 3-phase output load voltage*/
+	float32 XF_U3Ph;/*Frequency of measured 3-phase output load voltage*/
 
 	float32 XU_3PhSqu;
 	float32 XU_3PhRms;/*3-phase output load voltage, phase-phase, RMS value*/
