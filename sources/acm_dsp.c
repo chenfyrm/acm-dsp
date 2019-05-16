@@ -142,7 +142,7 @@ void SIPR_B(void) {
 		//ต๗สิ
 		XU_3PhAB = CPLXSCA(
 				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
-						POL2CPLX(1.0, PI / 2.0)), 1.1);
+						POL2CPLX(1.0, PI / 2.0)), 1.095);
 	}
 
 	/**/
@@ -371,7 +371,7 @@ void McuInit(void) {
 	McuData.PF_FRefRmpDo23 = 30.0;
 
 	/*FrefRmp*/
-	McuData.PF_3PhNom = 50.0;
+	McuData.PF_3PhNom = 50.3;
 	McuData.PF_3PhMin = 3.0;
 
 	/*UF3PhCmp 4ms*/
@@ -450,7 +450,7 @@ void McuStep(void) {
 /**/
 void TFrefRmp(void) {
 	McuData.XX_FRefRmpUp = 25.0;
-	McuData.XX_FRefRmpDo = 25.0;
+	McuData.XX_FRefRmpDo = 10.0;
 }
 
 void FrefUDcLk(void) {
@@ -589,8 +589,6 @@ void U3PhRef(void) {
 
 	RAMP2(&McuData.WU_3PhRmp, McuData.WU_3PhU3PhRef, McuData.PX_U3PhRefRmp1,
 			-McuData.PX_U3PhRefRmp1, 0.0, FALSE, FALSE);
-
-	McuData.WU_3PhRmp = McuData.WU_3PhRmp;
 
 	if (!McuData.L_EnRmpU3PhRef) {
 

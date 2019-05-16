@@ -4,7 +4,7 @@
 
 void SOGIOSGMA(TYPE_SOGIOSGMA_IF *data)
 {
-	data->Ts = 1.0/2900.0;
+	data->Ts = 1.0/2700.0;
 	data->w = 100*3.1415926;
 	data->K = sqrt(2);
 
@@ -35,7 +35,7 @@ void SOGIOSGMA(TYPE_SOGIOSGMA_IF *data)
 
 void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *data)
 {
-	data->Ts = 1.0/2900.0;
+	data->Ts = 1.0/2700.0;
 	data->w0 = 100*3.1415926;
 	data->K = sqrt(2);
 	data->Ki = 10000;
@@ -59,11 +59,10 @@ void SOGIOSGFLL(TYPE_SOGIOSGMA_IF *data)
 /**/
 	data->ErrF = (data->phase-data->alpha)*data->beta/(data->peak*data->peak);
 	data->ComW +=data->ErrF*(-1.0)*data->Ki*data->Ts;
-	if (data->ComW > 30.0)
-		data->ComW = 30.0;
-	if (data->ComW <-30.0)
-		data->ComW = -30.0;
-
+	if (data->ComW > 50.0)
+		data->ComW = 50.0;
+	if (data->ComW <-50.0)
+		data->ComW = -50.0;
 
 	/*update*/
 	data->w = data->w0 + data->ComW;

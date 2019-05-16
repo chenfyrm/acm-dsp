@@ -407,10 +407,41 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x28) = McuData.WF_3PhDsp*10;
 //	*(XintfZone7 + 0x29) = DspData.XX_MRef*100;
 //	*(XintfZone7 + 0x2A) = DspData.XI_Ph1Rms_Flt*10;
-	*(XintfZone7 + 0x27) = fabs((DspData.WU_3PhAbs / DspData.XU_DcLk) * 100);
-	*(XintfZone7 + 0x28) = fabs(PX_Out_Spf.XI_DcLkEst * 100);
-	*(XintfZone7 + 0x29) = fabs(PX_Out_Spf.XU_PhAB_Rms);
-	*(XintfZone7 + 0x2A) = fabs(PX_Out_Spf.XI_PhA_Rms);
+
+//	*(XintfZone7 + 0x27) = fabs((DspData.WU_3PhAbs / DspData.XU_DcLk) * 100);
+//	*(XintfZone7 + 0x28) = fabs(PX_Out_Spf.XI_DcLkEst * 100);
+//	*(XintfZone7 + 0x29) = fabs(PX_Out_Spf.XU_PhAB_Rms);
+//	*(XintfZone7 + 0x2A) = fabs(PX_Out_Spf.XI_PhA_Rms);
+
+//	*(XintfZone7 + 0x27) = fabs();
+//	*(XintfZone7 + 0x28) = fabs();
+//	*(XintfZone7 + 0x29) = fabs();
+//	*(XintfZone7 + 0x2A) = fabs();
+
+	//	DspData.WU_Ref_Abs
+	//				DspData.WU_DcLkStb
+	//	McuData.WU_3PhDsp
+	//	 McuData.WU_3PhClIn
+	//  McuData.WU_U3PhClOut
+	//sogiosg.ComW
+	//DspData.WU_3PhSec
+	//DspData.WU_3PhPm
+//	*(XintfZone7 + 0x27) = fabs(DspData.WU_Ref_Abs*10);
+//	*(XintfZone7 + 0x28) = fabs(DspData.WU_DcLkStb*10);
+//	*(XintfZone7 + 0x29) = fabs(McuData.WU_3PhDsp*10);
+//	*(XintfZone7 + 0x2A) = fabs(McuData.WU_3PhClIn*10);
+
+
+		*(XintfZone7 + 0x27) = fabs(McuData.WU_U3PhClOut*10);
+		*(XintfZone7 + 0x28) = fabs(sogiosg.ComW*10);
+		*(XintfZone7 + 0x29) = fabs(sogiosg.peak*10.95);
+		*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs*10);
+
+	//	*(XintfZone7 + 0x27) = fabs(DspData.WU_3PhSec.re*10);
+	//	*(XintfZone7 + 0x28) = fabs(DspData.WU_3PhSec.im*10);
+	//	*(XintfZone7 + 0x29) = fabs(DspData.WU_3PhPm.re*10);
+	//	*(XintfZone7 + 0x2A) = fabs(DspData.WU_3PhPm.im*10);
+
 	/*DA杈撳嚭*/
 	DA[3] = 0.0;
 	DA[4] = 0.0;
