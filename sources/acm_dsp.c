@@ -2,7 +2,7 @@
 #include "acm_dsp.h"
 
 #define SIMULATION 0
-#define U3PHRMS 300.0
+#define U3PHRMS 50.0
 
 volatile float32 Tsc = 1.0 / 2700.0;
 volatile struct Dsp_Data DspData;
@@ -35,10 +35,6 @@ void DspInit(void) {
 	DspParam.PZ_3PhFiCaIm = -5.47; //	-5,47 滤波电容电抗折算到一次侧
 	DspParam.PZ_3PhTfRe = 0.0; //	0
 	DspParam.PZ_3PhTfIm = 0.0; //	0
-	DspParam.PZ_3PhFiNd = FRAC2CPLX(DspParam.PZ_3PhFiNdRe,
-			DspParam.PZ_3PhFiNdIm);
-	DspParam.PZ_3PhFiCa = FRAC2CPLX(0.0, DspParam.PZ_3PhFiCaIm);
-	DspParam.PZ_3PhTf = FRAC2CPLX(DspParam.PZ_3PhTfRe, DspParam.PZ_3PhTfIm);
 
 	DspParam.L_UDcLkStbEn = TRUE; //	TRUE
 	DspParam.PN_UDcLkStbSliSmt = 2200.0; //	2200
@@ -86,6 +82,38 @@ void DspInit(void) {
 	DspData.XX_CntPh3Rms = 0;
 
 	Tsc = 1.0 / 2700.0;
+
+//	float32 phase;	//input  0.0
+//	float32 alpha;	//output 0.0
+//	float32 beta; 0.0
+//	float32 Ts;	//param
+//	float32 w0;
+//	float32 K;
+//	float32 Ki;
+//	float32 oldPhase1;	//state  0.0
+//	float32 oldPhase2; 0.0
+//	float32 oldAlpha1; 0.0
+//	float32 oldAlpha2; 0.0
+//	float32 oldBeta1; 0.0
+//	float32 oldBeta2; 0.0
+//	float32 a;	//local
+//	float32 b;
+//	float32 w;
+//	float32 peak;
+//	float32 ErrF;
+//	float32 ComW;
+//
+
+	sogiosg.phase = 0.0;
+	sogiosg.alpha = 0.0;
+	sogiosg.beta = 0.0;
+	sogiosg.oldPhase1 = 0.0;
+	sogiosg.oldPhase2 = 0.0;
+	sogiosg.oldAlpha1 = 0.0;
+	sogiosg.oldAlpha2 = 0.0;
+	sogiosg.oldBeta1 = 0.0;
+	sogiosg.oldBeta2 = 0.0;
+
 }
 
 void DspStep(void) {
@@ -128,7 +156,7 @@ void SIPR_B(void) {
 
 	SOGIOSGFLL(&sogiosg);
 
-	DspData.XF_U3Ph = 2.0 * PI / sogiosg.w;
+	DspData.XF_U3Ph = sogiosg.w / 2.0 / PI;
 
 	cfloat32 XU_3PhAB;
 	/**/
@@ -140,6 +168,10 @@ void SIPR_B(void) {
 
 	} else {
 		//调试
+//		XU_3PhAB = CPLXSCA(
+//				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
+//						POL2CPLX(1.0, PI / 2.0)),
+//				1.095 * 100.0 * PI / sqrt(sogiosg.w * sogiosg.w + 1));
 		XU_3PhAB = CPLXSCA(
 				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
 						POL2CPLX(1.0, PI / 2.0)), 1.095);
@@ -228,6 +260,13 @@ void UFCO_B(void) {
 
 	DspData.WU_3PhSec = POL2CPLX(McuData.WU_3PhDsp, 0.0); //静止坐标系按1次侧，同步频率按WF_3PhDsp  DQ
 
+	DspParam.PZ_3PhFiNd = FRAC2CPLX(DspParam.PZ_3PhFiNdRe,
+			DspParam.PZ_3PhFiNdIm / 50.0 * McuData.WF_3PhDsp);
+	DspParam.PZ_3PhFiCa = FRAC2CPLX(0.0,
+			DspParam.PZ_3PhFiCaIm / 50.0 * McuData.WF_3PhDsp);
+	DspParam.PZ_3PhTf = FRAC2CPLX(DspParam.PZ_3PhTfRe,
+			DspParam.PZ_3PhTfIm / 50.0 * McuData.WF_3PhDsp);
+
 	cfloat32 Z1, Z2;
 	Z1 = CPLXDIV(DspParam.PZ_3PhFiCa,
 			CPLXADD(DspParam.PZ_3PhFiCa, DspParam.PZ_3PhTf));
@@ -237,19 +276,19 @@ void UFCO_B(void) {
 	DspData.WU_3PhPm = CPLXADD(CPLXMULT(DspData.WU_3PhSec, Z1),
 			CPLXMULT(DspData.XI_PhDQ_Flt, Z2));
 	//B_EnBuiTs
-//	DspData.WU_3PhPm = DspData.WU_3PhSec;	//DQ
+	//	DspData.WU_3PhPm = DspData.WU_3PhSec;	//DQ
 	/**/
 	DspData.WU_3PhPmAB = CPLXMULT(DspData.WU_3PhPm,
 			POL2CPLX(1.0, DspData.WX_Theta)); //ipark
 	CPLX2POL(&DspData.WU_Ref_Abs, &DspData.WX_ThetaCv, DspData.WU_3PhPmAB);
 
-	/*
+	/******************************************************************
 	 * 直流母线电压振荡抑制
 	 *
 	 *
 	 *
 	 *
-	 * */
+	 *****************************************************************/
 	LowPass(&DspData.XU_DcLkStbFltSli, DspData.XU_DcLk,
 			DspData.XT_Tsc * DspParam.PN_UDcLkStbSliSmt);
 	LowPass(&DspData.XU_DcLkStbFltHev, DspData.XU_DcLk,
@@ -259,8 +298,8 @@ void UFCO_B(void) {
 					* (pow(DspData.XU_DcLkStbFltSli / DspData.XU_DcLkStbFltHev,
 							2.0) - 1.0), -DspParam.PU_DcLkStbMaxMin,
 			DspParam.PU_DcLkStbMaxMin);
-	/**/
 
+	/**/
 	DspData.WU_Ref_Abs = DspData.WU_Ref_Abs + DspData.WU_IPhClTrs
 			+ DspData.WU_DcLkStb;
 
@@ -392,7 +431,7 @@ void McuInit(void) {
 	/*U3PhSz 16ms*/
 	McuData.PU_UF3PhSzClAdd = 0.0;
 	McuData.PU_UF3PhSzClMaxMin = 100.0;
-	McuData.PU_UF3PhSzRdy = 20.0;
+	McuData.PU_UF3PhSzRdy = 20.0 * SQRT2bySQRT3;
 
 	McuData.PU_3PhBusAct = 370.0;
 	McuData.PU_3PhBusIdle = 50.0;
@@ -402,8 +441,8 @@ void McuInit(void) {
 	McuData.PF_U3PhRef3 = 50.0;
 	McuData.PU_U3PhRef1 = 0.0; //0Hz
 	McuData.PU_U3PhRef2 = 0.0;  //6Hz
-	McuData.PU_U3PhRef3 = U3PHRMS;  //50Hz
-	McuData.PU_U3PhRef4 = U3PHRMS; //100Hz
+	McuData.PU_U3PhRef3 = U3PHRMS * SQRT2bySQRT3;  //50Hz
+	McuData.PU_U3PhRef4 = U3PHRMS * SQRT2bySQRT3; //100Hz
 	McuData.L_ExtU3PhRef = FALSE;
 	McuData.PX_ExtU3PhRefRmp = 200.0;
 	McuData.L_EnRmpU3PhRef = FALSE;
@@ -419,7 +458,7 @@ void McuInit(void) {
 	McuData.PT_U3PhCl = 50.0; //ms
 	McuData.PU_3PhClMax = 75.0;
 	McuData.PU_3PhClMin = -50.0;
-	McuData.PU_3PhClRefMax = 395.0;
+	McuData.PU_3PhClRefMax = 395.0 * SQRT2bySQRT3;
 	McuData.PU_3PhClRefMin = 0.0;
 	McuData.PX_TrfRtPr3Ph = 1.684;
 
@@ -427,9 +466,26 @@ void McuInit(void) {
 	McuParam.PX_IPhClTrsKpRct = 0.03;
 	McuParam.PX_IPhClTrsKpAbs = 0.0;
 
+//	float32 Ref;   			// Input: reference set-point 0
+//	float32 Fbk;   			// Input: feedback 0
+//	float32 Out;   			// Output: controller output 0
+//	float32 Kp;				// Parameter: proportional loop gain
+//	float32 Ki;			    // Parameter: integral gain
+//	float32 Umax;			// Parameter: upper saturation limit
+//	float32 Umin;			// Parameter: lower saturation limit
+//	float32 up;				// Data: proportional term
+//	float32 ui;				// Data: integral term
+//	float32 v1;				// Data: pre-saturated controller output
+//	float32 i1;				// Data: integrator storage: ui(k-1)
+//	float32 w1;
+
 	PI_U3PhCl.i1 = 0.0;
 	PI_U3PhCl.ui = 0.0;
 	PI_U3PhCl.Out = 0.0;
+
+	PI_F3PhSz.i1 = 0.0;
+	PI_F3PhSz.ui = 0.0;
+	PI_F3PhSz.Out = 0.0;
 }
 
 void McuStep(void) {
@@ -598,7 +654,7 @@ void U3PhRef(void) {
 }
 
 void U3PhCl(void) {
-	McuData.WU_3PhClIn = McuData.WU_3PhRmp * SQRT2 / SQRT3 + McuData.WU_UF3PhCmp
+	McuData.WU_3PhClIn = McuData.WU_3PhRmp + McuData.WU_UF3PhCmp
 			+ McuData.WU_UF3PhSz;
 	McuData.WU_3PhClIn = Limit(McuData.WU_3PhClIn, McuData.PU_3PhClRefMin,
 			McuData.PU_3PhClRefMax);

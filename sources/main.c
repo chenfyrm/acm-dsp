@@ -170,9 +170,8 @@ struct PX_Out {
 };
 volatile struct PX_Out PX_Out_Spf = { 21,
 		6944,			//鍙岄噰鏍凤細1450Hz:6465 1350Hz:6944
-		3472, 3472, 3472, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000, 0x0000,
-		0x10, 0x0000, };
+		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000,
+		0x0000, 0x10, 0x0000, };
 //======================================================================
 /* GLOBALS */
 
@@ -282,7 +281,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 
 	DspStCl();
 
-	if (!Hold) {
+
 		DspStep();
 
 		Cnt_1ms++;
@@ -305,7 +304,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 			Tsc = tmp * 11.0;
 
 			McuData.PF_3PhNom = Limit(Ext_F, 40.0, 60.0);
-			McuData.PU_U3PhRef3 = Limit(Ext_U, 200.0, 380.0);
+			McuData.PU_U3PhRef3 = Limit(Ext_U, 50.0, 100.0) * SQRT2bySQRT3;
 			McuData.PU_U3PhRef4 = McuData.PU_U3PhRef3;
 
 			McuStep();
@@ -313,7 +312,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 			Cnt_4ms = 0;
 			Tsc = tmp;
 		}
-	}
+
 
 	/**/
 	if (PX_Out_Spf.SX_Run == 1) {
@@ -339,7 +338,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
 	}
 
-	PX_Out_Spf.XU_PhAB_Rms = DspData.XU_3PhAbs/SQRT2;
+	PX_Out_Spf.XU_PhAB_Rms = DspData.XU_3PhAbs / SQRT2;
 	PX_Out_Spf.XF_PhAB = DspData.XF_U3Ph;
 	PX_Out_Spf.XI_PhA_Rms = DspData.XI_Ph1Rms_Flt;
 	PX_Out_Spf.XI_PhB_Rms = DspData.XI_Ph2Rms_Flt;
@@ -349,12 +348,13 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	PX_Out_Spf.XI_DcLkEst = DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt;
 
 	DPRAM_WR(); //鍐檇sp浜や簰淇℃伅
-	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
 
 	EN_GPIO30();
 
 	/*恢复现场*/
 	Tsc = tmp;
+
+	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
 }
 //==============================================================================
 void DPRAM_RD(void) //MCU-->DSP
@@ -378,7 +378,38 @@ void DPRAM_RD(void) //MCU-->DSP
 //==============================================================================
 void DPRAM_WR(void)			//DSP-->MCU
 {
-	*(XintfZone7 + 0x2) = PX_Out_Spf.NX_DspOpSt.all;// NX_Dsp2OpSt: DSP2 operation state
+	/*重新烧写FPGA，确认死区和PWM发波
+	 *
+	 *
+	 *
+	 ************************************************************* */
+//	DspData.XX_DutyA = 0.2;
+//	DspData.XX_DutyB = 0.3;
+//	DspData.XX_DutyC = 0.6;
+//
+//	PX_Out_Spf.XT_PwmPdVv = 6944;
+//
+//	if (DspData.XX_Mode) {
+//		PX_Out_Spf.XX_PwmMo = 21; // FPGA閫昏緫锛氳鏁板櫒鍊煎ぇ浜庢瘮杈冨櫒鍊间负楂橈紝鍔犳鍖猴紝鍙栧弽锛岀粡鍏夌氦鏉垮啀鍙嶅悜
+//		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv
+//				* (1.0 - DspData.XX_DutyA);
+//		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv
+//				* (1.0 - DspData.XX_DutyB);
+//		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv
+//				* (1.0 - DspData.XX_DutyC);
+//	} else {
+//		PX_Out_Spf.XX_PwmMo = 0; // FPGA閫昏緫锛氳鏁板櫒鍊煎皬浜庢瘮杈冨櫒鍊间负楂橈紝鍔犳鍖猴紝鍙栧弽锛岀粡鍏夌氦鏉垮啀鍙嶅悜
+//		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyA;
+//		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyB;
+//		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyC;
+//	}
+/*******************************************************************************/
+	/*
+	 *
+	 *
+	 *
+	 * */
+	*(XintfZone7 + 0x2) = PX_Out_Spf.NX_DspOpSt.all; // NX_Dsp2OpSt: DSP2 operation state
 	*(XintfZone7 + 0x3) = PX_Out_Spf.NX_DspVer;		// DSP version
 	*(XintfZone7 + 0x15) = PX_Out_Spf.XX_PwmMo;     // PWM  mode configuration
 	*(XintfZone7 + 0x16) = PX_Out_Spf.XT_PwmPdVv;			// PWM period value
@@ -407,17 +438,14 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x28) = McuData.WF_3PhDsp*10;
 //	*(XintfZone7 + 0x29) = DspData.XX_MRef*100;
 //	*(XintfZone7 + 0x2A) = DspData.XI_Ph1Rms_Flt*10;
-
 //	*(XintfZone7 + 0x27) = fabs((DspData.WU_3PhAbs / DspData.XU_DcLk) * 100);
 //	*(XintfZone7 + 0x28) = fabs(PX_Out_Spf.XI_DcLkEst * 100);
 //	*(XintfZone7 + 0x29) = fabs(PX_Out_Spf.XU_PhAB_Rms);
 //	*(XintfZone7 + 0x2A) = fabs(PX_Out_Spf.XI_PhA_Rms);
-
 //	*(XintfZone7 + 0x27) = fabs();
 //	*(XintfZone7 + 0x28) = fabs();
 //	*(XintfZone7 + 0x29) = fabs();
 //	*(XintfZone7 + 0x2A) = fabs();
-
 	//	DspData.WU_Ref_Abs
 	//				DspData.WU_DcLkStb
 	//	McuData.WU_3PhDsp
@@ -430,12 +458,10 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x28) = fabs(DspData.WU_DcLkStb*10);
 //	*(XintfZone7 + 0x29) = fabs(McuData.WU_3PhDsp*10);
 //	*(XintfZone7 + 0x2A) = fabs(McuData.WU_3PhClIn*10);
-
-
-		*(XintfZone7 + 0x27) = fabs(McuData.WU_U3PhClOut*10);
-		*(XintfZone7 + 0x28) = fabs(sogiosg.ComW*10);
-		*(XintfZone7 + 0x29) = fabs(sogiosg.peak*10.95);
-		*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs*10);
+	*(XintfZone7 + 0x27) = fabs(McuData.WU_U3PhClOut * 10);
+	*(XintfZone7 + 0x28) = fabs(DspData.XU_3PhAbs * 10);
+	*(XintfZone7 + 0x29) = fabs(PI_U3PhCl.Ref * 10);
+	*(XintfZone7 + 0x2A) = fabs(DspData.WU_3PhAbs * 10);
 
 	//	*(XintfZone7 + 0x27) = fabs(DspData.WU_3PhSec.re*10);
 	//	*(XintfZone7 + 0x28) = fabs(DspData.WU_3PhSec.im*10);
