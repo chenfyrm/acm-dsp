@@ -413,13 +413,13 @@ void IPhClGenOvLd(void);
 void IPhClPsTrs(void);
 
 /*math*/
-extern void Delay(volatile float32 *Dy, float32 Src);
-extern void LowPass(volatile float32 *Flt, float32 Src, float32 TsPerT1);
-extern void CplxLowPass(volatile cfloat32 *Flt, cfloat32 Src, float32 TsPerT1);
+extern float32 LowPass(float32 oldFlt, float32 Src, float32 TsPerT1);
+extern cfloat32 CplxLowPass(cfloat32 oldFlt, cfloat32 Src, float32 TsPerT1);
 extern void RmsClc(volatile float32 *rms,float32 Src,Uint16 N,volatile float32 *Square,volatile Uint16 *cnt);
 extern void RAMP2(volatile float32 *Y,float32 X,float32 Dr,float32 Df,float32 Init,Uint16 Set,Uint16 Hold);
 extern float32 Cycle(void);
 extern void INTEGR(volatile float32 *Y,float32 X,float32 T,float32 Init,float32 Max,float32 Min,Uint16 Set,Uint16 Hold);
+
 
 extern float32 Min(float32 a, float32 b);
 extern float32 Max(float32 a, float32 b);
@@ -549,7 +549,33 @@ extern void PI_CONTROLLER(TYPE_PI_CONTROLLER *data);
 }
 #endif
 
+typedef struct {
+	float32 In;//input
+	float32 Out;//output
+	float32 a1;//param
+	float32 a2;
+	float32 b0;
+	float32 b1;
+	float32 b2;
+	float32 oldIn1;//state
+	float32 oldIn2;
+	float32 oldOut1;
+	float32 oldOut2;
+}TYPE_IIRFILTER_2ND;
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void IIRFilter_2nd(TYPE_IIRFILTER_2ND *data);
+extern void AdaptIIRNotchFilter(TYPE_IIRFILTER_2ND *data,float32 W0,float32 Ts);
+
+#ifdef __cplusplus
+}
+#endif
+
 extern TYPE_SOGIOSGMA sogiosg ;
+extern TYPE_IIRFILTER_2ND U3PhAlpha,U3PhBeta;
 extern TYPE_PI_CONTROLLER PI_F3PhSz ;
 extern TYPE_PI_CONTROLLER PI_U3PhCl ;
 
