@@ -23,7 +23,7 @@
 
 /*STRUCTDEFS*/
 //-----------------input-------------------------
-//閲囨牱銆佹寚浠�
+//闁插洦鐗遍妴浣瑰瘹娴狅拷
 struct MCUFLAG1_BITS {
 	Uint16 RstSa :1;
 	Uint16 OvpFcTsAv :1;
@@ -54,7 +54,7 @@ struct PX_In {
 	float32 XI_PhA;						// phase A current, A
 	float32 XI_PhB;						// phase B current, A
 	float32 XI_PhC;			  	  		// phase C current, A
-	float32 XU_PhABGt;					// AB鐩哥嚎鐢靛帇, V
+	float32 XU_PhABGt;					// AB閻╁摜鍤庨悽闈涘竾, V
 	Uint16 NX_McuPlCn;				// MCU pulse(heartbeat) counter
 	Uint16 NX_McuOpSt;				// MCU operation state
 	Uint16 NX_McuVer;			// MCU version
@@ -63,7 +63,7 @@ struct PX_In {
 volatile struct PX_In PX_In_Spf = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0x400,
 		0x10, 0x00, };
 //========================================================================
-//淇濇姢鍊�
+//娣囨繃濮㈤崐锟
 struct PX_InPr {
 	float32 XU_DcLk_Max;   			// DC-link voltage, V
 	float32 XU_DcLk_Min;   			// DC-link voltage, V
@@ -77,28 +77,28 @@ struct PX_InPr {
 	Uint16 XI_PhCOvCn;				// phase C over current counter
 	float32 XH_AmTp_Max;         		// ambient temperature, C
 };
-volatile struct PX_InPr PX_InPr_Spf = { 1800.0,         		//鐩存祦姣嶇嚎鐢靛帇涓婇檺
-		0.0,         		//鐩存祦姣嶇嚎鐢靛帇涓嬮檺
-		0, 0, 10.0,         		//鐩存祦姣嶇嚎鐢垫祦涓婇檺
-		0, 300.0,         		//閫嗗彉鍣ㄨ緭鍑虹數娴佷笂闄�
-		0, 0, 0, 0.0, };         		//鐜娓╁害涓婇檺
+volatile struct PX_InPr PX_InPr_Spf = { 1800.0,         		//閻╁瓨绁﹀В宥囧殠閻㈤潧甯囨稉濠囨
+		0.0,         		//閻╁瓨绁﹀В宥囧殠閻㈤潧甯囨稉瀣
+		0, 0, 10.0,         		//閻╁瓨绁﹀В宥囧殠閻㈠灚绁︽稉濠囨
+		0, 300.0,         		//闁棗褰夐崳銊ㄧ翻閸戣櫣鏁稿ù浣风瑐闂勶拷
+		0, 0, 0, 0.0, };         		//閻滎垰顣ㄥ〒鈺佸娑撳﹪妾
 //-------------output-------------
 //============================================================================================
 struct WARN_BITS {
-	Uint16 TA0 :1;		//鐩存祦姣嶇嚎杩囧帇銆佹瑺鍘嬩繚鎶�
-	Uint16 TA1 :1;		//鐩存祦姣嶇嚎杩囨祦淇濇姢
-	Uint16 TA2 :1;		// Idc 閲囨牱淇濇姢
-	Uint16 TA3 :1;		// Udc 閲囨牱淇濇姢
+	Uint16 TA0 :1;		//閻╁瓨绁﹀В宥囧殠鏉╁洤甯囬妴浣圭懞閸樺绻氶幎锟
+	Uint16 TA1 :1;		//閻╁瓨绁﹀В宥囧殠鏉╁洦绁︽穱婵囧Б
+	Uint16 TA2 :1;		// Idc 闁插洦鐗辨穱婵囧Б
+	Uint16 TA3 :1;		// Udc 闁插洦鐗辨穱婵囧Б
 	Uint16 TA4 :1;		// DSP
-	Uint16 TA5 :1;		//A鐩哥數娴佽繃娴佷繚鎶�
-	Uint16 TA6 :1;		//B鐩哥數娴佽繃娴佷繚鎶�
-	Uint16 TA7 :1;		//C鐩哥數娴佽繃娴佷繚鎶�
+	Uint16 TA5 :1;		//A閻╁摜鏁稿ù浣界箖濞翠椒绻氶幎锟
+	Uint16 TA6 :1;		//B閻╁摜鏁稿ù浣界箖濞翠椒绻氶幎锟
+	Uint16 TA7 :1;		//C閻╁摜鏁稿ù浣界箖濞翠椒绻氶幎锟
 	Uint16 TA8 :1;		// Iac
 	Uint16 TA9 :1;		// Ia
 	Uint16 TA10 :1;		// Ib
 	Uint16 TA11 :1;		// Ic
-	Uint16 TA12 :1;		// Ia顔�
-	Uint16 TA13 :1;		// Ib顔�
+	Uint16 TA12 :1;		// Ia椤旓拷
+	Uint16 TA13 :1;		// Ib椤旓拷
 	Uint16 TA14 :1;		// Ic
 	Uint16 TA15 :1;		// Iac
 };
@@ -142,7 +142,7 @@ union DSPST_REG {
 	struct DSPST_BITS bit;
 };
 
-//杈撳嚭浜や簰鍊�
+//鏉堟挸鍤禍銈勭鞍閸婏拷
 struct PX_Out {
 	Uint16 XX_PwmMo;			// PWM mode  0x00  0x15
 	Uint16 XT_PwmPdVv;   		// PWM period value,  for initialization
@@ -160,16 +160,16 @@ struct PX_Out {
 	float32 XQ_Out;
 	float32 XI_DcLkEst;
 	float32 XX_PhUbl;			// phase unbalance
-	union WARN_REG XX_Flt1;			// 16浣嶆晠闅滃瓧
+	union WARN_REG XX_Flt1;			// 16娴ｅ秵鏅犻梾婊冪摟
 	Uint16 SX_Run;
 	Uint16 NX_DspPlCn;			// DSP2 pulse(heartbeat) counter
-	union DSPST_REG NX_DspOpSt;	// NX_Dsp2OpSt: DSP2 operation state 0x11:鍒濆鍖栦腑      0x22:鍒濆鍖栧け璐�   0x33:鍒濆鍖栧畬鎴�
+	union DSPST_REG NX_DspOpSt;	// NX_Dsp2OpSt: DSP2 operation state 0x11:閸掓繂顬婇崠鏍﹁厬      0x22:閸掓繂顬婇崠鏍с亼鐠愶拷   0x33:閸掓繂顬婇崠鏍х暚閹达拷
 	union DSPST_REG oldDspSt;
 	Uint16 NX_DspVer;			// DSP2 version
 	union DSPFLAG1_REG XX_DspFlag1;
 };
 volatile struct PX_Out PX_Out_Spf = { 21,
-		6944,			//鍙岄噰鏍凤細1450Hz:6465 1350Hz:6944
+		6944,			//閸欏矂鍣伴弽鍑ょ窗1450Hz:6465 1350Hz:6944
 		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000,
 		0x0000, 0x10, 0x0000, };
 //======================================================================
@@ -240,19 +240,19 @@ void main(void) {
 
 	while (1) {
 		//--------------------------------------------------------------------------------
-		GPIO_Temp181 = GpioDataRegs.GPADAT.bit.GPIO18;			//澶栭儴涓柇杈撳叆鏍囧織浣�
+		GPIO_Temp181 = GpioDataRegs.GPADAT.bit.GPIO18;			//婢舵牠鍎存稉顓熸焽鏉堟挸鍙嗛弽鍥х箶娴ｏ拷
 		DELAY_US(2L);
-		//涓昏鏄负浜嗗垽鏂槸鍚﹂暱鏃堕棿鏈繘鍏ヤ腑鏂浣嶏紝姝ゅ鍙噰鐢ㄦ棤鏁堝欢鏃讹紝鎴栬�鎻掑叆鍏朵粬鏈夋晥鐨勬墽琛屼换鍔�
+		//娑撴槒顪呴弰顖欒礋娴滃棗鍨介弬顓熸Ц閸氾箓鏆遍弮鍫曟？閺堫亣绻橀崗銉よ厬閺傤厼顦炬担宥忕礉濮濄倕顦甸崣顖炲櫚閻劍妫ら弫鍫濇閺冭绱濋幋鏍拷閹绘帒鍙嗛崗鏈电铂閺堝鏅ラ惃鍕⒔鐞涘奔鎹㈤崝锟
 		GPIO_Temp182 = GpioDataRegs.GPADAT.bit.GPIO18;
 		if ((GPIO_Temp181 == 0) && (GPIO_Temp182 == 0)) {
-			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//澶栭儴涓柇澶嶄綅璇彞,SDRAM璇绘搷浣�
+			PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF);//婢舵牠鍎存稉顓熸焽婢跺秳缍呯拠顓炲綖,SDRAM鐠囩粯鎼锋担锟�
 		}
 	}
 }
 //==============================================================================
 interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the interrupt
 {
-	/*保护现场*/
+	/*淇濇姢鐜板満*/
 	float32 tmp = Tsc;
 	Tsc = DspData.XT_Tsc;
 
@@ -275,7 +275,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 //	}
 
 	DIS_GPIO30();
-	DPRAM_RD(); //璇籑CU浜や簰淇℃伅
+	DPRAM_RD(); //鐠囩睉CU娴溿倓绨版穱鈩冧紖
 
 	NX_Pr();
 
@@ -303,9 +303,9 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 			float32 tmp = Tsc;
 			Tsc = tmp * 11.0;
 
-			McuData.PF_3PhNom = Limit(Ext_F, 40.0, 60.0);
-			McuData.PU_U3PhRef3 = Limit(Ext_U, 50.0, 100.0) * SQRT2bySQRT3;
-			McuData.PU_U3PhRef4 = McuData.PU_U3PhRef3;
+			McuParam.PF_3PhNom = Limit(Ext_F, 40.0, 60.0);
+			McuParam.PU_U3PhRef3 = Limit(Ext_U, 50.0, 100.0) * SQRT2bySQRT3;
+			McuParam.PU_U3PhRef4 = McuParam.PU_U3PhRef3;
 
 			McuStep();
 
@@ -317,7 +317,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	/**/
 	if (PX_Out_Spf.SX_Run == 1) {
 		if (DspData.XX_Mode == 1) {
-			PX_Out_Spf.XX_PwmMo = 21; // FPGA閫昏緫锛氳鏁板櫒鍊煎ぇ浜庢瘮杈冨櫒鍊间负楂橈紝鍔犳鍖猴紝鍙栧弽锛岀粡鍏夌氦鏉垮啀鍙嶅悜
+			PX_Out_Spf.XX_PwmMo = 21; // FPGA闁槒绶敍姘愁吀閺佹澘娅掗崐鐓庛亣娴滃孩鐦潏鍐ㄦ珤閸婇棿璐熸姗堢礉閸旂姵顒撮崠鐚寸礉閸欐牕寮介敍宀�病閸忓姘﹂弶鍨晙閸欏秴鎮�
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv
 					* (1.0 - DspData.XX_DutyA);
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv
@@ -326,7 +326,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 					* (1.0 - DspData.XX_DutyC);
 		}
 		if (DspData.XX_Mode == 0) {
-			PX_Out_Spf.XX_PwmMo = 0; // FPGA閫昏緫锛氳鏁板櫒鍊煎皬浜庢瘮杈冨櫒鍊间负楂橈紝鍔犳鍖猴紝鍙栧弽锛岀粡鍏夌氦鏉垮啀鍙嶅悜
+			PX_Out_Spf.XX_PwmMo = 0; // FPGA闁槒绶敍姘愁吀閺佹澘娅掗崐鐓庣毈娴滃孩鐦潏鍐ㄦ珤閸婇棿璐熸姗堢礉閸旂姵顒撮崠鐚寸礉閸欐牕寮介敍宀�病閸忓姘﹂弶鍨晙閸欏秴鎮�
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyA;
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyB;
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyC;
@@ -347,11 +347,11 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	PX_Out_Spf.XQ_Out = DspData.XQ_3Ph_Flt;
 	PX_Out_Spf.XI_DcLkEst = DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt;
 
-	DPRAM_WR(); //鍐檇sp浜や簰淇℃伅
+	DPRAM_WR(); //閸愭獓sp娴溿倓绨版穱鈩冧紖
 
 	EN_GPIO30();
 
-	/*恢复现场*/
+	/*鎭㈠鐜板満*/
 	Tsc = tmp;
 
 	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
@@ -360,7 +360,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 void DPRAM_RD(void) //MCU-->DSP
 {
 	//----------------------------------------------------
-	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    (RAM 0x7FFF clear) 姝よ鏈�厛璇伙紝浜х敓DPRAM涓柇婧�
+	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    (RAM 0x7FFF clear) 濮濄倛顢戦張锟藉帥鐠囦紮绱濇禍褏鏁揇PRAM娑擃厽鏌囧┃锟�
 	//---------------------------------------------------------------------
 	PX_In_Spf.NX_McuOpSt = *(XintfZone7 + 0x0001);		// MCU operation state
 //	PX_In_Spf.NX_McuVer = 0x10;
@@ -371,14 +371,14 @@ void DPRAM_RD(void) //MCU-->DSP
 	DspData.XI_PhA = *(XintfZone7 + 0x8) * 0.1 / 2.0 * (-1.0);// phase A current, A
 	DspData.XI_PhB = *(XintfZone7 + 0xA) * 0.1 / 2.0 * (-1.0);// phase B current, A
 	DspData.XI_PhC = *(XintfZone7 + 0x9) * 0.1 / 2.0 * (-1.0);// phase C current, A
-	DspData.XU_PhABLk = *(XintfZone7 + 0x7) * 0.1 * 2.0;// AB鐩歌緭鍑虹嚎鐢靛帇, V 閲囨牱婊ゆ尝瀵瑰箙鍊肩殑琛板噺 50Hz鏃惰“鍑忎负0.5
+	DspData.XU_PhABLk = *(XintfZone7 + 0x7) * 0.1 * 2.0;// AB閻╂瓕绶崙铏瑰殠閻㈤潧甯� V 闁插洦鐗卞銈嗗皾鐎电懓绠欓崐鑲╂畱鐞涙澘鍣�50Hz閺冩儼鈥滈崙蹇庤礋0.5
 	Ext_U = *(XintfZone7 + 0x11) * 10.0;
 	Ext_F = *(XintfZone7 + 0x12) * 1.0;
 }
 //==============================================================================
 void DPRAM_WR(void)			//DSP-->MCU
 {
-	/*重新烧写FPGA，确认死区和PWM发波
+	/*閲嶆柊鐑у啓FPGA锛岀‘璁ゆ鍖哄拰PWM鍙戞尝
 	 *
 	 *
 	 *
@@ -390,7 +390,7 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	PX_Out_Spf.XT_PwmPdVv = 6944;
 //
 //	if (DspData.XX_Mode) {
-//		PX_Out_Spf.XX_PwmMo = 21; // FPGA閫昏緫锛氳鏁板櫒鍊煎ぇ浜庢瘮杈冨櫒鍊间负楂橈紝鍔犳鍖猴紝鍙栧弽锛岀粡鍏夌氦鏉垮啀鍙嶅悜
+//		PX_Out_Spf.XX_PwmMo = 21; // FPGA闁槒绶敍姘愁吀閺佹澘娅掗崐鐓庛亣娴滃孩鐦潏鍐ㄦ珤閸婇棿璐熸姗堢礉閸旂姵顒撮崠鐚寸礉閸欐牕寮介敍宀�病閸忓姘﹂弶鍨晙閸欏秴鎮�
 //		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv
 //				* (1.0 - DspData.XX_DutyA);
 //		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv
@@ -398,7 +398,7 @@ void DPRAM_WR(void)			//DSP-->MCU
 //		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv
 //				* (1.0 - DspData.XX_DutyC);
 //	} else {
-//		PX_Out_Spf.XX_PwmMo = 0; // FPGA閫昏緫锛氳鏁板櫒鍊煎皬浜庢瘮杈冨櫒鍊间负楂橈紝鍔犳鍖猴紝鍙栧弽锛岀粡鍏夌氦鏉垮啀鍙嶅悜
+//		PX_Out_Spf.XX_PwmMo = 0; // FPGA闁槒绶敍姘愁吀閺佹澘娅掗崐鐓庣毈娴滃孩鐦潏鍐ㄦ珤閸婇棿璐熸姗堢礉閸旂姵顒撮崠鐚寸礉閸欐牕寮介敍宀�病閸忓姘﹂弶鍨晙閸欏秴鎮�
 //		PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyA;
 //		PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyB;
 //		PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * DspData.XX_DutyC;
@@ -431,9 +431,9 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x24) = PX_Out_Spf.NX_DspOpSt.all;
 	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_DspFlag1.all;
 
-	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// DSP鏁呴殰鐘舵�
+	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// DSP閺佸懘娈伴悩鑸碉拷
 
-	/*涓婁綅鏈�*/
+	/*娑撳﹣缍呴張锟�*/
 //	*(XintfZone7 + 0x27) = McuData.WU_3PhDsp*10;
 //	*(XintfZone7 + 0x28) = McuData.WF_3PhDsp*10;
 //	*(XintfZone7 + 0x29) = DspData.XX_MRef*100;
@@ -468,7 +468,11 @@ void DPRAM_WR(void)			//DSP-->MCU
 	//	*(XintfZone7 + 0x29) = fabs(DspData.WU_3PhPm.re*10);
 	//	*(XintfZone7 + 0x2A) = fabs(DspData.WU_3PhPm.im*10);
 
-	/*DA杈撳嚭*/
+
+	/*
+	 *
+	 * */
+
 	DA[3] = 0.0;
 	DA[4] = 0.0;
 	DA[5] = 0.0;
@@ -502,12 +506,12 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x2F) = DA[7];
 
 //---------------------------------------------------
-	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		//姝よ鏈�悗鍐欙紝DPRAM浜х敓涓柇婧�
+	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		//濮濄倛顢戦張锟芥倵閸愭瑱绱滵PRAM娴溠呮晸娑擃厽鏌囧┃锟�
 //------------------------------------------------------------
 
 }
 //==============================================================================
-/* 淇濇姢 */
+/* 娣囨繃濮�*/
 void NX_Pr(void) {
 //-------------------Udc over-voltage--------------------
 	if (PX_In_Spf.XU_DcLk > PX_InPr_Spf.XU_DcLk_Max) {
@@ -679,7 +683,7 @@ void DspStCl(void) {
 //	}
 
 	//-------------------------------------------
-	//鍒濆鍖�
+	//閸掓繂顬婇崠锟�
 	if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x00) {
 		//
 		//
@@ -691,7 +695,7 @@ void DspStCl(void) {
 		if (PX_In_Spf.NX_McuOpSt == 0x403)
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x20;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x20) {
-		//鍙傛暟鍒濆鍖�
+		//閸欏倹鏆熼崚婵嗩瀶閸栵拷
 		DspInit();
 		McuInit();
 		PX_Out_Spf.XX_DspFlag1.all = 0x0000;
@@ -704,7 +708,7 @@ void DspStCl(void) {
 	}
 
 	//------------------------------------------------------------
-	//鍚姩
+	//閸氼垰濮�
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x40) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
@@ -800,7 +804,7 @@ void DspStCl(void) {
 		}
 	}
 	//--------------------------------------------------------
-	//鍋滄
+	//閸嬫粍顒�
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x50) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x40A)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 0)) {
@@ -813,8 +817,8 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x52;
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x52) {
-		McuData.B_EnU3PhCl = FALSE;	//闭环控制失效
-		DspData.C_CvOp = FALSE;	//目标频率为最小值
+		McuData.B_EnU3PhCl = FALSE;	//闂幆鎺у埗澶辨晥
+		DspData.C_CvOp = FALSE;	//鐩爣棰戠巼涓烘渶灏忓�
 		if (DspData.C_CvOp == 0)
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x53;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x53) {
@@ -831,7 +835,7 @@ void DspStCl(void) {
 		}
 	}
 	//------------------------------------------------
-	//閿欒
+	//闁挎瑨顕�
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x60) {
 		PX_Out_Spf.XX_DspFlag1.all = 0x0000;
 		PX_Out_Spf.SX_Run = 0;
@@ -847,7 +851,7 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x1;
 	} else if (PX_Out_Spf.oldDspSt.bit.OvpCp == 0x1) {
 		//
-		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 0;	//标志清零
+		PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 0;	//鏍囧織娓呴浂
 		PX_Out_Spf.XX_DspFlag1.bit.OvpCpAv = 1;
 		if (1) {
 			PX_Out_Spf.XX_DspFlag1.bit.OvpFcTs = 1;
