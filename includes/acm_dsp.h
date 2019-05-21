@@ -138,6 +138,18 @@ struct Dsp_Data {
 	float32 XP_Ovp;/*OVP power*/
 	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
 
+	/*MEMS*/
+	Uint16 B_U3PhRmsPlySvFl:1; //三相输出电压合理性监视
+
+	/*ACLS*/
+	Uint16 B_IPhClTmWnd1Fl:1;
+	Uint16 B_IPhClRmsTmFl:1;
+
+	/*OVPT*/
+	float32 XX_Duty4A;
+	Uint16 C_OvpFcTs:1;
+	Uint16 A_OvpFcTsOk:1;
+
 };
 
 struct Dsp_Param {
@@ -186,9 +198,25 @@ struct Dsp_Param {
 
 	float32 PF_3PhSg; //1350
 
-	Uint16 L_EnIPhClRms :1;
 	Uint16 L_EnTPrDdCmp :1;
 	Uint16 L_DsPlElm3PhMod :1;
+
+	//DUVP
+	flaot32 PARTDP_PU_DcLkMin;//	1000
+
+	//DOVP
+	float32 PARTDP_PU_DcLkHgh4;//	1950
+
+	//MEMS
+	float32 PX_U3PhMmSvMax;	//0,9
+	float32 L_U3PhRmsPlySv;	//TRUE
+	float32 PU_U3PhRmsPlySvLim;	//35	V
+	float32 PT_U3PhRmsPlySvDy;	//1	s
+
+	//ACCL
+	Uint16 L_EnIPhClRms:1;//	FALSE
+	float32 PI_PhClRmsLim;//	800	A
+
 };
 
 struct Mcu_Data {

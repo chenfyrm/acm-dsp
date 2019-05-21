@@ -346,7 +346,7 @@ void PPG3_B(void) {
 	 * 电流小于零时从上管续流，下管为可控管，电压增加
 	 * 电流大于零时从下管续流，上管为可控管，电压减小
 	 * ***************/
-	if (!DspData.XX_Mode) {
+	if (DspData.XX_Mode) {
 		float32 coff;
 		if (DspData.XI_PhA <= 0) {
 
@@ -357,7 +357,7 @@ void PPG3_B(void) {
 			else
 				coff = 1.0;
 
-			DspData.XX_CrU += 0.00001 / DspData.XT_Tsc * coff;
+			DspData.XX_CrU -= 0.00001 / DspData.XT_Tsc * coff;
 		}
 		if (DspData.XI_PhB <= 0) {
 
@@ -368,7 +368,7 @@ void PPG3_B(void) {
 			else
 				coff = 1.0;
 
-			DspData.XX_CrV += 0.00001 / DspData.XT_Tsc * coff;
+			DspData.XX_CrV -= 0.00001 / DspData.XT_Tsc * coff;
 		}
 		if (DspData.XI_PhC <= 0) {
 
@@ -379,11 +379,10 @@ void PPG3_B(void) {
 			else
 				coff = 1.0;
 
-			DspData.XX_CrW += 0.00001 / DspData.XT_Tsc * coff;
+			DspData.XX_CrW -= 0.00001 / DspData.XT_Tsc * coff;
 		}
 
-	}
-	if (DspData.XX_Mode) {
+	} else {
 		float32 coff;
 		if (DspData.XI_PhA >= 0) {
 
@@ -394,7 +393,7 @@ void PPG3_B(void) {
 			else
 				coff = 1.0;
 
-			DspData.XX_CrU -= 0.00001 / DspData.XT_Tsc * coff;
+			DspData.XX_CrU += 0.00001 / DspData.XT_Tsc * coff;
 		}
 		if (DspData.XI_PhB >= 0) {
 
@@ -405,7 +404,7 @@ void PPG3_B(void) {
 			else
 				coff = 1.0;
 
-			DspData.XX_CrV -= 0.00001 / DspData.XT_Tsc * coff;
+			DspData.XX_CrV += 0.00001 / DspData.XT_Tsc * coff;
 		}
 		if (DspData.XI_PhC >= 0) {
 
@@ -416,17 +415,8 @@ void PPG3_B(void) {
 			else
 				coff = 1.0;
 
-			DspData.XX_CrW -= 0.00001 / DspData.XT_Tsc * coff;
+			DspData.XX_CrW += 0.00001 / DspData.XT_Tsc * coff;
 		}
-//		if (DspData.XI_PhA >= 0) {
-//			DspData.XX_CrU -= 0.00001 / DspData.XT_Tsc;
-//		}
-//		if (DspData.XI_PhB >= 0) {
-//			DspData.XX_CrV -= 0.00001 / DspData.XT_Tsc;
-//		}
-//		if (DspData.XI_PhC >= 0) {
-//			DspData.XX_CrW -= 0.00001 / DspData.XT_Tsc;
-//		}
 	}
 	/***************/
 	if (Max(DspData.XX_CrU, Max(DspData.XX_CrV, DspData.XX_CrW))
@@ -444,7 +434,6 @@ void PPG3_B(void) {
 			DspParam.PX_3PhClRtHgh);
 	DspData.XX_DutyC = Limit(DspData.XX_CrW, DspParam.PX_3PhClRtLow,
 			DspParam.PX_3PhClRtHgh);
-
 }
 
 float32 OvMd(float32 M1) {
@@ -722,8 +711,8 @@ void F3PhSz(void) {
 
 void U3PhSz(void) {
 	if (McuData.C_AuSz) {
-		float32 temp = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph +McuParam.PU_UF3PhSzClAdd
-				- McuData.WU_3PhDsp;
+		float32 temp = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph
+				+ McuParam.PU_UF3PhSzClAdd - McuData.WU_3PhDsp;
 		McuData.WU_UF3PhSzErr = temp;
 
 		if (McuData.WU_UF3PhSz < temp) {
