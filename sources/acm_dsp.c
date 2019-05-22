@@ -4,7 +4,6 @@
 #define SIMULATION 1
 #define U3PHRMS 380.0
 
-volatile float32 Tsc = 1.0 / 2700.0;
 volatile struct Dsp_Data DspData;
 volatile struct Dsp_Param DspParam;
 volatile struct Mcu_Data McuData;
@@ -13,6 +12,43 @@ TYPE_SOGIOSGMA sogiosg = SOGIOSGMA_DEFAULTS;
 TYPE_PI_CONTROLLER PI_F3PhSz = PI_CONTROLLER_DEFAULTS;
 TYPE_PI_CONTROLLER PI_U3PhCl = PI_CONTROLLER_DEFAULTS;
 
+/*IRQB*/
+void ANIN_B(void);
+void CSIV_B(void);
+void MEMS_B(void);
+void POCP_B(void);
+void CALI_B(void);
+void SIPR_B(void);
+void ACCL_B(void);
+void BACC_B(void);
+void UFCO_B(void);
+void PPG3_B(void);
+void LOGB_B(void);
+
+float32 OvMd(float32 M1);
+void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
+		volatile float32 *DutyC, cfloat32 _3PhAB);
+
+/*166us 2QC*/
+
+/*200us*/
+
+/*500us*/
+
+/*1ms*/
+void HSTI_T2(void);
+void ACCL_T2(void);
+void OVPT_T2(void);
+void HSTO_T2(void);
+
+/*100ms*/
+void SFSU_T3(void);
+void DIAG_T3(void);
+void DCUI_T3(void);
+void HSTP_T3(void);
+void HWSS_T3(void);
+
+/**/
 void DspInit(void) {
 	DspParam.PN_IPhFixMcu_Flt = 4.0; //rad/s
 	DspParam.PN_U3PhRms_Flt = 5.0; //5
@@ -81,7 +117,6 @@ void DspInit(void) {
 	DspData.XX_CntPh2Rms = 0;
 	DspData.XX_CntPh3Rms = 0;
 
-	Tsc = 1.0 / 2700.0;
 
 	//	float32 phase;	//input  0.0
 	//	float32 alpha;	//output 0.0
@@ -116,12 +151,19 @@ void DspInit(void) {
 
 }
 
-void DspStep(void) {
+void DspTask_B(void) {
 	SIPR_B();
 	ACCL_B();
-	ACCL_T2();
 	UFCO_B();
 	PPG3_B();
+}
+
+void DspTask_T2(void) {
+	ACCL_T2();
+}
+
+void DspTask_T3(void) {
+
 }
 
 void SIPR_B(void) {
@@ -233,30 +275,6 @@ void ACCL_B(void) {
 
 	LowPass(&DspData.WU_IPhClTrs_Flt, DspData.WU_IPhClTrs,
 			DspData.XT_Tsc * DspParam.PN_URefIPhClTrs_Flt);
-}
-
-void ACCL_T2(void) {
-	RmsClc(&DspData.XI_Ph1Rms, DspData.XI_PhA, 50, &DspData.XI_Ph1Squ,
-			&DspData.XX_CntPh1Rms);
-	RmsClc(&DspData.XI_Ph2Rms, DspData.XI_PhB, 50, &DspData.XI_Ph2Squ,
-			&DspData.XX_CntPh2Rms);
-	RmsClc(&DspData.XI_Ph3Rms, DspData.XI_PhC, 50, &DspData.XI_Ph3Squ,
-			&DspData.XX_CntPh3Rms);
-
-	LowPass(&DspData.XI_Ph1Rms_Flt, DspData.XI_Ph1Rms,
-			Cycle() * DspParam.PN_IPhRms_Flt);
-	LowPass(&DspData.XI_Ph2Rms_Flt, DspData.XI_Ph2Rms,
-			Cycle() * DspParam.PN_IPhRms_Flt);
-	LowPass(&DspData.XI_Ph3Rms_Flt, DspData.XI_Ph3Rms,
-			Cycle() * DspParam.PN_IPhRms_Flt);
-
-	DspData.WU_IPhClRms = 0.0;
-	DspData.B_LimAct = 0;
-
-	if (DspParam.L_EnIPhClRms) //功能未开启
-	{
-
-	}
 }
 
 void UFCO_B(void) {
@@ -477,6 +495,51 @@ void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 	*DutyC = (c + Cml) / NrmFa + 0.5;
 }
 
+/*
+ * DSP中1ms任务
+ * */
+void ACCL_T2(void) {
+	RmsClc(&DspData.XI_Ph1Rms, DspData.XI_PhA, 50, &DspData.XI_Ph1Squ,
+			&DspData.XX_CntPh1Rms);
+	RmsClc(&DspData.XI_Ph2Rms, DspData.XI_PhB, 50, &DspData.XI_Ph2Squ,
+			&DspData.XX_CntPh2Rms);
+	RmsClc(&DspData.XI_Ph3Rms, DspData.XI_PhC, 50, &DspData.XI_Ph3Squ,
+			&DspData.XX_CntPh3Rms);
+
+	LowPass(&DspData.XI_Ph1Rms_Flt, DspData.XI_Ph1Rms,
+			0.001 * DspParam.PN_IPhRms_Flt);
+	LowPass(&DspData.XI_Ph2Rms_Flt, DspData.XI_Ph2Rms,
+			0.001 * DspParam.PN_IPhRms_Flt);
+	LowPass(&DspData.XI_Ph3Rms_Flt, DspData.XI_Ph3Rms,
+			0.001 * DspParam.PN_IPhRms_Flt);
+
+	DspData.WU_IPhClRms = 0.0;
+	DspData.B_LimAct = 0;
+
+	if (DspParam.L_EnIPhClRms) //功能未开启
+	{
+
+	}
+}
+
+/**/
+void F3PhRef(void);
+void U3PhRef(void);
+void U3PhCl(void);
+
+void TFrefRmp(void);
+void FrefUDcLk(void);
+void FrefRmp(void);
+
+void UF3PhCmp(void);
+
+void F3PhSz(void);
+void U3PhSz(void);
+void UF3PhSz(void);
+
+void IPhClGenOvLd(void);
+void IPhClPsTrs(void);
+
 /**/
 void McuInit(void) {
 
@@ -562,19 +625,6 @@ void McuInit(void) {
 	McuParam.PX_IPhClTrsKpRct = 0.03;
 	McuParam.PX_IPhClTrsKpAbs = 0.0;
 
-	//	float32 Ref;   			// Input: reference set-point 0
-	//	float32 Fbk;   			// Input: feedback 0
-	//	float32 Out;   			// Output: controller output 0
-	//	float32 Kp;				// Parameter: proportional loop gain
-	//	float32 Ki;			    // Parameter: integral gain
-	//	float32 Umax;			// Parameter: upper saturation limit
-	//	float32 Umin;			// Parameter: lower saturation limit
-	//	float32 up;				// Data: proportional term
-	//	float32 ui;				// Data: integral term
-	//	float32 v1;				// Data: pre-saturated controller output
-	//	float32 i1;				// Data: integrator storage: ui(k-1)
-	//	float32 w1;
-
 	PI_U3PhCl.i1 = 0.0;
 	PI_U3PhCl.ui = 0.0;
 	PI_U3PhCl.Out = 0.0;
@@ -584,21 +634,23 @@ void McuInit(void) {
 	PI_F3PhSz.Out = 0.0;
 }
 
-void McuStep(void) {
+void McuTask_4ms(void) {
 	/**/
-	TFrefRmp();
-	FrefUDcLk();
-	FrefRmp();
 	UF3PhCmp();
-	F3PhSz();
-	U3PhSz();
 	IPhClGenOvLd();
 	IPhClPsTrs();
 	F3PhRef();
 	U3PhRef();
 	U3PhCl();
-	//	McuData.WU_3PhDsp = McuData.WU_3PhRmp * McuParam.PX_TrfRtPr3Ph;
+}
 
+void McuTask_16ms(void) {
+	TFrefRmp();
+	FrefUDcLk();
+	FrefRmp();
+	F3PhSz();
+	U3PhSz();
+	UF3PhSz();
 }
 
 /*16ms*/
@@ -629,14 +681,17 @@ void FrefUDcLk(void) {
 			McuParam.PX_FRefRmpUDcLkDo, 0.0, FALSE, FALSE);
 }
 
+/*
+ * MCU中16ms任务
+ * */
 void FrefRmp(void) {
 	if (DspData.C_CvOp) {
 		if (McuData.WF_3PhRmp <= McuParam.PF_3PhNom) {
-			McuData.WF_3PhRmp += McuData.XX_FRefRmpUp * Cycle();
+			McuData.WF_3PhRmp += McuData.XX_FRefRmpUp * 0.016;
 			if (McuData.WF_3PhRmp > McuParam.PF_3PhNom)
 				McuData.WF_3PhRmp = McuParam.PF_3PhNom;
 		} else {
-			McuData.WF_3PhRmp -= McuData.XX_FRefRmpDo * Cycle();
+			McuData.WF_3PhRmp -= McuData.XX_FRefRmpDo * 0.016;
 			if (McuData.WF_3PhRmp < McuParam.PF_3PhNom)
 				McuData.WF_3PhRmp = McuParam.PF_3PhNom;
 		}
@@ -646,11 +701,11 @@ void FrefRmp(void) {
 			McuData.A_FRmp = FALSE;
 	} else {
 		if (McuData.WF_3PhRmp <= McuParam.PF_3PhMin) {
-			McuData.WF_3PhRmp += McuData.XX_FRefRmpUp * Cycle();
+			McuData.WF_3PhRmp += McuData.XX_FRefRmpUp * 0.016;
 			if (McuData.WF_3PhRmp > McuParam.PF_3PhMin)
 				McuData.WF_3PhRmp = McuParam.PF_3PhMin;
 		} else {
-			McuData.WF_3PhRmp -= McuData.XX_FRefRmpDo * Cycle();
+			McuData.WF_3PhRmp -= McuData.XX_FRefRmpDo * 0.016;
 			if (McuData.WF_3PhRmp < McuParam.PF_3PhMin)
 				McuData.WF_3PhRmp = McuParam.PF_3PhMin;
 		}
@@ -663,6 +718,9 @@ void FrefRmp(void) {
 	McuData.WF_3PhRmp = Min(McuData.WF_3PhRmp, McuData.WF_3PhUDcLk);
 }
 
+/*
+ * 4ms
+ * */
 void UF3PhCmp(void) {
 	if (DspData.C_CvOp && McuParam.L_EnUF3PhCmp) {
 		if (DspData.XI_PhAct_Flt2 < -McuParam.PI_UF3PhCmpActHiLo)
@@ -687,6 +745,9 @@ void UF3PhCmp(void) {
 	}
 }
 
+/*
+ * 16ms
+ * */
 void F3PhSz(void) {
 	if (McuData.C_AuSz) {
 		float32 temp = sqrt(
@@ -699,7 +760,7 @@ void F3PhSz(void) {
 			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / temp;
 		}
 		PI_F3PhSz.Kp = McuParam.PX_KpF3PhSzCl;
-		PI_F3PhSz.Ki = 1000.0 * Cycle() / McuParam.PT_F3PhSzCl;
+		PI_F3PhSz.Ki = 16.0 / McuParam.PT_F3PhSzCl;
 		PI_F3PhSz.Umax = McuParam.PF_UF3PhSzClMaxMin;
 		PI_F3PhSz.Umin = -McuParam.PF_UF3PhSzClMaxMin;
 		PI_CONTROLLER(&PI_F3PhSz);
@@ -709,6 +770,9 @@ void F3PhSz(void) {
 	}
 }
 
+/*
+ * 16ms
+ * */
 void U3PhSz(void) {
 	if (McuData.C_AuSz) {
 		float32 temp = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph
@@ -733,21 +797,32 @@ void U3PhSz(void) {
 	}
 }
 
+/*
+ * 16ms
+ * */
+void UF3PhSz(void){
+
+}
+
+/*4ms*/
 void IPhClGenOvLd(void) {
 	McuData.WF_IPhCl = 0.0;
 }
 
+/*4ms*/
 void IPhClPsTrs(void) {
 	McuData.WI_PhActDsp = 450;
 	McuData.WI_PhRctDsp = 300;
 }
 
+/*4ms*/
 void F3PhRef(void) {
 	McuData.WF_3PhU3PhRef = McuData.WF_3PhRmp + McuData.WF_IPhCl
 			+ McuData.WF_UF3PhSz;
 	McuData.WF_3PhDsp = McuData.WF_3PhU3PhRef + McuData.WF_WF3PhCmp;
 }
 
+/*4ms*/
 void U3PhRef(void) {
 	if (!McuParam.L_ExtU3PhRef) {
 		if (McuData.WF_3PhU3PhRef <= 0.0)
@@ -781,6 +856,7 @@ void U3PhRef(void) {
 	}
 }
 
+/*4ms*/
 void U3PhCl(void) {
 	McuData.WU_3PhClIn = McuData.WU_3PhRmp + McuData.WU_UF3PhCmp
 			+ McuData.WU_UF3PhSz;
@@ -794,9 +870,9 @@ void U3PhCl(void) {
 
 	if (McuData.B_EnU3PhCl) {
 		PI_U3PhCl.Kp = McuParam.PX_KpU3PhCl;
-		//		PI_U3PhCl.Ki = 1000.0 * Cycle() / McuData.PT_U3PhCl;
+		//		PI_U3PhCl.Ki = 1000.0 * Ts / McuData.PT_U3PhCl;
 		//	YI := YI + ((KP * ERROR) / LIMIT(1.0,TN_TZ,3.4E+38)) ;
-		PI_U3PhCl.Ki = PI_U3PhCl.Kp / (McuParam.PT_U3PhCl * 0.001 / Cycle()); //TN_TZ 控制周期的倍率，推荐大于10  PI_U3PhCl.Kp *Cycle()*1000/ McuData.PT_U3PhCl;
+		PI_U3PhCl.Ki = PI_U3PhCl.Kp * 4.0 / McuParam.PT_U3PhCl; //TN_TZ 控制周期的倍率，推荐大于10  PI_U3PhCl.Kp *Ts*1000/ McuData.PT_U3PhCl; 4ms/50ms
 		PI_U3PhCl.Umax = McuParam.PU_3PhClMax;
 		PI_U3PhCl.Umin = McuParam.PU_3PhClMin;
 		PI_CONTROLLER(&PI_U3PhCl);
@@ -811,10 +887,7 @@ void U3PhCl(void) {
 			+ McuData.WU_U3PhClOut;
 }
 
-/**/
-void Delay(volatile float32 *Dy, float32 Src) {
 
-}
 /**/
 void LowPass(volatile float32 *Flt, float32 Src, float32 TsPerT1) {
 	*Flt = (*Flt + Src * TsPerT1) / (1.0 + TsPerT1);
@@ -860,8 +933,8 @@ void RAMP2(volatile float32 *Y, float32 X, float32 Dr, float32 Df, float32 Init,
 		if (Set) {
 			*Y = Init;
 		} else {
-			Yinc = *Y + fabs(Dr) * Cycle();
-			Ydec = *Y - fabs(Df) * Cycle();
+			Yinc = *Y + fabs(Dr);
+			Ydec = *Y - fabs(Df);
 
 			if (X > Yinc) {
 				*Y = Yinc;
@@ -874,21 +947,18 @@ void RAMP2(volatile float32 *Y, float32 X, float32 Dr, float32 Df, float32 Init,
 	}
 }
 
-void INTEGR(volatile float32 *Y, float32 X, float32 T, float32 Init,
+void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,
 		float32 Max, float32 Min, Uint16 Set, Uint16 Hold) {
 	if (!Hold) {
 		if (Set) {
 			*Y = Init;
 		} else {
-			*Y = *Y + X * Cycle() / T;
+			*Y = *Y + X * TsPerT1;
 			*Y = Limit(*Y, Min, Max);
 		}
 	}
 }
 
-float32 Cycle(void) {
-	return Tsc;
-}
 
 float32 Min(float32 a, float32 b) {
 	if (a <= b)

@@ -202,7 +202,7 @@ struct Dsp_Param {
 	Uint16 L_DsPlElm3PhMod :1;
 
 	//DUVP
-	flaot32 PARTDP_PU_DcLkMin;//	1000
+	float32 PARTDP_PU_DcLkMin;//	1000
 
 	//DOVP
 	float32 PARTDP_PU_DcLkHgh4;//	1950
@@ -384,7 +384,6 @@ struct Mcu_Param {
 };
 
 /**/
-extern volatile float32 Tsc;
 extern volatile struct Dsp_Data DspData;
 extern volatile struct Dsp_Param DspParam;
 extern volatile struct Mcu_Data McuData;
@@ -393,60 +392,21 @@ extern volatile struct Mcu_Param McuParam;
 /*DSP*/
 /*IRQB*/
 //Дж±д
-extern void DspStep(void);
+
 extern void DspInit(void);
+//extern void DspStep(void);
 
-extern void ANIN_B(void);
-extern void CSIV_B(void);
-extern void MEMS_B(void);
-extern void POCP_B(void);
-extern void CALI_B(void);
-extern void SIPR_B(void);
-extern void ACCL_B(void);
-extern void BACC_B(void);
-extern void UFCO_B(void);
-extern void PPG3_B(void);
-extern void LOGB_B(void);
-
-extern float32 OvMd(float32 M1);
-extern void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
-		volatile float32 *DutyC, cfloat32 _3PhAB);
-
-/*500us*/
-
-/*1ms*/
-extern void HSTI_T2(void);
-extern void ACCL_T2(void);
-extern void OVPT_T2(void);
-extern void HSTO_T2(void);
-
-/*100ms*/
-extern void SFSU_T3(void);
-extern void DIAG_T3(void);
-extern void DCUI_T3(void);
-extern void HSTP_T3(void);
-extern void HWSS_T3(void);
+extern void DspTask_B(void);
+extern void DspTask_T2(void);
+extern void DspTask_T3(void);
 
 /*MCU*/
 extern void McuInit(void);
-extern void McuStep(void);
+//extern void McuStep(void);
+extern void McuTask_4ms(void);
+extern void McuTask_16ms(void);
 
-void F3PhRef(void);
-void U3PhRef(void);
-void U3PhCl(void);
 
-void TFrefRmp(void);
-void FrefUDcLk(void);
-void FrefRmp(void);
-
-void UF3PhCmp(void);
-
-void F3PhSz(void);
-void U3PhSz(void);
-void UF3PhSz(void);
-
-void IPhClGenOvLd(void);
-void IPhClPsTrs(void);
 
 /*math*/
 extern void Delay(volatile float32 *Dy, float32 Src);
