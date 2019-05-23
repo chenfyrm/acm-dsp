@@ -165,7 +165,7 @@ struct Dsp_Param {
 	float32 PN_URefIPhClTrs_Flt;
 	float32 PN_IPhRms_Flt;
 
-	float32 PD_TrfThetaPr3Ph; //1.047
+	float32 PD_ThetaFiOs; //1.047
 
 	float32 PU_PhClTrsMax; //	75
 	float32 PI_PhClTrsAbsLim; //	600
@@ -235,7 +235,7 @@ struct Mcu_Data {
 
 	/*COMPMA*/
 	/*UF3PhCmp*/
-	float32 WF_WF3PhCmp;
+	float32 WF_UF3PhCmp;
 	float32 WU_UF3PhCmp;
 
 	/*UFCOMA*/
@@ -263,7 +263,8 @@ struct Mcu_Data {
 
 	/*FrefRmp 16ms*/
 	float32 WF_3PhRmp;
-	Uint16 A_FRmp :1;
+	Uint16 A_FNom :1;
+	Uint16 A_FMin :1;
 
 	/*AUSZMA*/
 	/*F3PhSz 16ms*/
@@ -274,14 +275,21 @@ struct Mcu_Data {
 	float32 WU_UF3PhSz;
 	float32 WU_UF3PhSzErr;
 
-
-
 	/*UF3PhSz 16ms*/
 	Uint16 A_AuSz :1;
 
-	/**/
+	/*CvOpSaSq*/
+	Uint16 C_CdAuLdCt:1;
+	Uint16 C_Ck3PhGduFb:1;
+	Uint16 C_CvOpSa:1;
 	Uint16 C_AuSz :1;	//开始同步
+	Uint16 A_CvOpSa:1;
+	Uint16 NX_SqSt;
+
+	Uint16 C_CvOp_MnSq:1;
+	Uint16 C_FRmp:1;
 	Uint16 B_EnU3PhCl :1;	//开始闭环
+	Uint16 A_CdAuLdCt:1;
 };
 
 struct Mcu_Param {
@@ -344,18 +352,21 @@ struct Mcu_Param {
 	float32 PX_KpF3PhSzCl;
 	float32 PT_F3PhSzCl;
 	float32 PF_UF3PhSzClMaxMin;
-	float32 PF_UF3PhSzRdy;
 	float32 PT_UF3PhSzRmp;
-	float32 PD_TrfSfPr3Ph;	//变压器原边相电压与副边线电压相移
 
-	/**/
+
+	/*U3PhSz*/
 	float32 PU_UF3PhSzClAdd;
 	float32 PU_UF3PhSzClMaxMin;
-	float32 PU_UF3PhSzRdy;
-	float32 PU_3PhBusAct;
-	float32 PU_3PhBusIdle;
 
-	/**/
+
+	/*UF3PhSz*/
+	float32 PF_UF3PhSzRdy;
+	float32 PU_UF3PhSzRdy;
+	float32 PT_UF3PhSzRdy;
+	float32 PT_UF3PhSzFl;
+
+	/*U3PhRef*/
 	float32 PF_U3PhRef2;
 	float32 PF_U3PhRef3;
 	float32 PU_U3PhRef1;
@@ -380,6 +391,10 @@ struct Mcu_Param {
 	float32 PU_3PhClRefMax;
 	float32 PU_3PhClRefMin;
 	float32 PX_TrfRtPr3Ph;
+
+	/*CvOpSaSq*/
+	float32 PU_3PhIdlCmp;
+	float32 PU_3PhActCmp;
 
 };
 
@@ -555,7 +570,33 @@ extern void PI_CONTROLLER(TYPE_PI_CONTROLLER *data);
 }
 #endif
 
+typedef struct {
+	float32 In;//input
+	float32 Out;//output
+	float32 a1;//param
+	float32 a2;
+	float32 b0;
+	float32 b1;
+	float32 b2;
+	float32 oldIn1;//state
+	float32 oldIn2;
+	float32 oldOut1;
+	float32 oldOut2;
+}TYPE_IIRFILTER_2ND;
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* extern "C" */
+
+extern void IIRFilter_2nd(TYPE_IIRFILTER_2ND *data);
+extern void AdaptIIRNotchFilter(TYPE_IIRFILTER_2ND *data,float32 W0,float32 Ts);
+
+#ifdef __cplusplus
+}
+#endif
+
 extern TYPE_SOGIOSGMA sogiosg;
+extern TYPE_IIRFILTER_2ND U3PhRe,U3PhIm;
 extern TYPE_PI_CONTROLLER PI_F3PhSz;
 extern TYPE_PI_CONTROLLER PI_U3PhCl;
 
