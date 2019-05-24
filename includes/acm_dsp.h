@@ -130,9 +130,10 @@ struct Dsp_Data {
 	Uint16 L_DsPlElm3PhMod :1; //TRUE
 
 	/*SRTODA*/
-	Uint16 C_CvOp :1;
-	Uint16 C_OvpCpOp :1;
-	Uint16 C_BtCpOp :1;
+	Uint16 A_CvOp:1;
+//	Uint16 C_CvOp :1;
+//	Uint16 C_OvpCpOp :1;
+//	Uint16 C_BtCpOp :1;
 
 	/**/
 	float32 XP_Ovp;/*OVP power*/
@@ -196,6 +197,8 @@ struct Dsp_Param {
 	float32 PX_KpUDcLkStb;
 	float32 PX_KpUDcLkVoStbFb;
 
+	float32 PX_3PhRndMax;//	0,0345
+	Uint16 L_3PhRndEn:1;//	TRUE
 	float32 PF_3PhSg; //1350
 
 	Uint16 L_EnTPrDdCmp :1;
@@ -409,19 +412,17 @@ extern volatile struct Mcu_Param McuParam;
 //Дж±д
 
 extern void DspInit(void);
-//extern void DspStep(void);
 
+extern void DspTask_185us(void);
 extern void DspTask_B(void);
 extern void DspTask_T2(void);
 extern void DspTask_T3(void);
 
 /*MCU*/
 extern void McuInit(void);
-//extern void McuStep(void);
+
 extern void McuTask_4ms(void);
 extern void McuTask_16ms(void);
-
-
 
 /*math*/
 extern void Delay(volatile float32 *Dy, float32 Src);

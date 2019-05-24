@@ -32,8 +32,6 @@ float32 OvMd(float32 M1);
 void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 		volatile float32 *DutyC, cfloat32 _3PhAB);
 
-void F3PhSz_B(void);
-
 /*166us 2QC*/
 
 /*200us*/
@@ -89,6 +87,8 @@ void DspInit(void) {
 
 	DspParam.PF_IRQBMax = 150000000.0 / 8.0;
 	DspParam.PF_3PhSg = 1350.0;
+	DspParam.L_3PhRndEn = FALSE; //TRUE
+	DspParam.PX_3PhRndMax = 0.0345; //0.0345
 
 	DspParam.L_EnIPhClRms = FALSE;
 
@@ -129,12 +129,103 @@ void DspInit(void) {
 //	DspData.XX_CntPh3Rms = 0;
 }
 
+void DspTask_185us(void) {
+	/*
+	 *
+	 * */
+	sogiosg.phase = DspData.XU_PhABLk;
+	sogiosg.Ts = DspData.XT_Tsc ; //
+	sogiosg.w0 = 100 * 3.1415926;
+	sogiosg.K = sqrt(0.1); //sqrt(2)
+	sogiosg.Ki = 10000;
+
+	SOGIOSGFLL(&sogiosg);
+
+	DspData.XF_U3Ph = sogiosg.w / 2.0 / PI;
+
+	cfloat32 XU_3PhAB, XU_3PhDQ;
+	/**/
+	if (SIMULATION) {
+		//仿真
+		XU_3PhAB = CPLXSCA(
+				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
+						POL2CPLX(1.0, 0.0)), 1.0);
+
+	} else {
+		//调试
+		//		XU_3PhAB = CPLXSCA(
+		//				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
+		//						POL2CPLX(1.0, PI / 2.0)),
+		//				1.095 * 100.0 * PI / sqrt(sogiosg.w * sogiosg.w + 1));
+		XU_3PhAB = CPLXSCA(
+				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
+						POL2CPLX(1.0, PI / 2.0)), 1.095);
+	}
+	XU_3PhDQ = CPLXMULT(XU_3PhAB,
+			POL2CPLX(1.0, -(DspData.WX_Theta + DspParam.PD_ThetaFiOs)));
+
+	DspData.XU_3PhRe = XU_3PhDQ.re;
+	DspData.XU_3PhIm = XU_3PhDQ.im;
+	DspData.XU_3PhAbs = sqrt(
+			DspData.XU_3PhRe * DspData.XU_3PhRe
+					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
+
+	DspData.WX_Theta += 2.0 * PI * McuData.WF_3PhDsp * DspData.XT_Tsc;
+	DspData.WX_Theta = fmod(DspData.WX_Theta, 2 * PI);
+
+	if (McuData.C_AuSz) {
+		float32 temp = sqrt(
+				DspData.XU_3PhRe * DspData.XU_3PhRe
+						+ DspData.XU_3PhIm * DspData.XU_3PhIm);
+		PI_F3PhSz.Ref = 0.0;
+		if (temp < 0.001) {
+			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / 0.001;
+		} else {
+			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / temp;
+		}
+		//		PI_F3PhSz.Kp = McuParam.PX_KpF3PhSzCl;
+		//		PI_F3PhSz.Ki = 16.0 / McuParam.PT_F3PhSzCl;
+		PI_F3PhSz.Kp = PI2 * 0.5;
+		PI_F3PhSz.Ki = DspData.XT_Tsc * PI_F3PhSz.Kp * PI_F3PhSz.Kp / 4.0;
+		PI_F3PhSz.Umax = McuParam.PF_UF3PhSzClMaxMin;
+		PI_F3PhSz.Umin = -McuParam.PF_UF3PhSzClMaxMin;
+		PI_CONTROLLER(&PI_F3PhSz);
+		McuData.WF_UF3PhSz = PI_F3PhSz.Out;
+	} else {
+		McuData.WF_UF3PhSz = 0.0;
+	}
+
+	if (McuData.C_AuSz) {
+		float32 temp = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph
+				+ McuParam.PU_UF3PhSzClAdd - McuData.WU_3PhDsp;
+		McuData.WU_UF3PhSzErr = temp;
+
+		if (McuData.WU_UF3PhSz < temp) {
+			McuData.WU_UF3PhSz += 1.0;
+			if (McuData.WU_UF3PhSz > temp)
+				McuData.WU_UF3PhSz = temp;
+		}
+		if (McuData.WU_UF3PhSz > temp) {
+			McuData.WU_UF3PhSz -= 1.0;
+			if (McuData.WU_UF3PhSz < temp)
+				McuData.WU_UF3PhSz = temp;
+		}
+		McuData.WU_UF3PhSz += McuParam.PU_UF3PhSzClAdd;
+
+	} else {
+		//		RAMP2(&McuData.WU_UF3PhSz,0.0);
+		McuData.WU_UF3PhSz = 0.0;
+	}
+}
+
+/*
+ *
+ * */
 void DspTask_B(void) {
 	SIPR_B();
 	ACCL_B();
 	UFCO_B();
 	PPG3_B();
-//	F3PhSz_B();
 }
 
 void DspTask_T2(void) {
@@ -168,59 +259,24 @@ void SIPR_B(void) {
 	DspData.XI_PhAct = DspData.XI_PhDQ.re;
 	DspData.XI_PhRct = DspData.XI_PhDQ.im;
 
-	DspData.WX_Theta += 2.0 * PI * McuData.WF_3PhDsp * DspData.XT_Tsc;
-	DspData.WX_Theta = fmod(DspData.WX_Theta, 2 * PI);
-
-	/*
-	 *
-	 * */
-	sogiosg.phase = DspData.XU_PhABLk;
-	sogiosg.Ts = DspData.XT_Tsc;
-	sogiosg.w0 = 100 * 3.1415926;
-	sogiosg.K = sqrt(0.1); //sqrt(2)
-	sogiosg.Ki = 10000;
-
-	SOGIOSGFLL(&sogiosg);
-
-	DspData.XF_U3Ph = sogiosg.w / 2.0 / PI;
-
-	cfloat32 XU_3PhAB, XU_3PhDQ;
-	/**/
-	if (SIMULATION) {
-		//仿真
-		XU_3PhAB = CPLXSCA(
-				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
-						POL2CPLX(1.0, 0.0)), 1.0);
-
-	} else {
-		//调试
-		//		XU_3PhAB = CPLXSCA(
-		//				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
-		//						POL2CPLX(1.0, PI / 2.0)),
-		//				1.095 * 100.0 * PI / sqrt(sogiosg.w * sogiosg.w + 1));
-		XU_3PhAB = CPLXSCA(
-				CPLXMULT(FRAC2CPLX(sogiosg.alpha, sogiosg.beta),
-						POL2CPLX(1.0, PI / 2.0)), 1.095);
-	}
-	XU_3PhDQ = CPLXMULT(XU_3PhAB,
-			POL2CPLX(1.0, -(DspData.WX_Theta + DspParam.PD_ThetaFiOs)));
+//	DspData.WX_Theta += 2.0 * PI * McuData.WF_3PhDsp * DspData.XT_Tsc;
+//	DspData.WX_Theta = fmod(DspData.WX_Theta, 2 * PI);
 
 	/**/
-	U3PhRe.In = DspData.XU_PhABLk
-			* cos(DspData.WX_Theta + DspParam.PD_ThetaFiOs);
-	AdaptIIRNotchFilter(&U3PhRe, 2.0 * PI2 * Max(McuData.WF_3PhDsp, 1.0),
-			DspData.XT_Tsc);
-	DspData.XU_3PhRe = U3PhRe.Out;
-
-	U3PhIm.In = DspData.XU_PhABLk
-			* sin(DspData.WX_Theta + DspParam.PD_ThetaFiOs);
-	AdaptIIRNotchFilter(&U3PhIm, 2.0 * PI2 * Max(McuData.WF_3PhDsp, 1.0),
-			DspData.XT_Tsc);
-	DspData.XU_3PhIm = U3PhIm.Out;
-
+//	DspData.XF_U3Ph = sogiosg.w / 2.0 / PI;
+	/*IIR Notch Filter*/
+//	U3PhRe.In = DspData.XU_PhABLk
+//			* cos(DspData.WX_Theta + DspParam.PD_ThetaFiOs);
+//	AdaptIIRNotchFilter(&U3PhRe, 2.0 * PI2 * Max(McuData.WF_3PhDsp, 1.0),
+//			DspData.XT_Tsc);
+//	DspData.XU_3PhRe = U3PhRe.Out;
+//
+//	U3PhIm.In = DspData.XU_PhABLk
+//			* sin(DspData.WX_Theta + DspParam.PD_ThetaFiOs);
+//	AdaptIIRNotchFilter(&U3PhIm, 2.0 * PI2 * Max(McuData.WF_3PhDsp, 1.0),
+//			DspData.XT_Tsc);
+//	DspData.XU_3PhIm = U3PhIm.Out;
 	/**/
-//	DspData.XU_3PhRe = XU_3PhDQ.re;
-//	DspData.XU_3PhIm = XU_3PhDQ.im;
 	DspData.XU_3PhAbs = sqrt(
 			DspData.XU_3PhRe * DspData.XU_3PhRe
 					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
@@ -333,7 +389,7 @@ void UFCO_B(void) {
 	DspData.WU_Ref_Abs = Max(0.0, DspData.WU_Ref_Abs);
 
 	DspData.XX_MRef = DspData.WU_Ref_Abs / DspData.XU_DcLk;
-	if (DspData.C_CvOp && (DspData.XX_MRef > ONEbySQRT3)) {
+	if (DspData.A_CvOp && (DspData.XX_MRef > ONEbySQRT3)) {
 		DspData.S_3PhOvMd = 1;
 	} else {
 		DspData.S_3PhOvMd = 0;
@@ -442,8 +498,15 @@ void PPG3_B(void) {
 		DspData.S_UDcLkLow = 0;
 	}
 
-	DspData.XX_PwmPdVv = floor(0.5 * DspParam.PF_IRQBMax / DspParam.PF_3PhSg);
-	DspData.XT_Tsc = DspData.XX_PwmPdVv / DspParam.PF_IRQBMax; //开关频率1350Hz，波峰波谷双采样
+	/**/
+	if (!DspParam.L_3PhRndEn) {
+		DspData.XT_Tsc = 0.5 / DspParam.PF_3PhSg; //开关频率1350Hz，波峰波谷双采样
+	} else {
+
+	}
+	/**/
+	DspData.XX_PwmPdVv = DspData.XT_Tsc * DspParam.PF_IRQBMax + 0.5;
+
 	DspData.XX_DutyA = Limit(DspData.XX_CrU, DspParam.PX_3PhClRtLow,
 			DspParam.PX_3PhClRtHgh);
 	DspData.XX_DutyB = Limit(DspData.XX_CrV, DspParam.PX_3PhClRtLow,
@@ -491,30 +554,6 @@ void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 	*DutyA = (a + Cml) / NrmFa + 0.5;
 	*DutyB = (b + Cml) / NrmFa + 0.5;
 	*DutyC = (c + Cml) / NrmFa + 0.5;
-}
-
-void F3PhSz_B(void) {
-	if (McuData.C_AuSz) {
-		float32 temp = sqrt(
-				DspData.XU_3PhRe * DspData.XU_3PhRe
-						+ DspData.XU_3PhIm * DspData.XU_3PhIm);
-		PI_F3PhSz.Ref = 0.0;
-		if (temp < 0.001) {
-			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / 0.001;
-		} else {
-			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / temp;
-		}
-//		PI_F3PhSz.Kp = McuParam.PX_KpF3PhSzCl;
-//		PI_F3PhSz.Ki = 16.0 / McuParam.PT_F3PhSzCl;
-		PI_F3PhSz.Kp = PI2 * 0.5;
-		PI_F3PhSz.Ki = 1.0 / 2700.0 * PI_F3PhSz.Kp * PI_F3PhSz.Kp / 4.0;
-		PI_F3PhSz.Umax = McuParam.PF_UF3PhSzClMaxMin;
-		PI_F3PhSz.Umin = -McuParam.PF_UF3PhSzClMaxMin;
-		PI_CONTROLLER(&PI_F3PhSz);
-		McuData.WF_UF3PhSz = PI_F3PhSz.Out;
-	} else {
-		McuData.WF_UF3PhSz = 0.0;
-	}
 }
 
 /*
@@ -601,14 +640,13 @@ void McuInit(void) {
 	McuParam.PU_UF3PhSzClAdd = 0.0;
 	McuParam.PU_UF3PhSzClMaxMin = 100.0;
 
-
 	McuParam.PU_3PhIdlCmp = 40.0;
 	McuParam.PU_3PhActCmp = 250.0;
 
 	/*UF3PhSz 16ms*/
 	McuParam.PF_UF3PhSzRdy = 0.3;
 	McuParam.PU_UF3PhSzRdy = 20.0 * SQRT2bySQRT3;
-	McuParam.PT_UF3PhSzRdy = 250.0;//250ms
+	McuParam.PT_UF3PhSzRdy = 250.0; //250ms
 	McuParam.PT_UF3PhSzFl = 5000.0; //5000ms
 
 	/*U3PhRef*/
@@ -671,9 +709,9 @@ void McuTask_16ms(void) {
 	TFrefRmp();
 	FrefUDcLk();
 	FrefRmp();
-	F3PhSz();
-	U3PhSz();
-	UF3PhSz();
+//	F3PhSz();
+//	U3PhSz();
+//	UF3PhSz();
 }
 
 /*
@@ -805,6 +843,9 @@ void U3PhRef(void) {
 	} else {
 
 	}
+	McuData.WU_3PhClIn = McuData.WU_3PhRmp + McuData.WU_UF3PhCmp
+			+ McuData.WU_UF3PhSz;
+	McuData.WU_3PhDsp = McuData.WU_3PhClIn * McuParam.PX_TrfRtPr3Ph;
 }
 
 /*4ms*/
@@ -966,19 +1007,18 @@ void U3PhSz(void) {
  * */
 void UF3PhSz(void) {
 
-	static float32 WndTime1,WndTime2;
+	static float32 WndTime1, WndTime2;
 
-	if(McuData.C_AuSz)
-	{
-		if((fabs(McuData.WF_UF3PhSzErr)<=McuParam.PF_UF3PhSzRdy)&&(fabs(McuData.WF_UF3PhSzErr)<=McuParam.PF_UF3PhSzRdy))
+	if (McuData.C_AuSz) {
+		if ((fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy)
+				&& (fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy))
 			WndTime1 += 16.0;
 		else
 			WndTime1 = 0.0;
 
-		if(WndTime1 > McuParam.PT_UF3PhSzRdy)
+		if (WndTime1 > McuParam.PT_UF3PhSzRdy)
 			McuData.A_AuSz = TRUE;
-	}else
-	{
+	} else {
 
 	}
 }
