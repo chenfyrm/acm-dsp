@@ -274,7 +274,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 
 
 
-	if (TestFlg == 0x55) {
+	if (!(TestFlg == 0x55)) {
 		DspTask_B();
 
 		Cnt_1ms++;
@@ -369,27 +369,31 @@ interrupt void DPRAM_isr_Fix(void) //固定中断频率4.35kHz
 		PX_Out_Spf.NX_DspPlCn = 0;
 
 	DIS_GPIO30();
-	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    (RAM 0x7FFF clear)
-	DspData.XU_PhABLk = *(XintfZone7 + 0x7) * 0.1 * 2.0;		// AB
 
-	Cnt_Period++;
-	if (Cnt_Period >= 2700) {
-		Cnt_sec++;
-		Cnt_Period = 0;
-	}
-	if(Cnt_sec>=60.0){
-		Cnt_min++;
-		Cnt_sec = 0;
-	}
+//	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    (RAM 0x7FFF clear)
+//	DspData.XU_PhABLk = *(XintfZone7 + 0x7) * 0.1 * 2.0;		// AB
+//
+//	Cnt_Period++;
+//	if (Cnt_Period >= 2700) {
+//		Cnt_sec++;
+//		Cnt_Period = 0;
+//	}
+//	if(Cnt_sec>=60.0){
+//		Cnt_min++;
+//		Cnt_sec = 0;
+//	}
 
-	DspTask_185us();
 
-	Cnt_B++;
-	if (Cnt_B >= 1) {
+
+//	Cnt_B++;
+//	if (Cnt_B >= 1) {
 		DPRAM_RD(); //
 		NX_Pr();
 		DspStCl();
-		if (!(TestFlg == 0x55)) {
+//		if (!(TestFlg == 0x55)) {
+
+			DspTask_185us();
+
 			DspTask_B();
 
 			Cnt_1ms++;
@@ -412,17 +416,17 @@ interrupt void DPRAM_isr_Fix(void) //固定中断频率4.35kHz
 				McuTask_16ms();
 				Cnt_16ms = 0;
 			}
-		} else {
-			/*
-			 *
-			 ************************************************************* */
-			PX_Out_Spf.XT_PwmPdVv = 6944;
-			DspData.XX_Mode = !DspData.XX_Mode;
-			DspData.XX_DutyA = 0.2;
-			DspData.XX_DutyB = 0.3;
-			DspData.XX_DutyC = 0.6;
-			/*******************************************************************************/
-		}
+//		} else {
+//			/*
+//			 *
+//			 ************************************************************* */
+//			PX_Out_Spf.XT_PwmPdVv = 6944;
+//			DspData.XX_Mode = !DspData.XX_Mode;
+//			DspData.XX_DutyA = 0.2;
+//			DspData.XX_DutyB = 0.3;
+//			DspData.XX_DutyC = 0.6;
+//			/*******************************************************************************/
+//		}
 
 		/**/
 		if (PX_Out_Spf.SX_Run == 1) {
@@ -461,8 +465,8 @@ interrupt void DPRAM_isr_Fix(void) //固定中断频率4.35kHz
 		PX_Out_Spf.XI_DcLkEst = DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt;
 
 		DPRAM_WR(); //
-		Cnt_B = 0;
-	}
+//		Cnt_B = 0;
+//	}
 
 	EN_GPIO30();
 	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
@@ -547,8 +551,8 @@ void DPRAM_WR(void)			//DSP-->MCU
 	//	*(XintfZone7 + 0x2A) = fabs(McuData.WU_3PhClIn*10);
 	*(XintfZone7 + 0x27) = fabs(McuData.WF_3PhDsp * 10);
 	*(XintfZone7 + 0x28) = fabs(McuData.WU_3PhDsp * 10);
-	*(XintfZone7 + 0x29) = fabs(Cnt_sec );
-	*(XintfZone7 + 0x2A) = fabs(Cnt_min );
+	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqSt);
+	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhRms*10 );
 
 	//	*(XintfZone7 + 0x27) = fabs(DspData.WU_3PhSec.re*10);
 	//	*(XintfZone7 + 0x28) = fabs(DspData.WU_3PhSec.im*10);
@@ -790,6 +794,7 @@ void DspStCl(void) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
+
 		}
 	}
 

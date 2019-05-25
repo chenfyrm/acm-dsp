@@ -1,7 +1,7 @@
 #include "math.h"
 #include "acm_dsp.h"
 
-#define SIMULATION 1
+#define SIMULATION 0
 #define U3PHRMS 380.0
 
 volatile struct Dsp_Data DspData;
@@ -158,7 +158,7 @@ void DspTask_185us(void) {
 	 *
 	 * */
 	sogiosg.phase = DspData.XU_PhABLk;
-	sogiosg.Ts = DspData.XT_Tsc ; //
+	sogiosg.Ts = DspData.XT_Tsc; //
 	sogiosg.w0 = 100 * 3.1415926;
 	sogiosg.K = sqrt(0.1); //sqrt(2)
 	sogiosg.Ki = 10000;
@@ -262,7 +262,6 @@ void DspTask_T3(void) {
 
 void SIPR_B(void) {
 
-
 //	DspData.WX_Theta += 2.0 * PI * McuData.WF_3PhDsp * DspData.XT_Tsc;
 //	DspData.WX_Theta = fmod(DspData.WX_Theta, 2 * PI);
 
@@ -284,11 +283,10 @@ void SIPR_B(void) {
 //	DspData.XU_3PhAbs = sqrt(
 //			DspData.XU_3PhRe * DspData.XU_3PhRe
 //					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
-
 //	LowPass(&DspData.XU_3PhSqu, DspData.XU_PhABLk * DspData.XU_PhABLk,
 //			DspData.XT_Tsc * DspParam.PN_U3PhRms_Flt);
 //	DspData.XU_3PhRms = sqrt(DspData.XU_3PhSqu);
-		DspData.XU_3PhRms = DspData.XU_3PhAbs / SQRT2;
+	DspData.XU_3PhRms = DspData.XU_3PhAbs / SQRT2;
 
 	/**/
 	LowPass(&DspData.XU_DcLkFlt, DspData.XU_DcLk,
@@ -419,7 +417,6 @@ void UFCO_B(void) {
 
 void PPG3_B(void) {
 
-
 	/***************/
 	if (Max(DspData.XX_CrU, Max(DspData.XX_CrV, DspData.XX_CrW))
 			> DspParam.PX_3PhClRtHgh) {
@@ -491,7 +488,7 @@ void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 	*DutyC = (c + Cml) / NrmFa + 0.5;
 }
 
-void DdCmp(void){
+void DdCmp(void) {
 	/*
 	 * 电流小于零时从上管续流，下管为可控管，电压增加
 	 * 电流大于零时从下管续流，上管为可控管，电压减小
@@ -918,46 +915,35 @@ void FrefUDcLk(void) {
 			McuParam.PU_DcLkFRefMin, McuParam.PF_3PhMin,
 			McuParam.PU_DcLkFRefLow, McuParam.PF_3PhNom, 10000.0,
 			McuParam.PF_3PhNom);
-	RAMP2(&McuData.WF_3PhUDcLk, v01, McuParam.PX_FRefRmpUDcLkUp,
-			McuParam.PX_FRefRmpUDcLkDo, 0.0, FALSE, FALSE);
+	RAMP2(&McuData.WF_3PhUDcLk, v01, McuParam.PX_FRefRmpUDcLkUp * 0.016,
+			McuParam.PX_FRefRmpUDcLkDo * 0.016, 0.0, FALSE, FALSE);
 }
 
 /*
  * MCU中16ms任务
  * */
 void FrefRmp(void) {
+	static float32 temp = 0.0;
 	if (McuData.C_FRmp) {
-		if (McuData.WF_3PhRmp <= McuParam.PF_3PhNom) {
-			McuData.WF_3PhRmp += McuData.XX_FRefRmpUp * 0.016;
-			if (McuData.WF_3PhRmp > McuParam.PF_3PhNom)
-				McuData.WF_3PhRmp = McuParam.PF_3PhNom;
-		} else {
-			McuData.WF_3PhRmp -= McuData.XX_FRefRmpDo * 0.016;
-			if (McuData.WF_3PhRmp < McuParam.PF_3PhNom)
-				McuData.WF_3PhRmp = McuParam.PF_3PhNom;
-		}
-		if (McuData.WF_3PhRmp == McuParam.PF_3PhNom)
+		RAMP2(&temp, McuParam.PF_3PhNom, McuData.XX_FRefRmpUp * 0.016,
+				-McuData.XX_FRefRmpDo * 0.016, 0.0, FALSE, FALSE);
+		if (temp == McuParam.PF_3PhNom)
 			McuData.A_FNom = TRUE;
 		else
 			McuData.A_FNom = FALSE;
 	} else {
-		if (McuData.WF_3PhRmp <= McuParam.PF_3PhMin) {
-			McuData.WF_3PhRmp += McuData.XX_FRefRmpUp * 0.016;
-			if (McuData.WF_3PhRmp > McuParam.PF_3PhMin)
-				McuData.WF_3PhRmp = McuParam.PF_3PhMin;
-		} else {
-			McuData.WF_3PhRmp -= McuData.XX_FRefRmpDo * 0.016;
-			if (McuData.WF_3PhRmp < McuParam.PF_3PhMin)
-				McuData.WF_3PhRmp = McuParam.PF_3PhMin;
-		}
-		if (McuData.WF_3PhRmp == McuParam.PF_3PhMin)
+		RAMP2(&temp, McuParam.PF_3PhMin, McuData.XX_FRefRmpUp * 0.016,
+				-McuData.XX_FRefRmpDo * 0.016, 0.0, FALSE, FALSE);
+		if (temp == McuParam.PF_3PhMin)
 			McuData.A_FMin = TRUE;
 		else
 			McuData.A_FMin = FALSE;
 	}
 
-	McuData.WF_3PhRmp = Min(McuData.WF_3PhRmp, McuData.WF_3PhUDcLk);
+//	McuData.WF_3PhRmp = Min(temp, McuData.WF_3PhUDcLk);
+	McuData.WF_3PhRmp = temp;
 }
+
 
 /*
  * 16ms
