@@ -31,6 +31,7 @@ void LOGB_B(void);
 float32 OvMd(float32 M1);
 void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 		volatile float32 *DutyC, cfloat32 _3PhAB);
+void DdCmp(void);
 
 /*166us 2QC*/
 
@@ -130,6 +131,29 @@ void DspInit(void) {
 }
 
 void DspTask_185us(void) {
+
+	/*
+	 * clark变换
+	 * */
+	DspData.XI_PhAB = PH3TOCPLX(DspData.XI_PhA, DspData.XI_PhB, DspData.XI_PhC);
+	LowPass(&DspData.XI_PhReFix, DspData.XI_PhAB.re,
+			DspData.XT_Tsc * DspParam.PN_IPhFixMcu_Flt / 2.0);
+	LowPass(&DspData.XI_PhImFix, DspData.XI_PhAB.im,
+			DspData.XT_Tsc * DspParam.PN_IPhFixMcu_Flt / 2.0);
+
+	cfloat32 XS_3Ph;
+	XS_3Ph = CPLXSCA(CPLXMULT(DspData.WU_3PhAB, CPLXCONJ(DspData.XI_PhAB)),
+			1.5);
+	DspData.XP_3Ph = XS_3Ph.re;
+	DspData.XQ_3Ph = XS_3Ph.im;
+
+	/*park变换*/
+	DspData.XI_PhDQ = CPLXMULT(DspData.XI_PhAB,
+			POL2CPLX(1.0, -DspData.WX_Theta));
+	/**/
+	DspData.XI_PhAct = DspData.XI_PhDQ.re;
+	DspData.XI_PhRct = DspData.XI_PhDQ.im;
+
 	/*
 	 *
 	 * */
@@ -237,27 +261,7 @@ void DspTask_T3(void) {
 }
 
 void SIPR_B(void) {
-	/*
-	 * clark变换
-	 * */
-	DspData.XI_PhAB = PH3TOCPLX(DspData.XI_PhA, DspData.XI_PhB, DspData.XI_PhC);
-	LowPass(&DspData.XI_PhReFix, DspData.XI_PhAB.re,
-			DspData.XT_Tsc * DspParam.PN_IPhFixMcu_Flt / 2.0);
-	LowPass(&DspData.XI_PhImFix, DspData.XI_PhAB.im,
-			DspData.XT_Tsc * DspParam.PN_IPhFixMcu_Flt / 2.0);
 
-	cfloat32 XS_3Ph;
-	XS_3Ph = CPLXSCA(CPLXMULT(DspData.WU_3PhAB, CPLXCONJ(DspData.XI_PhAB)),
-			1.5);
-	DspData.XP_3Ph = XS_3Ph.re;
-	DspData.XQ_3Ph = XS_3Ph.im;
-
-	/*park变换*/
-	DspData.XI_PhDQ = CPLXMULT(DspData.XI_PhAB,
-			POL2CPLX(1.0, -DspData.WX_Theta));
-	/**/
-	DspData.XI_PhAct = DspData.XI_PhDQ.re;
-	DspData.XI_PhRct = DspData.XI_PhDQ.im;
 
 //	DspData.WX_Theta += 2.0 * PI * McuData.WF_3PhDsp * DspData.XT_Tsc;
 //	DspData.WX_Theta = fmod(DspData.WX_Theta, 2 * PI);
@@ -277,14 +281,14 @@ void SIPR_B(void) {
 //			DspData.XT_Tsc);
 //	DspData.XU_3PhIm = U3PhIm.Out;
 	/**/
-	DspData.XU_3PhAbs = sqrt(
-			DspData.XU_3PhRe * DspData.XU_3PhRe
-					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
+//	DspData.XU_3PhAbs = sqrt(
+//			DspData.XU_3PhRe * DspData.XU_3PhRe
+//					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
 
-	LowPass(&DspData.XU_3PhSqu, DspData.XU_PhABLk * DspData.XU_PhABLk,
-			DspData.XT_Tsc * DspParam.PN_U3PhRms_Flt);
-	DspData.XU_3PhRms = sqrt(DspData.XU_3PhSqu);
-	//	DspData.XU_3PhRms = DspData.XU_3PhAbs / SQRT2;
+//	LowPass(&DspData.XU_3PhSqu, DspData.XU_PhABLk * DspData.XU_PhABLk,
+//			DspData.XT_Tsc * DspParam.PN_U3PhRms_Flt);
+//	DspData.XU_3PhRms = sqrt(DspData.XU_3PhSqu);
+		DspData.XU_3PhRms = DspData.XU_3PhAbs / SQRT2;
 
 	/**/
 	LowPass(&DspData.XU_DcLkFlt, DspData.XU_DcLk,
@@ -408,88 +412,14 @@ void UFCO_B(void) {
 	SVPWM(&DspData.XX_CrU, &DspData.XX_CrV, &DspData.XX_CrW,
 			CPLXSCA(DspData.WU_3PhAB, 1.0 / DspData.XU_DcLk));
 
+	DspData.XX_Mode = !DspData.XX_Mode;
+//	DdCmp();
+
 }
 
 void PPG3_B(void) {
 
-	DspData.XX_Mode = !DspData.XX_Mode;
 
-	/*
-	 * 电流小于零时从上管续流，下管为可控管，电压增加
-	 * 电流大于零时从下管续流，上管为可控管，电压减小
-	 * ***************/
-//	if (DspData.XX_Mode) {
-//		float32 coff;
-//		if (DspData.XI_PhA <= 0) {
-//
-//			if (fabs(DspData.XI_PhA) < 10.0)
-//				coff = 0.0;
-//			else if (fabs(DspData.XI_PhA) < 50.0)
-//				coff = (fabs(DspData.XI_PhA) - 10.0) / 40.0;
-//			else
-//				coff = 1.0;
-//
-//			DspData.XX_CrU -= 0.00001 / DspData.XT_Tsc * coff;
-//		}
-//		if (DspData.XI_PhB <= 0) {
-//
-//			if (fabs(DspData.XI_PhB) < 10.0)
-//				coff = 0.0;
-//			else if (fabs(DspData.XI_PhB) < 50.0)
-//				coff = (fabs(DspData.XI_PhB) - 10.0) / 40.0;
-//			else
-//				coff = 1.0;
-//
-//			DspData.XX_CrV -= 0.00001 / DspData.XT_Tsc * coff;
-//		}
-//		if (DspData.XI_PhC <= 0) {
-//
-//			if (fabs(DspData.XI_PhC) < 10.0)
-//				coff = 0.0;
-//			else if (fabs(DspData.XI_PhC) < 50.0)
-//				coff = (fabs(DspData.XI_PhC) - 10.0) / 40.0;
-//			else
-//				coff = 1.0;
-//
-//			DspData.XX_CrW -= 0.00001 / DspData.XT_Tsc * coff;
-//		}
-//
-//	} else {
-//		float32 coff;
-//		if (DspData.XI_PhA >= 0) {
-//
-//			if (fabs(DspData.XI_PhA) < 10.0)
-//				coff = 0.0;
-//			else if (fabs(DspData.XI_PhA) < 50.0)
-//				coff = (fabs(DspData.XI_PhA) - 10.0) / 40.0;
-//			else
-//				coff = 1.0;
-//
-//			DspData.XX_CrU += 0.00001 / DspData.XT_Tsc * coff;
-//		}
-//		if (DspData.XI_PhB >= 0) {
-//
-//			if (fabs(DspData.XI_PhB) < 10.0)
-//				coff = 0.0;
-//			else if (fabs(DspData.XI_PhB) < 50.0)
-//				coff = (fabs(DspData.XI_PhB) - 10.0) / 40.0;
-//			else
-//				coff = 1.0;
-//
-//			DspData.XX_CrV += 0.00001 / DspData.XT_Tsc * coff;
-//		}
-//		if (DspData.XI_PhC >= 0) {
-//
-//			if (fabs(DspData.XI_PhC) < 10.0)
-//				coff = 0.0;
-//			else if (fabs(DspData.XI_PhC) < 50.0)
-//				coff = (fabs(DspData.XI_PhC) - 10.0) / 40.0;
-//			else
-//				coff = 1.0;
-//
-//			DspData.XX_CrW += 0.00001 / DspData.XT_Tsc * coff;
-//		}
-//	}
 	/***************/
 	if (Max(DspData.XX_CrU, Max(DspData.XX_CrV, DspData.XX_CrW))
 			> DspParam.PX_3PhClRtHgh) {
@@ -498,7 +428,9 @@ void PPG3_B(void) {
 		DspData.S_UDcLkLow = 0;
 	}
 
-	/**/
+	/*
+	 * 随机开关频率降噪
+	 * */
 	if (!DspParam.L_3PhRndEn) {
 		DspData.XT_Tsc = 0.5 / DspParam.PF_3PhSg; //开关频率1350Hz，波峰波谷双采样
 	} else {
@@ -507,6 +439,9 @@ void PPG3_B(void) {
 	/**/
 	DspData.XX_PwmPdVv = DspData.XT_Tsc * DspParam.PF_IRQBMax + 0.5;
 
+	/*
+	 * 最小脉宽限制
+	 * */
 	DspData.XX_DutyA = Limit(DspData.XX_CrU, DspParam.PX_3PhClRtLow,
 			DspParam.PX_3PhClRtHgh);
 	DspData.XX_DutyB = Limit(DspData.XX_CrV, DspParam.PX_3PhClRtLow,
@@ -554,6 +489,86 @@ void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 	*DutyA = (a + Cml) / NrmFa + 0.5;
 	*DutyB = (b + Cml) / NrmFa + 0.5;
 	*DutyC = (c + Cml) / NrmFa + 0.5;
+}
+
+void DdCmp(void){
+	/*
+	 * 电流小于零时从上管续流，下管为可控管，电压增加
+	 * 电流大于零时从下管续流，上管为可控管，电压减小
+	 * ***************/
+	if (DspData.XX_Mode) {
+		float32 coff;
+		if (DspData.XI_PhA <= 0) {
+
+			if (fabs(DspData.XI_PhA) < 10.0)
+				coff = 0.0;
+			else if (fabs(DspData.XI_PhA) < 50.0)
+				coff = (fabs(DspData.XI_PhA) - 10.0) / 40.0;
+			else
+				coff = 1.0;
+
+			DspData.XX_CrU -= 0.00001 / DspData.XT_Tsc * coff;
+		}
+		if (DspData.XI_PhB <= 0) {
+
+			if (fabs(DspData.XI_PhB) < 10.0)
+				coff = 0.0;
+			else if (fabs(DspData.XI_PhB) < 50.0)
+				coff = (fabs(DspData.XI_PhB) - 10.0) / 40.0;
+			else
+				coff = 1.0;
+
+			DspData.XX_CrV -= 0.00001 / DspData.XT_Tsc * coff;
+		}
+		if (DspData.XI_PhC <= 0) {
+
+			if (fabs(DspData.XI_PhC) < 10.0)
+				coff = 0.0;
+			else if (fabs(DspData.XI_PhC) < 50.0)
+				coff = (fabs(DspData.XI_PhC) - 10.0) / 40.0;
+			else
+				coff = 1.0;
+
+			DspData.XX_CrW -= 0.00001 / DspData.XT_Tsc * coff;
+		}
+
+	} else {
+		float32 coff;
+		if (DspData.XI_PhA >= 0) {
+
+			if (fabs(DspData.XI_PhA) < 10.0)
+				coff = 0.0;
+			else if (fabs(DspData.XI_PhA) < 50.0)
+				coff = (fabs(DspData.XI_PhA) - 10.0) / 40.0;
+			else
+				coff = 1.0;
+
+			DspData.XX_CrU += 0.00001 / DspData.XT_Tsc * coff;
+		}
+		if (DspData.XI_PhB >= 0) {
+
+			if (fabs(DspData.XI_PhB) < 10.0)
+				coff = 0.0;
+			else if (fabs(DspData.XI_PhB) < 50.0)
+				coff = (fabs(DspData.XI_PhB) - 10.0) / 40.0;
+			else
+				coff = 1.0;
+
+			DspData.XX_CrV += 0.00001 / DspData.XT_Tsc * coff;
+		}
+		if (DspData.XI_PhC >= 0) {
+
+			if (fabs(DspData.XI_PhC) < 10.0)
+				coff = 0.0;
+			else if (fabs(DspData.XI_PhC) < 50.0)
+				coff = (fabs(DspData.XI_PhC) - 10.0) / 40.0;
+			else
+				coff = 1.0;
+
+			DspData.XX_CrW += 0.00001 / DspData.XT_Tsc * coff;
+		}
+	}
+
 }
 
 /*

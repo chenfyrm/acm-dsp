@@ -389,7 +389,7 @@ interrupt void DPRAM_isr_Fix(void) //¹Ì¶¨ÖÐ¶ÏÆµÂÊ4.35kHz
 		DPRAM_RD(); //
 		NX_Pr();
 		DspStCl();
-		if (TestFlg == 0x55) {
+		if (!(TestFlg == 0x55)) {
 			DspTask_B();
 
 			Cnt_1ms++;
