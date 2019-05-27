@@ -49,6 +49,7 @@ union MCUFLAG1_REG {
 	struct MCUFLAG1_BITS bit;
 };
 
+//从DPRAM读入 与FPGA和MCU交互
 struct PX_In {
 	float32 XU_DcLk;   		    		// DC-link voltage, V
 	float32 XI_DcLk;   				// DC current, A
@@ -143,7 +144,7 @@ union DSPST_REG {
 	struct DSPST_BITS bit;
 };
 
-//杈撳嚭浜や簰鍊�
+//写入DPRAM 与FPGA和MCU交互
 struct PX_Out {
 	Uint16 XX_PwmMo;			// PWM mode  0x00  0x15
 	Uint16 XT_PwmPdVv;   		// PWM period value,  for initialization
@@ -152,13 +153,14 @@ struct PX_Out {
 	Uint16 XX_Pwm3AVv;			// PWM3A value
 	Uint16 XX_Pwm4AVv;			// PWM4A value, chopper
 	Uint16 XX_Pwm4BVv;			// PWM4B value, chopper
+
 	float32 XP_Out;		    	// output power, kw
 	float32 XX_PhUbl;			// phase unbalance
 	float32 XI_PhA_Rms;		    // phase A current, RMS
 	float32 XI_PhB_Rms;	    	// phase B current, RMS
 	float32 XI_PhC_Rms;		    // phase C current, RMS
 	float32 XU_PhAB_Rms;
-	union WARN_REG XX_Flt1;			// 16浣嶆晠闅滃瓧
+	union WARN_REG XX_Flt1;			// 16位故障
 	Uint16 SX_Run;
 	Uint16 NX_DspPlCn;			// DSP2 pulse(heartbeat) counter
 	union DSPST_REG NX_DspOpSt;	// NX_Dsp2OpSt: DSP2 operation state 0x11:鍒濆鍖栦腑      0x22:鍒濆鍖栧け璐�   0x33:鍒濆鍖栧畬鎴�
@@ -166,6 +168,7 @@ struct PX_Out {
 	Uint16 NX_DspVer;			// DSP2 version
 	union DSPFLAG1_REG XX_DspFlag1;
 };
+
 volatile struct PX_Out PX_Out_Spf = { 21,
 		6944,			//鍙岄噰鏍凤細1450Hz:6465 1350Hz:6944
 		3472, 3472, 3472, 0, 0, 0, 0, 0, 0, 0, 0, 0x0000, 0, 0, 0x0000, 0x0000,
