@@ -1,7 +1,7 @@
 #include "math.h"
 #include "acm_dsp.h"
 
-#define SIMULATION 0
+#define SIMULATION 1
 #define U3PHRMS 380.0
 
 volatile struct Dsp_Data DspData;
@@ -58,24 +58,26 @@ void DspInit(void) {
 	DspParam.PN_U3PhRms_Flt = 5.0; //5
 	DspParam.PN_UDcLk_Flt = 100.0;
 	DspParam.PN_URef_Flt = 600.0;
-	DspParam.PN_IPhActRct_Flt = 2000;
-	DspParam.PN_IPhActRctMcu_Flt = 20;
-	DspParam.PN_IPhAbs_Flt = 60;
-	DspParam.PN_PQ3PhMcu_Flt = 60;
-	DspParam.PN_IPhDQ_Flt = 18;
+	DspParam.PN_IPhActRct_Flt = 2000.0;
+	DspParam.PN_IPhActRctMcu_Flt = 20.0;
+	DspParam.PN_IPhAbs_Flt = 60.0;
+	DspParam.PN_PQ3PhMcu_Flt = 60.0;
+	DspParam.PN_IPhDQ_Flt = 18.0;
 	DspParam.PN_IPhRms_Flt = 30.0;
 	DspParam.PN_URefIPhClTrs_Flt = 20.0;
 
 	DspParam.PU_PhClTrsMax = 75.0; //	75
 	DspParam.PI_PhClTrsAbsLim = 600.0; //	600
 
-	DspParam.PD_ThetaFiOs = PI / 3.0; //1.047 线电压落后相电压60deg
+	DspParam.PD_ThetaFiOs = PI / 3.0 - 4.5 / 180.0 * PI; //同步相位补偿,1.047 线电压落后相电压60deg,死区时间造成电压相位滞后
+
 	DspParam.PZ_3PhFiNdRe = 0.078; //	0,078 滤波电感电阻
 	DspParam.PZ_3PhFiNdIm = 0.207; //	0,207滤波电感电抗
 	DspParam.PZ_3PhFiCaIm = -5.47; //	-5,47 滤波电容电抗折算到一次侧
 	DspParam.PZ_3PhTfRe = 0.0; //	0
 	DspParam.PZ_3PhTfIm = 0.0; //	0
 
+	/*直流振荡抑制*/
 	DspParam.L_UDcLkStbEn = TRUE; //	TRUE
 	DspParam.PN_UDcLkStbSliSmt = 2200.0; //	2200
 	DspParam.PN_UDcLkStbHevSmt = 13.5; //	13,5
@@ -83,6 +85,12 @@ void DspInit(void) {
 	DspParam.PX_KpUDcLkStb = 150.0; //需调试
 	DspParam.PX_KpUDcLkVoStbFb = 0.00002;
 
+	/**/
+//	data->PARADP_PX_3PhClRtMax = 1 - 0.00000025 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PX_3PhClRtHgh = 1 - 0.00000050 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PX_3PhClRtLow = 0.00000050 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PX_3PhClRtMin = 0.00000025 * (MWT_REAL) (data->PARTDP_PT_PoaOnMin * data->PARADP_PX_T3PhSmpNvt) ;
+//	data->PARADP_PT_PoaOfMin = 2 * data->PARTDP_PT_PrDdPoa + data->PARTDP_PT_PoaOnMin ;
 	DspParam.PX_3PhClRtHgh = 0.94;
 	DspParam.PX_3PhClRtLow = 0.06;
 
@@ -202,11 +210,8 @@ void DspTask_185us(void) {
 				DspData.XU_3PhRe * DspData.XU_3PhRe
 						+ DspData.XU_3PhIm * DspData.XU_3PhIm);
 		PI_F3PhSz.Ref = 0.0;
-		if (temp < 0.001) {
-			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / 0.001;
-		} else {
-			PI_F3PhSz.Fbk = -DspData.XU_3PhIm / temp;
-		}
+		PI_F3PhSz.Fbk = -DspData.XU_3PhIm / Max(0.001, temp);
+
 		//		PI_F3PhSz.Kp = McuParam.PX_KpF3PhSzCl;
 		//		PI_F3PhSz.Ki = 16.0 / McuParam.PT_F3PhSzCl;
 		PI_F3PhSz.Kp = PI2 * 0.5;
@@ -214,30 +219,25 @@ void DspTask_185us(void) {
 		PI_F3PhSz.Umax = McuParam.PF_UF3PhSzClMaxMin;
 		PI_F3PhSz.Umin = -McuParam.PF_UF3PhSzClMaxMin;
 		PI_CONTROLLER(&PI_F3PhSz);
+		McuData.WF_UF3PhSzErr = Limit(
+				atan2(DspData.XU_3PhIm, Max(DspData.XU_3PhRe, 1.0)), -PI / 2.0,
+				PI / 2.0);
 		McuData.WF_UF3PhSz = PI_F3PhSz.Out;
 	} else {
 		McuData.WF_UF3PhSz = 0.0;
 	}
 
 	if (McuData.C_AuSz) {
-		float32 temp = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph
-				+ McuParam.PU_UF3PhSzClAdd - McuData.WU_3PhDsp;
-		McuData.WU_UF3PhSzErr = temp;
+		McuData.WU_UF3PhSzErr = DspData.XU_3PhAbs / SQRT3
+				* McuParam.PX_TrfRtPr3Ph + McuParam.PU_UF3PhSzClAdd
+				- McuData.WU_3PhDsp;
 
-		if (McuData.WU_UF3PhSz < temp) {
-			McuData.WU_UF3PhSz += 1.0;
-			if (McuData.WU_UF3PhSz > temp)
-				McuData.WU_UF3PhSz = temp;
-		}
-		if (McuData.WU_UF3PhSz > temp) {
-			McuData.WU_UF3PhSz -= 1.0;
-			if (McuData.WU_UF3PhSz < temp)
-				McuData.WU_UF3PhSz = temp;
-		}
-		McuData.WU_UF3PhSz += McuParam.PU_UF3PhSzClAdd;
+		INTEGR(&McuData.WU_UF3PhSz, McuData.WU_UF3PhSzErr, 16.0 / 200.0, 0.0,
+				McuParam.PU_UF3PhSzClMaxMin, -McuParam.PU_UF3PhSzClMaxMin,
+				FALSE, FALSE);
 
 	} else {
-		//		RAMP2(&McuData.WU_UF3PhSz,0.0);
+//		RAMP(&McuData.WU_UF3PhSz,0.0);
 		McuData.WU_UF3PhSz = 0.0;
 	}
 }
@@ -353,7 +353,7 @@ void UFCO_B(void) {
 	DspData.WU_3PhPm = CPLXADD(CPLXMULT(DspData.WU_3PhSec, Z1),
 			CPLXMULT(DspData.XI_PhDQ_Flt, Z2));
 	//B_EnBuiTs
-	//	DspData.WU_3PhPm = DspData.WU_3PhSec;	//DQ
+//		DspData.WU_3PhPm = DspData.WU_3PhSec;	//DQ
 	/*
 	 * ipark变换
 	 * */
@@ -447,6 +447,9 @@ void PPG3_B(void) {
 			DspParam.PX_3PhClRtHgh);
 }
 
+/*
+ * 过调制
+ * */
 float32 OvMd(float32 M1) {
 	//[0 1/sqrt(3) 0.579 0.6038 0.6057]
 	//[0 1/sqrt(3) 0.58  0.6389 0.6667]
@@ -471,6 +474,9 @@ float32 OvMd(float32 M1) {
 	return M;
 }
 
+/*
+ * 空间电压矢量调节
+ * */
 void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 		volatile float32 *DutyC, cfloat32 _3PhAB) {
 	float32 a, b, c, min, max, NrmFa, Cml;
@@ -488,6 +494,9 @@ void SVPWM(volatile float32 *DutyA, volatile float32 *DutyB,
 	*DutyC = (c + Cml) / NrmFa + 0.5;
 }
 
+/*
+ * 死区补偿
+ * */
 void DdCmp(void) {
 	/*
 	 * 电流小于零时从上管续流，下管为可控管，电压增加
@@ -597,6 +606,7 @@ void ACCL_T2(void) {
 
 /**/
 void CvOpSaSq(void);
+void CvOpSoSq(void);
 void UF3PhCmp(void);
 void IPhClGenOvLd(void);
 void IPhClPsTrs(void);
@@ -649,11 +659,11 @@ void McuInit(void) {
 	McuParam.PT_UF3PhSzRmp = 1000.0; //ms
 
 	/*U3PhSz 16ms*/
-	McuParam.PU_UF3PhSzClAdd = 0.0;
+	McuParam.PU_UF3PhSzClAdd = 0.0; //同步幅值补偿
 	McuParam.PU_UF3PhSzClMaxMin = 100.0;
 
-	McuParam.PU_3PhIdlCmp = 40.0;
-	McuParam.PU_3PhActCmp = 250.0;
+	McuParam.PU_3PhIdlCmp = 10.0;
+	McuParam.PU_3PhActCmp = 30.0;
 
 	/*UF3PhSz 16ms*/
 	McuParam.PF_UF3PhSzRdy = 0.3;
@@ -723,59 +733,67 @@ void McuTask_16ms(void) {
 	FrefRmp();
 //	F3PhSz();
 //	U3PhSz();
-//	UF3PhSz();
+	UF3PhSz();
 }
 
 /*
  * 4ms
  * */
 void CvOpSaSq(void) {
-	if (McuData.NX_SqSt == 0) {
-		if (McuData.C_CvOp_MnSq) {
+	if (McuData.NX_SqStCvOpSa == 0) {
+		if (McuData.C_CvOpSa_MnSq) {
 			if (DspData.XU_3PhRms < McuParam.PU_3PhIdlCmp) {
-				McuData.NX_SqSt = 1;
+				McuData.NX_SqStCvOpSa = 1;
 				McuData.C_CdAuLdCt = TRUE;
 			} else if (DspData.XU_3PhRms > McuParam.PU_3PhActCmp) {
-				McuData.NX_SqSt = 2;
+				McuData.NX_SqStCvOpSa = 2;
 				McuData.C_Ck3PhGduFb = TRUE;
 			}
 		}
-	} else if (McuData.NX_SqSt == 1) {
+	} else if (McuData.NX_SqStCvOpSa == 1) {
 		if (McuData.A_CdAuLdCt) {
-			McuData.NX_SqSt = 2;
+			McuData.NX_SqStCvOpSa = 2;
 			McuData.C_Ck3PhGduFb = TRUE;
 		}
-	} else if (McuData.NX_SqSt == 2) {
-		McuData.NX_SqSt = 3;
+	} else if (McuData.NX_SqStCvOpSa == 2) {
+		McuData.NX_SqStCvOpSa = 3;
 		McuData.C_CvOpSa = TRUE;
-	} else if (McuData.NX_SqSt == 3) {
-		McuData.NX_SqSt = 4;
+	} else if (McuData.NX_SqStCvOpSa == 3) {
+		McuData.NX_SqStCvOpSa = 4;
 		McuData.C_FRmp = TRUE;
-	} else if (McuData.NX_SqSt == 4) {
+	} else if (McuData.NX_SqStCvOpSa == 4) {
 		if (McuData.A_FNom)
-			McuData.NX_SqSt = 5;
-	} else if (McuData.NX_SqSt == 5) {
+			McuData.NX_SqStCvOpSa = 5;
+	} else if (McuData.NX_SqStCvOpSa == 5) {
 		if (McuData.A_CdAuLdCt) {
-			McuData.NX_SqSt = 8;
+			McuData.NX_SqStCvOpSa = 8;
 			McuData.A_CvOpSa = TRUE;
 			McuData.B_EnU3PhCl = TRUE;
 		} else {
-			McuData.NX_SqSt = 6;
+			McuData.NX_SqStCvOpSa = 6;
 			McuData.C_AuSz = TRUE;
 		}
-	} else if (McuData.NX_SqSt == 6) {
+	} else if (McuData.NX_SqStCvOpSa == 6) {
 		if (McuData.A_AuSz) {
-			McuData.NX_SqSt = 7;
-//			McuData.C_CdAuLdCt = TRUE;
+			McuData.NX_SqStCvOpSa = 7;
+			McuData.C_CdAuLdCt = TRUE;
 		}
-	} else if (McuData.NX_SqSt == 7) {
+	} else if (McuData.NX_SqStCvOpSa == 7) {
 		if (McuData.A_CdAuLdCt) {
-			McuData.NX_SqSt = 8;
+			McuData.NX_SqStCvOpSa = 8;
 			McuData.A_CvOpSa = TRUE;
 //			McuData.B_EnU3PhCl = TRUE;
 //			McuData.C_AuSz = FALSE;
 		}
 	}
+}
+
+/*
+ *
+ * */
+void CvOpSoSq(void)
+{
+
 }
 
 /*
@@ -798,7 +816,6 @@ void UF3PhCmp(void) {
 					/ McuParam.PI_UF3PhCmpRctHiLo * DspData.XI_PhRct_Flt2;
 		else
 			McuData.WU_UF3PhCmp = McuParam.PU_UF3PhCmpRctHiLo;
-
 	} else {
 		McuData.WF_UF3PhCmp = 0.0;
 		McuData.WU_UF3PhCmp = 0.0;
@@ -944,7 +961,6 @@ void FrefRmp(void) {
 	McuData.WF_3PhRmp = temp;
 }
 
-
 /*
  * 16ms
  * */
@@ -970,6 +986,7 @@ void F3PhSz(void) {
 		PI_F3PhSz.Umax = McuParam.PF_UF3PhSzClMaxMin;
 		PI_F3PhSz.Umin = -McuParam.PF_UF3PhSzClMaxMin;
 		PI_CONTROLLER(&PI_F3PhSz);
+		McuData.WF_UF3PhSzErr = PI_F3PhSz.Fbk;
 		McuData.WF_UF3PhSz = PI_F3PhSz.Out;
 	} else {
 		McuData.WF_UF3PhSz = 0.0;
@@ -981,24 +998,16 @@ void F3PhSz(void) {
  * */
 void U3PhSz(void) {
 	if (McuData.C_AuSz) {
-		float32 temp = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph
-				+ McuParam.PU_UF3PhSzClAdd - McuData.WU_3PhDsp;
-		McuData.WU_UF3PhSzErr = temp;
+		McuData.WU_UF3PhSzErr = DspData.XU_3PhAbs / SQRT3
+				* McuParam.PX_TrfRtPr3Ph + McuParam.PU_UF3PhSzClAdd
+				- McuData.WU_3PhDsp;
 
-		if (McuData.WU_UF3PhSz < temp) {
-			McuData.WU_UF3PhSz += 1.0;
-			if (McuData.WU_UF3PhSz > temp)
-				McuData.WU_UF3PhSz = temp;
-		}
-		if (McuData.WU_UF3PhSz > temp) {
-			McuData.WU_UF3PhSz -= 1.0;
-			if (McuData.WU_UF3PhSz < temp)
-				McuData.WU_UF3PhSz = temp;
-		}
-		McuData.WU_UF3PhSz += McuParam.PU_UF3PhSzClAdd;
+		INTEGR(&McuData.WU_UF3PhSz, McuData.WU_UF3PhSzErr, 16.0 / 200.0, 0.0,
+				McuParam.PU_UF3PhSzClMaxMin, -McuParam.PU_UF3PhSzClMaxMin,
+				FALSE, FALSE);
 
 	} else {
-//		RAMP2(&McuData.WU_UF3PhSz,0.0);
+//		RAMP(&McuData.WU_UF3PhSz,0.0);
 		McuData.WU_UF3PhSz = 0.0;
 	}
 }
@@ -1012,7 +1021,7 @@ void UF3PhSz(void) {
 
 	if (McuData.C_AuSz) {
 		if ((fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy)
-				&& (fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy))
+				&& (fabs(McuData.WU_UF3PhSzErr) <= McuParam.PU_UF3PhSzRdy))
 			WndTime1 += 16.0;
 		else
 			WndTime1 = 0.0;
@@ -1051,11 +1060,11 @@ float32 FKG4(float32 X, float32 X1, float32 Y1, float32 X2, float32 Y2,
 	if (X < X1)
 		Y = Y1;
 	else if (X < X2)
-		Y = Y1 + (Y2 - Y1) * (X - X1) / (X2 - X1);
+		Y = Y1 + (Y2 - Y1) * (X - X1) / Max((X2 - X1),0.00001);
 	else if (X < X3)
-		Y = Y2 + (Y3 - Y2) * (X - X2) / (X3 - X2);
+		Y = Y2 + (Y3 - Y2) * (X - X2) / Max((X3 - X2),0.00001);
 	else if (X < X4)
-		Y = Y3 + (Y4 - Y3) * (X - X3) / (X4 - X3);
+		Y = Y3 + (Y4 - Y3) * (X - X3) / Max((X4 - X3),0.00001);
 	else
 		Y = Y4;
 
@@ -1081,6 +1090,28 @@ void RAMP2(volatile float32 *Y, float32 X, float32 Dr, float32 Df, float32 Init,
 			}
 		}
 	}
+}
+
+void RAMP(volatile float32 *Y, float32 X, float32 TsPerTr, float32 TsPerTf,
+		float32 Init, Uint16 Set, Uint16 Hold, float32 Max) {
+	float32 Yinc, Ydec;
+	if (!Hold) {
+		if (Set) {
+			*Y = Init;
+		} else {
+			Yinc = *Y + fabs(Max) * Min(TsPerTr, 1.0);
+			Ydec = *Y - fabs(Max) * Min(TsPerTr, 1.0);
+
+			if (X > Yinc) {
+				*Y = Yinc;
+			} else if (X < Ydec) {
+				*Y = Ydec;
+			} else {
+				*Y = X;
+			}
+		}
+	}
+
 }
 
 void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,

@@ -23,7 +23,7 @@
 
 /*STRUCTDEFS*/
 //-----------------input-------------------------
-//闂佹彃娲﹂悧閬嶅Υ娴ｇ懓鐦瑰ù鐙呮嫹
+//
 struct MCUFLAG1_BITS {
 	Uint16 RstSa :1;
 	Uint16 OvpFcTsAv :1;
@@ -297,7 +297,7 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 		if (Cnt_16ms >= 44) {
 
 			McuParam.PF_3PhNom = Limit(Ext_F, 40.0, 60.0);
-			McuParam.PU_U3PhRef3 = Limit(Ext_U, 50.0, 380.0) * SQRT2bySQRT3;
+			McuParam.PU_U3PhRef3 = Limit(Ext_U, 30.0, 380.0) * SQRT2bySQRT3;
 			McuParam.PU_U3PhRef4 = McuParam.PU_U3PhRef3;
 
 			McuTask_16ms();
@@ -449,7 +449,7 @@ interrupt void DPRAM_isr_Fix(void) //固定中断频率4.35kHz
 						* DspData.XX_DutyC;
 			}
 		} else {
-			PX_Out_Spf.XX_PwmMo = 0;
+			PX_Out_Spf.XX_PwmMo = !PX_Out_Spf.XX_PwmMo;
 			PX_Out_Spf.XX_Pwm1AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
 			PX_Out_Spf.XX_Pwm2AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
 			PX_Out_Spf.XX_Pwm3AVv = PX_Out_Spf.XT_PwmPdVv * 0.5;
@@ -463,6 +463,8 @@ interrupt void DPRAM_isr_Fix(void) //固定中断频率4.35kHz
 		PX_Out_Spf.XP_Out = DspData.XP_3Ph_Flt;
 		PX_Out_Spf.XQ_Out = DspData.XQ_3Ph_Flt;
 		PX_Out_Spf.XI_DcLkEst = DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt;
+
+//		PX_Out_Spf.XX_Pwm4AVv = 18750*0.2;
 
 		DPRAM_WR(); //
 //		Cnt_B = 0;
@@ -551,8 +553,8 @@ void DPRAM_WR(void)			//DSP-->MCU
 	//	*(XintfZone7 + 0x2A) = fabs(McuData.WU_3PhClIn*10);
 	*(XintfZone7 + 0x27) = fabs(McuData.WF_3PhDsp * 10);
 	*(XintfZone7 + 0x28) = fabs(McuData.WU_3PhDsp * 10);
-	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqSt);
-	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhRms*10 );
+	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqStCvOpSa);
+	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs/SQRT2*10 );
 
 	//	*(XintfZone7 + 0x27) = fabs(DspData.WU_3PhSec.re*10);
 	//	*(XintfZone7 + 0x28) = fabs(DspData.WU_3PhSec.im*10);
@@ -563,9 +565,9 @@ void DPRAM_WR(void)			//DSP-->MCU
 	 *
 	 * */
 
-	DA[3] = 0.0;
-	DA[4] = 0.0;
-	DA[5] = 0.0;
+	DA[3] = sogiosg.alpha*10;
+	DA[4] = DspData.XI_PhDQ_Flt.re*100;
+	DA[5] = DspData.XI_PhDQ_Flt.im*100;
 	DA[6] = 0.0;
 	DA[7] = 0.0;
 
@@ -803,10 +805,11 @@ void DspStCl(void) {
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x40) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
-			if (DspData.XU_3PhRms < 50.0) {
+			McuData.C_CvOpSa_MnSq = TRUE;
+			if (DspData.XU_3PhRms < McuParam.PU_3PhIdlCmp) {
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x41;
 			}
-			if (DspData.XU_3PhRms > 370.0) {
+			if (DspData.XU_3PhRms > McuParam.PU_3PhActCmp) {
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x42;
 			}
 		}
@@ -852,24 +855,20 @@ void DspStCl(void) {
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 1) {
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x48;
-
 			} else {
 				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x46;
-
 			}
 		} else {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x46) {
-
 		//
 		McuData.C_AuSz = 1;
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 
 			if (McuData.A_AuSz == 1) {
-				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x47;
-
+//				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x47;
 			}
 		} else {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;

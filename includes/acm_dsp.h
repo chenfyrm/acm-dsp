@@ -281,18 +281,29 @@ struct Mcu_Data {
 	/*UF3PhSz 16ms*/
 	Uint16 A_AuSz :1;
 
+	/*SRTOMA*/
 	/*CvOpSaSq*/
 	Uint16 C_CdAuLdCt:1;
 	Uint16 C_Ck3PhGduFb:1;
 	Uint16 C_CvOpSa:1;
 	Uint16 C_AuSz :1;	//开始同步
 	Uint16 A_CvOpSa:1;
-	Uint16 NX_SqSt;
+	Uint16 NX_SqStCvOpSa;
 
-	Uint16 C_CvOp_MnSq:1;
+	Uint16 C_CvOpSa_MnSq:1;
 	Uint16 C_FRmp:1;
 	Uint16 B_EnU3PhCl :1;	//开始闭环
 	Uint16 A_CdAuLdCt:1;
+
+	/*CvOpSoSq*/
+	Uint16 C_CvBc:1;
+	Uint16 C_CkSrCtI:1;//(*Command check of current through contactors*)
+	Uint16 C_OpAuLdCt:1;
+	Uint16 C_OpChCt:1;
+	Uint16 C_OpSrCt:1;
+	Uint16 A_CvOpSo:1;
+	Uint16 NX_SqStCvOpSo;
+
 };
 
 struct Mcu_Param {
@@ -432,7 +443,7 @@ extern void RmsClc(volatile float32 *rms, float32 Src, Uint16 N,
 		volatile float32 *Square, volatile Uint16 *cnt);
 extern void RAMP2(volatile float32 *Y, float32 X, float32 Dr, float32 Df,
 		float32 Init, Uint16 Set, Uint16 Hold);
-extern void RAMP(volatile float32 *Y, float32 X, float32 Tr, float32 Tf,
+extern void RAMP(volatile float32 *Y, float32 X, float32 TsPerTr, float32 TsPerTf,
 		float32 Init, Uint16 Set, Uint16 Hold,float32 Max);
 extern float32 Cycle(void);
 extern void INTEGR(volatile float32 *Y, float32 X, float32 T, float32 Init,
