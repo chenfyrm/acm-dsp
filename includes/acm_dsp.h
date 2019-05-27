@@ -131,9 +131,6 @@ struct Dsp_Data {
 
 	/*SRTODA*/
 	Uint16 A_CvOp:1;
-//	Uint16 C_CvOp :1;
-//	Uint16 C_OvpCpOp :1;
-//	Uint16 C_BtCpOp :1;
 
 	/**/
 	float32 XP_Ovp;/*OVP power*/
@@ -150,6 +147,11 @@ struct Dsp_Data {
 	float32 XX_Duty4A;
 	Uint16 C_OvpFcTs:1;
 	Uint16 A_OvpFcTsOk:1;
+
+	Uint16 A_BtCpAv:1;
+
+	Uint16 A_OvpAv:1;
+	Uint16 S_OvpEn:1;
 
 };
 
@@ -304,35 +306,45 @@ struct Mcu_Data {
 	Uint16 A_CvOpSo:1;
 	Uint16 NX_SqStCvOpSo;
 
+	Uint16 C_CvOpSo_MnSq:1;
+	Uint16 A_SrCtIOk:1;
+	Uint16 A_CdChCt:1;
+	Uint16 A_CdSrCt:1;
+	Uint16 B_BcOpSrCt:1;
+
 };
 
 struct Mcu_Param {
-	/*ACCLMA
-	 PARTAP_PF_IPhClMin	50
-	 PARTAP_PF_IPhClMinErr	25
-	 PARTAP_PX_IPhClIntMax	20000
-	 PARTAP_PX_IPhClIntMin	0
-	 PARTAP_PT_IPhClInt	100
-	 PARTAP_PI_IPhClActMax	400
-	 PARTAP_PI_IPhClActMin	100
-	 PARTAP_PI_IPhClActPsTrs	450
-	 PARTAP_PI_IPhClActOs	100
-	 PARTAP_PX_IPhClActDe	200
-	 PARTAP_PI_IPhClRctMax	400
-	 PARTAP_PI_IPhClRctMin	0
-	 PARTAP_PI_IPhClRctPsTrs	300
-	 PARTAP_PI_IPhClRctOs	100
-	 PARTAP_PX_IPhClRctDePos	200
-	 PARTAP_PX_IPhClRctDeNg	200
-	 PARTAP_PI_IPhClPsTrsLim	600
-	 PARTDP_PX_IPhClTrsKpAct	0,005
-	 PARTDP_PX_IPhClTrsKpRct	0,03
-	 PARTDP_PX_IPhClTrsKpAbs	0
-	 */
+	/*ACCLMA*/
+	/*IPhClGenOvLd*/
+	 float32 PF_IPhClMin;//	50
+	 float32 PF_IPhClMinErr;//	25
+	 float32 PX_IPhClIntMax;//	20000
+	 float32 PX_IPhClIntMin;//	0
+	 float32 PT_IPhClInt;//	100
 
-	float32 PX_IPhClTrsKpAct;
-	float32 PX_IPhClTrsKpRct;
-	float32 PX_IPhClTrsKpAbs;
+	 /*IPhClPsTrs*/
+	 float32 PI_IPhClActMax;//	400
+	 float32 PI_IPhClActMin;//	100
+	 float32 PI_IPhClActPsTrs;//	450
+	 float32 PI_IPhClActOs;//	100
+	 float32 PX_IPhClActDe;//	200
+	 float32 PI_IPhClRctMax	;//400
+	 float32 PI_IPhClRctMin	;//0
+	 float32 PI_IPhClRctPsTrs;//	300
+	 float32 PI_IPhClRctOs	;//100
+	 float32 PX_IPhClRctDePos	;//200
+	 float32 PX_IPhClRctDeNg	;//200
+	 float32 PI_IPhClPsTrsLim;//	600
+	 float32 PX_IPhClTrsKpAct;//	0,005
+	 float32 PX_IPhClTrsKpRct;//	0,03
+	 float32 PX_IPhClTrsKpAbs;//	0
+
+	 /*IPhDcCl*/
+	 Uint16 L_EnIPhDcCl:1;//	TRUE
+	 float32 PU_IPhDcClMaxMin;//	3
+	 float32 PX_KpIPhDcCl;//	0,2
+	 float32 PX_KiIPhDcCl;//	0,0001
 
 	/*TFrefRmp*/
 	float32 PX_FRefRmpUp;
@@ -424,8 +436,10 @@ extern volatile struct Mcu_Param McuParam;
 
 extern void DspInit(void);
 
-extern void DspTask_185us(void);
+extern void DspTask_185us(void);//Õ¨≤ΩÀ¯œ‡
+
 extern void DspTask_B(void);
+extern void DspTask_C(void);
 extern void DspTask_T2(void);
 extern void DspTask_T3(void);
 

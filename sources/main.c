@@ -54,7 +54,7 @@ struct PX_In {
 	float32 XI_PhA;						// phase A current, A
 	float32 XI_PhB;						// phase B current, A
 	float32 XI_PhC;			  	  		// phase C current, A
-	float32 XU_PhABGt;					// ABé–»â•æ‘œé¤åº¨æ‚½é—ˆæ¶˜ç« V
+	float32 XU_PhABGt;					// ABé–»â•æ‘œé¤åº¨æ‚½é—ˆæ¶˜ï¿½ V
 	Uint16 NX_McuPlCn;				// MCU pulse(heartbeat) counter
 	Uint16 NX_McuOpSt;				// MCU operation state
 	Uint16 NX_McuVer;			// MCU version
@@ -63,7 +63,7 @@ struct PX_In {
 volatile struct PX_In PX_In_Spf = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0x400,
 		0x10, 0x00, };
 //========================================================================
-//å¨£å›¨ç¹ƒæ¿®ãˆ¤å´é”
+//å¨£å›¨ç¹ƒæ¿®ãˆ¤å´ï¿½
 struct PX_InPr {
 	float32 XU_DcLk_Max;   			// DC-link voltage, V
 	float32 XU_DcLk_Min;   			// DC-link voltage, V
@@ -257,7 +257,7 @@ void main(void) {
 //==============================================================================
 interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the interrupt
 {
-	/*±£»¤ÏÖ³¡*/
+	/*ï¿½ï¿½ï¿½ï¿½ï¿½Ö³ï¿½*/
 
 	/**/
 	PX_Out_Spf.NX_DspPlCn++;
@@ -359,9 +359,9 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 }
 
 //==============================================================================
-interrupt void DPRAM_isr_Fix(void) //¹Ì¶¨ÖÐ¶ÏÆµÂÊ4.35kHz
+interrupt void DPRAM_isr_Fix(void) //ï¿½Ì¶ï¿½ï¿½Ð¶ï¿½Æµï¿½ï¿½4.35kHz
 {
-	/*±£»¤ÏÖ³¡*/
+	/*ï¿½ï¿½ï¿½ï¿½ï¿½Ö³ï¿½*/
 
 	/**/
 	PX_Out_Spf.NX_DspPlCn++;
@@ -395,6 +395,7 @@ interrupt void DPRAM_isr_Fix(void) //¹Ì¶¨ÖÐ¶ÏÆµÂÊ4.35kHz
 			DspTask_185us();
 
 			DspTask_B();
+			DspTask_C();
 
 			Cnt_1ms++;
 			if (Cnt_1ms >= 3) {
@@ -477,7 +478,7 @@ interrupt void DPRAM_isr_Fix(void) //¹Ì¶¨ÖÐ¶ÏÆµÂÊ4.35kHz
 void DPRAM_RD(void) //MCU-->DSP
 {
 	//----------------------------------------------------
-	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    Çå³ýÓÒ²àÖÐ¶Ï±êÖ¾
+	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½Ð¶Ï±ï¿½Ö¾
 	//---------------------------------------------------------------------
 	PX_In_Spf.NX_McuOpSt = *(XintfZone7 + 0x0001);		// MCU operation state
 	//	PX_In_Spf.NX_McuVer = 0x10;
@@ -489,9 +490,9 @@ void DPRAM_RD(void) //MCU-->DSP
 	DspData.XI_PhB = *(XintfZone7 + 0xA) * 0.1 / 2.0 * (-1.0);// phase B current, A
 	DspData.XI_PhC = *(XintfZone7 + 0x9) * 0.1 / 2.0 * (-1.0);// phase C current, A
 	DspData.XU_PhABLk = *(XintfZone7 + 0x7) * 0.1 * 2.0;		// AB
-	Ext_U = *(XintfZone7 + 0x11) * 10.0;		//µçÑ¹
-	Ext_F = *(XintfZone7 + 0x12) * 1.0;		//ÆµÂÊ
-	TestFlg = *(XintfZone7 + 0x1A);		//0x55Îª²âÊÔ
+	Ext_U = *(XintfZone7 + 0x11) * 10.0;		//ï¿½ï¿½Ñ¹
+	Ext_F = *(XintfZone7 + 0x12) * 1.0;		//Æµï¿½ï¿½
+	TestFlg = *(XintfZone7 + 0x1A);		//0x55Îªï¿½ï¿½ï¿½ï¿½
 }
 //==============================================================================
 void DPRAM_WR(void)			//DSP-->MCU
@@ -598,7 +599,7 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x2F) = DA[7];
 
 	//---------------------------------------------------
-	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		// ÓÒ²àÐ´7FFE£¬×ó²à²úÉúÖÐ¶Ï
+	*(XintfZone7 + 0x7FFE) = PX_Out_Spf.NX_DspPlCn;		// ï¿½Ò²ï¿½Ð´7FFEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 	//------------------------------------------------------------
 
 }
@@ -710,7 +711,7 @@ void DspStCl(void) {
 		PX_Out_Spf.XX_Flt1.all = 0x0000;
 	}
 
-	//PrBc
+	//PrBc PrSd SfSd FsSd Slt
 	if ((PX_In_Spf.NX_McuOpSt == 0x417) || (PX_In_Spf.NX_McuOpSt == 0x41C)
 			|| (PX_In_Spf.NX_McuOpSt == 0x41A)
 			|| (PX_In_Spf.NX_McuOpSt == 0x426)
@@ -725,55 +726,6 @@ void DspStCl(void) {
 			}
 		}
 	}
-
-	//	//PrSd
-	//	if (PX_In_Spf.NX_McuOpSt == 0x41C) {
-	//		if ((PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0)
-	//				&& (PX_Out_Spf.NX_DspOpSt.bit.CvSt > 0x0030)) {
-	//			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
-	//			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0020;
-	//			if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
-	//				PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
-	//			}
-	//		}
-	//
-	//	}
-	//
-	//	//SfSd
-	//	if (PX_In_Spf.NX_McuOpSt == 0x41A) {
-	//		if ((PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0)
-	//				&& (PX_Out_Spf.NX_DspOpSt.bit.CvSt > 0x0030)) {
-	//			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
-	//			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0020;
-	//			if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
-	//				PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
-	//			}
-	//		}
-	//	}
-	//
-	//	//FsSd
-	//	if (PX_In_Spf.NX_McuOpSt == 0x426) {
-	//		if ((PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0)
-	//				&& (PX_Out_Spf.NX_DspOpSt.bit.CvSt > 0x0030)) {
-	//			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
-	//			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0020;
-	//			if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
-	//				PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
-	//			}
-	//		}
-	//	}
-	//
-	//	//Inso
-	//	if (PX_In_Spf.NX_McuOpSt == 0x41E) {
-	//		if (PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt == 0) {
-	//			PX_Out_Spf.XX_DspFlag1.all = 0x0000;
-	//			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x0020;
-	//		}
-	//		if (PX_In_Spf.XX_McuFlag1.bit.OvpCpAv == 1) {
-	//			PX_Out_Spf.NX_DspOpSt.bit.OvpCp = 0x4;
-	//		}
-	//	}
-
 	//-------------------------------------------
 	//
 	if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x00) {
@@ -830,9 +782,8 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x43) {
-		McuData.C_FRmp = TRUE;
-		PX_Out_Spf.SX_Run = 1;
 		PX_Out_Spf.XX_DspFlag1.bit.CvOp = 1;
+		PX_Out_Spf.SX_Run = 1;
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			if (PX_Out_Spf.SX_Run == 1)
@@ -841,6 +792,7 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x44) {
+		McuData.C_FRmp = TRUE;
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			if (McuData.A_FNom == 1)
@@ -887,7 +839,8 @@ void DspStCl(void) {
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x48) {
 
 		//
-		McuData.B_EnU3PhCl = TRUE;
+//		McuData.B_EnU3PhCl = TRUE;
+		McuData.C_AuSz = TRUE;
 		if (PX_In_Spf.NX_McuOpSt == 0x40A) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x50;
 		} else {
@@ -908,13 +861,13 @@ void DspStCl(void) {
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x52) {
 		McuData.B_EnU3PhCl = FALSE;	//
-		McuData.C_FRmp = FALSE;	//
+		McuData.C_AuSz = FALSE;
 		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x53;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x53) {
+		McuData.C_FRmp = FALSE;	//
 		if (McuData.A_FMin == 1)
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x54;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x54) {
-
 		PX_Out_Spf.SX_Run = 0;
 		PX_Out_Spf.XX_DspFlag1.bit.CvOp = 0;
 		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x55;
