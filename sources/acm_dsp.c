@@ -89,8 +89,12 @@ void DspInit(void) {
 	DspParam.PU_PhClTrsMax = 75.0; //	75
 	DspParam.PI_PhClTrsAbsLim = 600.0; //	600
 
-	DspParam.PD_ThetaFiOs = PI / 3.0 - 4.5 / 180.0 * PI; //同步相位补偿,1.047 线电压落后相电压60deg,死区时间造成电压相位滞后
+	if (SIMULATION) {
+		DspParam.PD_ThetaFiOs = PI / 3.0 - PI / 180.0;
 
+	} else {
+		DspParam.PD_ThetaFiOs = PI / 3.0 - 4.5 / 180.0 * PI; //同步相位补偿,1.047 线电压落后相电压60deg,死区时间造成电压相位滞后
+	}
 	DspParam.PZ_3PhFiNdRe = 0.078; //	0,078 滤波电感电阻
 	DspParam.PZ_3PhFiNdIm = 0.207; //	0,207滤波电感电抗
 	DspParam.PZ_3PhFiCaIm = -5.47; //	-5,47 滤波电容电抗折算到一次侧
@@ -182,12 +186,32 @@ void DspTask_185us(void) {
 	DspData.XI_PhAct = DspData.XI_PhDQ.re;
 	DspData.XI_PhRct = DspData.XI_PhDQ.im;
 
+	/*********************************************
+	 *
+	 *
+	 *******************************************/
+	/*IIR Notch Filter*/
+	U3PhRe.In = 2.0 * DspData.XU_PhABLk
+			* cos(DspData.WX_Theta + DspParam.PD_ThetaFiOs);
+	AdaptIIRNotchFilter(&U3PhRe, 2.0 * PI2 * Max(McuData.WF_3PhDsp, 1.0),
+			DspData.XT_Tsc);
+//		DspData.XU_3PhRe = U3PhRe.Out;
+
+	U3PhIm.In = 2.0 * DspData.XU_PhABLk
+			* sin(DspData.WX_Theta + DspParam.PD_ThetaFiOs);
+	AdaptIIRNotchFilter(&U3PhIm, 2.0 * PI2 * Max(McuData.WF_3PhDsp, 1.0),
+			DspData.XT_Tsc);
+//		DspData.XU_3PhIm = U3PhIm.Out;
+	/**/
+	DspData.XU_3PhAbs_Notch = sqrt(
+			U3PhRe.Out * U3PhRe.Out + U3PhIm.Out * U3PhIm.Out);
+
 	/*
 	 *
 	 * */
 	sogiosg.phase = DspData.XU_PhABLk;
 	sogiosg.Ts = DspData.XT_Tsc; //
-	sogiosg.w0 = 100 * 3.1415926;
+	sogiosg.w0 = 100 * PI;
 	sogiosg.K = sqrt(0.1); //sqrt(2)
 	sogiosg.Ki = 10000;
 
@@ -740,7 +764,14 @@ void McuInit(void) {
 	/*UF3PhSz 16ms*/
 	McuParam.PF_UF3PhSzRdy = 0.3;
 	McuParam.PU_UF3PhSzRdy = 20.0 * SQRT2bySQRT3;
-	McuParam.PT_UF3PhSzRdy = 250.0; //250ms
+	if (SIMULATION) {
+		McuParam.PT_UF3PhSzRdy = 250.0; //250ms
+
+	} else {
+		McuParam.PT_UF3PhSzRdy = 10000.0; //250ms
+
+	}
+
 	McuParam.PT_UF3PhSzFl = 5000.0; //5000ms
 
 	/**/
@@ -1191,6 +1222,73 @@ void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,
 			*Y = Limit(*Y, Min, Max);
 		}
 	}
+}
+
+/*
+ * SR Flip Flop with reset dominant
+ * */
+Uint16 SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
+	if (Reset) {
+		*Q = FALSE;
+	} else {
+		if (Set)
+			*Q = TRUE;
+	}
+}
+
+/*
+ * SR Flip Flop with set dominant
+ * */
+Uint16 SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
+	if (Set) {
+		*Q = TRUE;
+	} else {
+		if (Reset)
+			*Q = FALSE;
+	}
+}
+
+/*
+ * IF ( ACTNB AND FB ) THEN
+ IF TON_PREV_IN THEN
+ TON_ET := TON_ET + CT ;
+ END_IF ;
+ TON_ET := MIN( TON_ET, TONTimer ) ;
+ TON_Q := TON_ET = TONTimer ;
+ ELSE
+ TON_ET := TIME#0s ;
+ TON_Q := FALSE ;
+ END_IF ;
+ TON_PREV_IN := ACTNB AND FB ;
+ * */
+Uint16 DLYON(Uint16 In, Uint16 N, volatile Uint16 *Cnt,
+		volatile Uint16 *Prev_In) {
+	if (In) {
+		if (*Prev_In) {
+			*Cnt++;
+		}
+		*Cnt = Min(*Cnt, N);
+		return (*Cnt == N);
+	} else {
+		*Cnt = 0;
+		return FALSE;
+	}
+	*Prev_In = In;
+}
+
+Uint16 MONO(Uint16 In, Uint16 N, TYPE_LOGICAL* data) {
+	data->PreLogic = data->Logic;
+	data->Logic = In;
+	if (data->PreLogic ^ data->Logic) {
+		if (data->Logic)
+			data->RTrig = TRUE;
+		else
+			data->FTrig = TRUE;
+	} else {
+		data->RTrig = FALSE;
+		data->FTrig = FALSE;
+	}
+
 }
 
 float32 Min(float32 a, float32 b) {

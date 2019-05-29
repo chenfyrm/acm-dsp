@@ -50,11 +50,15 @@ union MCUFLAG1_REG {
 
 struct PX_In {
 	float32 XU_DcLk;   		    		// DC-link voltage, V
-	float32 XI_DcLk;   				// DC current, A
+	float32 XI_DcLk;   					// DC current, A
 	float32 XI_PhA;						// phase A current, A
 	float32 XI_PhB;						// phase B current, A
 	float32 XI_PhC;			  	  		// phase C current, A
-	float32 XU_PhABGt;					// AB閻╁摜鍤庨悽闈涘� V
+	float32 XU_PhABGt;					// ABV
+	float32 XI_Bt;
+	float32 XI_BtCg;
+	float32 XU_Bt;
+
 	Uint16 NX_McuPlCn;				// MCU pulse(heartbeat) counter
 	Uint16 NX_McuOpSt;				// MCU operation state
 	Uint16 NX_McuVer;			// MCU version
@@ -63,7 +67,7 @@ struct PX_In {
 volatile struct PX_In PX_In_Spf = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0x400,
 		0x10, 0x00, };
 //========================================================================
-//娣囨繃濮㈤崐�
+//
 struct PX_InPr {
 	float32 XU_DcLk_Max;   			// DC-link voltage, V
 	float32 XU_DcLk_Min;   			// DC-link voltage, V
@@ -478,11 +482,12 @@ interrupt void DPRAM_isr_Fix(void) //�̶��ж�Ƶ��4.35kHz
 void DPRAM_RD(void) //MCU-->DSP
 {
 	//----------------------------------------------------
-	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    ����Ҳ��жϱ�־
+	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter
 	//---------------------------------------------------------------------
 	PX_In_Spf.NX_McuOpSt = *(XintfZone7 + 0x0001);		// MCU operation state
 	//	PX_In_Spf.NX_McuVer = 0x10;
 	PX_In_Spf.XX_McuFlag1.all = *(XintfZone7 + 0x0014);
+	McuData.A_CdAuLdCt = PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt;
 
 	DspData.XU_DcLk = *(XintfZone7 + 0x6) * 0.1 * 2.0;	// DC-link voltage, V
 	DspData.XI_DcLk = 0;		// DC-link current, V
@@ -552,25 +557,24 @@ void DPRAM_WR(void)			//DSP-->MCU
 	//	*(XintfZone7 + 0x28) = fabs(DspData.WU_DcLkStb*10);
 	//	*(XintfZone7 + 0x29) = fabs(McuData.WU_3PhDsp*10);
 	//	*(XintfZone7 + 0x2A) = fabs(McuData.WU_3PhClIn*10);
-	*(XintfZone7 + 0x27) = fabs(McuData.WF_3PhDsp * 10);
-	*(XintfZone7 + 0x28) = fabs(McuData.WU_3PhDsp * 10);
-	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqStCvOpSa);
-	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs/SQRT2*10 );
+//	*(XintfZone7 + 0x27) = fabs(McuData.WF_3PhDsp * 10);
+//	*(XintfZone7 + 0x28) = fabs(McuData.WU_3PhDsp * 10);
+//	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqStCvOpSa);
+//	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs/SQRT2*10 );
 
-	//	*(XintfZone7 + 0x27) = fabs(DspData.WU_3PhSec.re*10);
-	//	*(XintfZone7 + 0x28) = fabs(DspData.WU_3PhSec.im*10);
-	//	*(XintfZone7 + 0x29) = fabs(DspData.WU_3PhPm.re*10);
-	//	*(XintfZone7 + 0x2A) = fabs(DspData.WU_3PhPm.im*10);
+		*(XintfZone7 + 0x27) = fabs(sogiosg.peak*10);
+		*(XintfZone7 + 0x28) = fabs(DspData.XU_3PhAbs*10);
+		*(XintfZone7 + 0x29) = fabs(DspData.XU_3PhAbs_Notch*10);
+		*(XintfZone7 + 0x2A) = fabs(McuData.WU_UF3PhSz*10);
 
 	/*
 	 *
 	 * */
-
 	DA[3] = sogiosg.alpha*10;
-	DA[4] = DspData.XI_PhDQ_Flt.re*100;
-	DA[5] = DspData.XI_PhDQ_Flt.im*100;
-	DA[6] = 0.0;
-	DA[7] = 0.0;
+	DA[4] = DspData.XI_PhDQ_Flt.re*10;
+	DA[5] = DspData.XI_PhDQ_Flt.im*10;
+	DA[6] = DspData.XU_3PhAbs*10;
+	DA[7] = McuData.WU_UF3PhSz*10;
 
 	if (DA[3] >= 4095)
 		DA[3] = 4095;
@@ -820,7 +824,7 @@ void DspStCl(void) {
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 
 			if (McuData.A_AuSz == 1) {
-//				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x47;
+				PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x47;
 			}
 		} else {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;

@@ -27,12 +27,20 @@ typedef unsigned int Uint16;
 typedef unsigned long Uint32;
 typedef unsigned long long Uint64;
 typedef float float32;
+typedef long double float64;
 #endif
 
 typedef struct {
 	float32 re;
 	float32 im;
 } cfloat32;
+
+typedef struct {
+	Uint16 Logic :1;
+	Uint16 PreLogic :1;
+	Uint16 RTrig :1;
+	Uint16 FTrig :1;
+} TYPE_LOGICAL;
 
 /*STRUCTDEFS*/
 struct Dsp_Data {
@@ -62,6 +70,7 @@ struct Dsp_Data {
 	float32 XU_3PhRe;/*3-phase output load voltage, phase-phase, real part*/
 	float32 XU_3PhIm;/*3-phase output load voltage, phase-phase, imaginary part*/
 	float32 XU_3PhAbs;/*3-phase output load voltage, phase-phase, peak value*/
+	float32 XU_3PhAbs_Notch;
 
 	float32 XU_DcLkDy;
 	float32 XU_DcLkFlt;
@@ -95,7 +104,7 @@ struct Dsp_Data {
 	float32 XI_Ph3Rms_Flt;
 
 	float32 WU_IPhClRms;
-	Uint16 B_LimAct:1;
+	Uint16 B_LimAct :1;
 
 	/*UFCODA*/
 	cfloat32 WU_3PhSec;
@@ -130,28 +139,28 @@ struct Dsp_Data {
 	Uint16 L_DsPlElm3PhMod :1; //TRUE
 
 	/*SRTODA*/
-	Uint16 A_CvOp:1;
+	Uint16 A_CvOp :1;
 
 	/**/
 	float32 XP_Ovp;/*OVP power*/
 	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
 
 	/*MEMS*/
-	Uint16 B_U3PhRmsPlySvFl:1; //三相输出电压合理性监视
+	Uint16 B_U3PhRmsPlySvFl :1; //三相输出电压合理性监视
 
 	/*ACLS*/
-	Uint16 B_IPhClTmWnd1Fl:1;
-	Uint16 B_IPhClRmsTmFl:1;
+	Uint16 B_IPhClTmWnd1Fl :1;
+	Uint16 B_IPhClRmsTmFl :1;
 
 	/*OVPT*/
 	float32 XX_Duty4A;
-	Uint16 C_OvpFcTs:1;
-	Uint16 A_OvpFcTsOk:1;
+	Uint16 C_OvpFcTs :1;
+	Uint16 A_OvpFcTsOk :1;
 
-	Uint16 A_BtCpAv:1;
+	Uint16 A_BtCpAv :1;
 
-	Uint16 A_OvpAv:1;
-	Uint16 S_OvpEn:1;
+	Uint16 A_OvpAv :1;
+	Uint16 S_OvpEn :1;
 
 };
 
@@ -199,18 +208,18 @@ struct Dsp_Param {
 	float32 PX_KpUDcLkStb;
 	float32 PX_KpUDcLkVoStbFb;
 
-	float32 PX_3PhRndMax;//	0,0345
-	Uint16 L_3PhRndEn:1;//	TRUE
+	float32 PX_3PhRndMax; //	0,0345
+	Uint16 L_3PhRndEn :1; //	TRUE
 	float32 PF_3PhSg; //1350
 
 	Uint16 L_EnTPrDdCmp :1;
 	Uint16 L_DsPlElm3PhMod :1;
 
 	//DUVP
-	float32 PARTDP_PU_DcLkMin;//	1000
+	float32 PARTDP_PU_DcLkMin; //	1000
 
 	//DOVP
-	float32 PARTDP_PU_DcLkHgh4;//	1950
+	float32 PARTDP_PU_DcLkHgh4; //	1950
 
 	//MEMS
 	float32 PX_U3PhMmSvMax;	//0,9
@@ -219,8 +228,8 @@ struct Dsp_Param {
 	float32 PT_U3PhRmsPlySvDy;	//1	s
 
 	//ACCL
-	Uint16 L_EnIPhClRms:1;//	FALSE
-	float32 PI_PhClRmsLim;//	800	A
+	Uint16 L_EnIPhClRms :1;	//	FALSE
+	float32 PI_PhClRmsLim;	//	800	A
 
 };
 
@@ -285,66 +294,66 @@ struct Mcu_Data {
 
 	/*SRTOMA*/
 	/*CvOpSaSq*/
-	Uint16 C_CdAuLdCt:1;
-	Uint16 C_Ck3PhGduFb:1;
-	Uint16 C_CvOpSa:1;
+	Uint16 C_CdAuLdCt :1;
+	Uint16 C_Ck3PhGduFb :1;
+	Uint16 C_CvOpSa :1;
 	Uint16 C_AuSz :1;	//开始同步
-	Uint16 A_CvOpSa:1;
+	Uint16 A_CvOpSa :1;
 	Uint16 NX_SqStCvOpSa;
 
-	Uint16 C_CvOpSa_MnSq:1;
-	Uint16 C_FRmp:1;
+	Uint16 C_CvOpSa_MnSq :1;
+	Uint16 C_FRmp :1;
 	Uint16 B_EnU3PhCl :1;	//开始闭环
-	Uint16 A_CdAuLdCt:1;
+	Uint16 A_CdAuLdCt :1;
 
 	/*CvOpSoSq*/
-	Uint16 C_CvBc:1;
-	Uint16 C_CkSrCtI:1;//(*Command check of current through contactors*)
-	Uint16 C_OpAuLdCt:1;
-	Uint16 C_OpChCt:1;
-	Uint16 C_OpSrCt:1;
-	Uint16 A_CvOpSo:1;
+	Uint16 C_CvBc :1;
+	Uint16 C_CkSrCtI :1;	//(*Command check of current through contactors*)
+	Uint16 C_OpAuLdCt :1;
+	Uint16 C_OpChCt :1;
+	Uint16 C_OpSrCt :1;
+	Uint16 A_CvOpSo :1;
 	Uint16 NX_SqStCvOpSo;
 
-	Uint16 C_CvOpSo_MnSq:1;
-	Uint16 A_SrCtIOk:1;
-	Uint16 A_CdChCt:1;
-	Uint16 A_CdSrCt:1;
-	Uint16 B_BcOpSrCt:1;
+	Uint16 C_CvOpSo_MnSq :1;
+	Uint16 A_SrCtIOk :1;
+	Uint16 A_CdChCt :1;
+	Uint16 A_CdSrCt :1;
+	Uint16 B_BcOpSrCt :1;
 
 };
 
 struct Mcu_Param {
 	/*ACCLMA*/
 	/*IPhClGenOvLd*/
-	 float32 PF_IPhClMin;//	50
-	 float32 PF_IPhClMinErr;//	25
-	 float32 PX_IPhClIntMax;//	20000
-	 float32 PX_IPhClIntMin;//	0
-	 float32 PT_IPhClInt;//	100
+	float32 PF_IPhClMin;	//	50
+	float32 PF_IPhClMinErr;	//	25
+	float32 PX_IPhClIntMax;	//	20000
+	float32 PX_IPhClIntMin;	//	0
+	float32 PT_IPhClInt;	//	100
 
-	 /*IPhClPsTrs*/
-	 float32 PI_IPhClActMax;//	400
-	 float32 PI_IPhClActMin;//	100
-	 float32 PI_IPhClActPsTrs;//	450
-	 float32 PI_IPhClActOs;//	100
-	 float32 PX_IPhClActDe;//	200
-	 float32 PI_IPhClRctMax	;//400
-	 float32 PI_IPhClRctMin	;//0
-	 float32 PI_IPhClRctPsTrs;//	300
-	 float32 PI_IPhClRctOs	;//100
-	 float32 PX_IPhClRctDePos	;//200
-	 float32 PX_IPhClRctDeNg	;//200
-	 float32 PI_IPhClPsTrsLim;//	600
-	 float32 PX_IPhClTrsKpAct;//	0,005
-	 float32 PX_IPhClTrsKpRct;//	0,03
-	 float32 PX_IPhClTrsKpAbs;//	0
+	/*IPhClPsTrs*/
+	float32 PI_IPhClActMax;	//	400
+	float32 PI_IPhClActMin;	//	100
+	float32 PI_IPhClActPsTrs;	//	450
+	float32 PI_IPhClActOs;	//	100
+	float32 PX_IPhClActDe;	//	200
+	float32 PI_IPhClRctMax;	//400
+	float32 PI_IPhClRctMin;	//0
+	float32 PI_IPhClRctPsTrs;	//	300
+	float32 PI_IPhClRctOs;	//100
+	float32 PX_IPhClRctDePos;	//200
+	float32 PX_IPhClRctDeNg;	//200
+	float32 PI_IPhClPsTrsLim;	//	600
+	float32 PX_IPhClTrsKpAct;	//	0,005
+	float32 PX_IPhClTrsKpRct;	//	0,03
+	float32 PX_IPhClTrsKpAbs;	//	0
 
-	 /*IPhDcCl*/
-	 Uint16 L_EnIPhDcCl:1;//	TRUE
-	 float32 PU_IPhDcClMaxMin;//	3
-	 float32 PX_KpIPhDcCl;//	0,2
-	 float32 PX_KiIPhDcCl;//	0,0001
+	/*IPhDcCl*/
+	Uint16 L_EnIPhDcCl :1;	//	TRUE
+	float32 PU_IPhDcClMaxMin;	//	3
+	float32 PX_KpIPhDcCl;	//	0,2
+	float32 PX_KiIPhDcCl;	//	0,0001
 
 	/*TFrefRmp*/
 	float32 PX_FRefRmpUp;
@@ -361,7 +370,7 @@ struct Mcu_Param {
 	float32 PU_DcLkFRefLow;	//	1000
 	float32 PX_FRefRmpUDcLkUp;	//	40
 	float32 PX_FRefRmpUDcLkDo;	//	40
-	float32 PT_FRefUDcLk;//100ms
+	float32 PT_FRefUDcLk;	//100ms
 
 	/*FrefRmp*/
 	float32 PF_3PhNom;
@@ -380,11 +389,9 @@ struct Mcu_Param {
 	float32 PF_UF3PhSzClMaxMin;
 	float32 PT_UF3PhSzRmp;
 
-
 	/*U3PhSz*/
 	float32 PU_UF3PhSzClAdd;
 	float32 PU_UF3PhSzClMaxMin;
-
 
 	/*UF3PhSz*/
 	float32 PF_UF3PhSzRdy;
@@ -433,10 +440,9 @@ extern volatile struct Mcu_Param McuParam;
 /*DSP*/
 /*IRQB*/
 //逆变
-
 extern void DspInit(void);
 
-extern void DspTask_185us(void);//同步锁相
+extern void DspTask_185us(void);	//同步锁相
 
 extern void DspTask_B(void);
 extern void DspTask_C(void);
@@ -457,14 +463,23 @@ extern void RmsClc(volatile float32 *rms, float32 Src, Uint16 N,
 		volatile float32 *Square, volatile Uint16 *cnt);
 extern void RAMP2(volatile float32 *Y, float32 X, float32 Dr, float32 Df,
 		float32 Init, Uint16 Set, Uint16 Hold);
-extern void RAMP(volatile float32 *Y, float32 X, float32 TsPerTr, float32 TsPerTf,
-		float32 Init, Uint16 Set, Uint16 Hold,float32 Max);
+extern void RAMP(volatile float32 *Y, float32 X, float32 TsPerTr,
+		float32 TsPerTf, float32 Init, Uint16 Set, Uint16 Hold, float32 Max);
 extern float32 Cycle(void);
 extern void INTEGR(volatile float32 *Y, float32 X, float32 T, float32 Init,
 		float32 Max, float32 Min, Uint16 Set, Uint16 Hold);
 extern float32 FKG4(float32 X, float32 X1, float32 Y1, float32 X2, float32 Y2,
 		float32 X3, float32 Y3, float32 X4, float32 Y4);
 extern float32 PIREG();
+
+extern Uint16 SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern Uint16 SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+
+extern Uint16 DLYON(Uint16 In, Uint16 N, volatile Uint16 *Cnt,
+		volatile Uint16 *Prev_In);
+extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile Uint16 *Cnt,
+		volatile Uint16 *Prev_In);
+extern Uint16 MONO(Uint16 In, Uint16 N, TYPE_LOGICAL* data);
 
 extern float32 Min(float32 a, float32 b);
 extern float32 Max(float32 a, float32 b);
@@ -597,32 +612,33 @@ extern void PI_CONTROLLER(TYPE_PI_CONTROLLER *data);
 #endif
 
 typedef struct {
-	float32 In;//input
-	float32 Out;//output
-	float32 a1;//param
+	float32 In;				//input
+	float32 Out;				//output
+	float32 a1;				//param
 	float32 a2;
 	float32 b0;
 	float32 b1;
 	float32 b2;
-	float32 oldIn1;//state
+	float32 oldIn1;				//state
 	float32 oldIn2;
 	float32 oldOut1;
 	float32 oldOut2;
-}TYPE_IIRFILTER_2ND;
+} TYPE_IIRFILTER_2ND;
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* extern "C" */
 
 extern void IIRFilter_2nd(TYPE_IIRFILTER_2ND *data);
-extern void AdaptIIRNotchFilter(TYPE_IIRFILTER_2ND *data,float32 W0,float32 Ts);
+extern void AdaptIIRNotchFilter(TYPE_IIRFILTER_2ND *data, float32 W0,
+		float32 Ts);
 
 #ifdef __cplusplus
 }
 #endif
 
 extern TYPE_SOGIOSGMA sogiosg;
-extern TYPE_IIRFILTER_2ND U3PhRe,U3PhIm;
+extern TYPE_IIRFILTER_2ND U3PhRe, U3PhIm;
 extern TYPE_PI_CONTROLLER PI_F3PhSz;
 extern TYPE_PI_CONTROLLER PI_U3PhCl;
 
