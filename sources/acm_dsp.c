@@ -664,8 +664,11 @@ void ACCL_T2(void) {
  *
  *
  *****************************************************/
+void SRTOMA_X(void);
 void CvOpSaSq(void);
 void CvOpSoSq(void);
+void CvOpSa(void);
+
 void UF3PhCmp(void);
 void IPhClGenOvLd(void);
 void IPhClPsTrs(void);
@@ -810,6 +813,10 @@ void McuTask_16ms(void) {
 //	U3PhSz();
 	UF3PhSz();
 }
+/**/
+void SRTOMA_X(void){
+	CvOpSaSq();
+}
 
 /*
  * 4ms
@@ -843,6 +850,9 @@ void CvOpSaSq(void) {
 	} else if (McuData.NX_SqStCvOpSa == 5) {
 		if (McuData.A_CdAuLdCt) {
 			McuData.NX_SqStCvOpSa = 8;
+
+			McuData.B_EnU3PhCl = TRUE; //Î¢Íø
+
 		} else {
 			McuData.NX_SqStCvOpSa = 6;
 		}
@@ -852,14 +862,18 @@ void CvOpSaSq(void) {
 			McuData.NX_SqStCvOpSa = 7;
 		}
 	} else if (McuData.NX_SqStCvOpSa == 7) {
-		McuData.C_CdAuLdCt = TRUE;
-		if (McuData.A_CdAuLdCt) {
-			McuData.NX_SqStCvOpSa = 8;
-		}
+//		McuData.C_CdAuLdCt = TRUE;
+//		if (McuData.A_CdAuLdCt) {
+//			McuData.NX_SqStCvOpSa = 8;
+//		}
+		McuData.NX_SqStCvOpSa = 8;
+
+		McuData.C_AuSz = TRUE; //Ç¿Íø
+
 	} else if (McuData.NX_SqStCvOpSa == 8) {
 		McuData.A_CvOpSa = TRUE;
 //		McuData.B_EnU3PhCl = TRUE;//Î¢Íø
-		McuData.C_AuSz = TRUE; //Ç¿Íø
+//		McuData.C_AuSz = FALSE; //Î¢Íø
 	}
 }
 
@@ -877,13 +891,16 @@ void CvOpSoSq(void) {
 		}
 	} else if (McuData.NX_SqStCvOpSo == 2) {
 		McuData.C_CkSrCtI = TRUE;
-		if (McuData.A_SrCtIOk)
-			McuData.NX_SqStCvOpSo = 2;
+//		if (McuData.A_SrCtIOk)
+//			McuData.NX_SqStCvOpSo = 3;
+		McuData.NX_SqStCvOpSo = 3;
 	} else if (McuData.NX_SqStCvOpSo == 3) {
 		McuData.C_OpAuLdCt = TRUE;
 		McuData.C_OpSrCt = TRUE;
 		McuData.C_OpChCt = TRUE;
-		if ((!McuData.A_CdAuLdCt) && (!McuData.A_CdSrCt) && (!McuData.A_CdChCt))
+//		if ((!McuData.A_CdAuLdCt) && (!McuData.A_CdSrCt) && (!McuData.A_CdChCt))
+//			McuData.NX_SqStCvOpSo = 5;
+		if ((!McuData.A_CdAuLdCt))
 			McuData.NX_SqStCvOpSo = 5;
 	} else if (McuData.NX_SqStCvOpSo == 4) {
 		McuData.C_OpAuLdCt = TRUE;
@@ -892,6 +909,10 @@ void CvOpSoSq(void) {
 	} else if (McuData.NX_SqStCvOpSo == 5) {
 		McuData.A_CvOpSo = TRUE;
 	}
+}
+
+void CvOpSa(void){
+
 }
 
 /*
@@ -1114,21 +1135,14 @@ void U3PhSz(void) {
  * 16ms
  * */
 void UF3PhSz(void) {
+	Uint16 logic;
+	logic = McuData.A_AuSz
+			&& (fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy)
+			&& (fabs(McuData.WU_UF3PhSzErr) <= McuParam.PU_UF3PhSzRdy);
 
-	static float32 WndTime1, WndTime2;
-
-	if (McuData.C_AuSz) {
-		if ((fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy)
-				&& (fabs(McuData.WU_UF3PhSzErr) <= McuParam.PU_UF3PhSzRdy))
-			WndTime1 += 16.0;
-		else
-			WndTime1 = 0.0;
-
-		if (WndTime1 > McuParam.PT_UF3PhSzRdy)
-			McuData.A_AuSz = TRUE;
-	} else {
-
-	}
+	static TYPE_DLYONOFF_N A_AUSZ;
+	McuData.A_AuSz = DLYON(logic, (Uint16) McuParam.PT_UF3PhSzRdy / 16.0,
+			&A_AUSZ);
 }
 
 /**/
@@ -1224,10 +1238,36 @@ void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,
 	}
 }
 
+/**/
+Uint16 RTRIG(Uint16 In, volatile union LOGICAL* data) {
+	Uint16 logic = FALSE;
+	if (In) {
+		if (!data->bit.PreLogic) {
+			logic = TRUE;
+		}
+	}
+	data->bit.PreLogic = In;
+
+	return logic;
+}
+
+/**/
+Uint16 FTRIG(Uint16 In, volatile union LOGICAL* data) {
+	Uint16 logic = FALSE;
+	if (!In) {
+		if (data->bit.PreLogic) {
+			logic = TRUE;
+		}
+	}
+	data->bit.PreLogic = In;
+
+	return logic;
+}
+
 /*
  * SR Flip Flop with reset dominant
  * */
-Uint16 SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
+void SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 	if (Reset) {
 		*Q = FALSE;
 	} else {
@@ -1239,7 +1279,7 @@ Uint16 SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 /*
  * SR Flip Flop with set dominant
  * */
-Uint16 SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
+void SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 	if (Set) {
 		*Q = TRUE;
 	} else {
@@ -1249,46 +1289,55 @@ Uint16 SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 }
 
 /*
- * IF ( ACTNB AND FB ) THEN
- IF TON_PREV_IN THEN
- TON_ET := TON_ET + CT ;
- END_IF ;
- TON_ET := MIN( TON_ET, TONTimer ) ;
- TON_Q := TON_ET = TONTimer ;
- ELSE
- TON_ET := TIME#0s ;
- TON_Q := FALSE ;
- END_IF ;
- TON_PREV_IN := ACTNB AND FB ;
+ *
  * */
-Uint16 DLYON(Uint16 In, Uint16 N, volatile Uint16 *Cnt,
-		volatile Uint16 *Prev_In) {
+Uint16 DLYON(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
+	Uint16 logic = FALSE;
 	if (In) {
-		if (*Prev_In) {
-			*Cnt++;
+		if (!data->logic.bit.PreLogic) {
+			data->Cnt = N;
 		}
-		*Cnt = Min(*Cnt, N);
-		return (*Cnt == N);
-	} else {
-		*Cnt = 0;
-		return FALSE;
+		if (data->Cnt > 0) {
+			data->Cnt--;
+		} else {
+			logic = TRUE;
+		}
 	}
-	*Prev_In = In;
+	data->logic.bit.PreLogic = In;
+
+	return logic;
 }
 
-Uint16 MONO(Uint16 In, Uint16 N, TYPE_LOGICAL* data) {
-	data->PreLogic = data->Logic;
-	data->Logic = In;
-	if (data->PreLogic ^ data->Logic) {
-		if (data->Logic)
-			data->RTrig = TRUE;
-		else
-			data->FTrig = TRUE;
-	} else {
-		data->RTrig = FALSE;
-		data->FTrig = FALSE;
+/**/
+extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
+	Uint16 logic = TRUE;
+	if (!In) {
+		if (data->logic.bit.PreLogic) {
+			data->Cnt = N;
+		}
+		if (data->Cnt > 0) {
+			data->Cnt--;
+		} else {
+			logic = FALSE;
+		}
+	}
+	data->logic.bit.PreLogic = In;
+
+	return logic;
+}
+
+/**/
+Uint16 MONO(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
+	Uint16 logic = FALSE;
+	if (RTRIG(In, &data->logic) || FTRIG(In, &data->logic)) {
+		data->Cnt = N;
+		if (data->Cnt > 0) {
+			data->Cnt--;
+			logic = TRUE;
+		}
 	}
 
+	return logic;
 }
 
 float32 Min(float32 a, float32 b) {

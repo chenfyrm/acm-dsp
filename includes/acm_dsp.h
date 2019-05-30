@@ -14,10 +14,58 @@ extern "C" {
 #define SQRT2bySQRT3    0.816397228637413   /*sqrt(2/3)*/
 #define	PI  		  	3.14159265358979
 #define	PI2  		  	6.28318530717959
-#define FALSE			0
-#define	TRUE			1
+#define TRUE 1
+#define FALSE 0
 
 /*TYPEDEFS*/
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+#ifndef TRUE
+#define TRUE (0==0)
+#endif
+
+#ifndef FALSE
+#define FALSE (0!=0)
+#endif
+
+#ifndef NOT
+#define NOT !
+#endif
+
+#ifndef AND
+#define AND &&
+#endif
+
+#ifndef OR
+#define OR ||
+#endif
+
+#ifndef OK
+#define OK 0
+#endif
+
+#ifndef ERROR
+#define ERROR (-1)
+#endif
+
+#ifndef INVALID
+#define INVALID 1
+#endif
+
+#ifndef FAST
+#define FAST register
+#endif
+
+#ifndef IMPORT
+#define IMPORT extern
+#endif
+
+#ifndef LOCAL
+#define LOCAL static
+#endif
+
 #ifndef DSP28_DATA_TYPES
 #define DSP28_DATA_TYPES
 typedef int int16;
@@ -30,17 +78,91 @@ typedef float float32;
 typedef long double float64;
 #endif
 
+/*CCS编译器实现的char为16位，所以最小计量字节也为16位*/
+typedef unsigned int BOOL;
+typedef unsigned int WORD;
+typedef unsigned long DWORD;
+
+typedef void VOID;
+
+//typedef INT16 CC_ANALOG;
+//typedef UINT8 CC_BCD4;
+//typedef INT16 CC_BIFRACT200;
+//typedef UINT16 CC_BITSET256[16];
+//typedef UINT8 CC_BOOL;
+//typedef UINT8 CC_BOOLEAN2;
+//typedef BYTE CC_BYTE;
+//typedef UINT32 CC_DATE;
+//typedef struct dt {UINT32 date; UINT16 ms;} CC_DATE_AND_TIME;
+//typedef INT32 CC_DINT;
+//typedef DWORD CC_DWORD;
+//typedef UINT8 CC_ENUM4;
+//typedef INT32 CC_FIXED;
+//typedef INT16 CC_INT;
+//typedef float CC_REAL;
+//typedef INT8 CC_SINT;
+//typedef char CC_STRING[81];
+//typedef INT32 CC_TIME;
+//typedef OS_TIMEDATE48 CC_TIMEDATE48;
+//typedef INT32 CC_TIME_OF_DAY;
+//typedef UINT32 CC_UDINT;
+//typedef UINT16 CC_UINT;
+//typedef UINT16 CC_UNIFRACT;
+//typedef UINT8 CC_USINT;
+//typedef WORD CC_WORD;
+
+//typedef CC_ANALOG MWT_ANALOG;
+//typedef CC_BCD4 MWT_BCD4;
+//typedef CC_BIFRACT200 MWT_BIFRACT200;
+//typedef CC_BOOL MWT_BOOL;
+//typedef CC_BOOLEAN2 MWT_BOOLEAN2;
+//typedef CC_BYTE MWT_BYTE;
+//typedef CC_DATE MWT_DATE;
+//typedef CC_DATE_AND_TIME MWT_DATE_AND_TIME;
+//typedef CC_DINT MWT_DINT;
+//typedef CC_DWORD MWT_DWORD;
+//typedef CC_ENUM4 MWT_ENUM4;
+//typedef CC_FIXED MWT_FIXED;
+//typedef CC_INT MWT_INT;
+//typedef CC_REAL MWT_REAL;
+//typedef CC_SINT MWT_SINT;
+//typedef CC_STRING MWT_STRING;
+//typedef CC_TIME MWT_TIME;
+//typedef CC_TIME_OF_DAY MWT_TIME_OF_DAY;
+//typedef CC_TIMEDATE48 MWT_TIMEDATE48;
+//typedef CC_UDINT MWT_UDINT;
+//typedef CC_UINT MWT_UINT;
+//typedef CC_UNIFRACT MWT_UNIFRACT;
+//typedef CC_USINT MWT_USINT;
+//typedef CC_WORD MWT_WORD;
+
 typedef struct {
 	float32 re;
 	float32 im;
 } cfloat32;
 
-typedef struct {
+struct LOGICAL_BITS {
 	Uint16 Logic :1;
 	Uint16 PreLogic :1;
 	Uint16 RTrig :1;
 	Uint16 FTrig :1;
-} TYPE_LOGICAL;
+	Uint16 rsvd1 :12;
+};
+
+union LOGICAL {
+	Uint16 all;
+	struct LOGICAL_BITS bit;
+};
+
+typedef struct DLYONOFF_N{
+	union LOGICAL logic;
+	Uint16 Cnt;
+}TYPE_DLYONOFF_N;
+
+typedef struct DLYONOFF_T{
+	union LOGICAL logic;
+	float32 Tm;
+}TYPE_DLYONOFF_T;
 
 /*STRUCTDEFS*/
 struct Dsp_Data {
@@ -87,7 +209,7 @@ struct Dsp_Data {
 
 	/*ACCLDA*/
 	float32 WU_IPhClTrs;/*3-phase output load voltage reference manipulation,transient phase current control*/
-	Uint16 S_IPhClTrsAv :1;
+	Uint16 S_IPhClTrsAv;
 	float32 WU_IPhClTrs_Flt;
 
 	Uint16 XX_CntPh1Rms;
@@ -104,7 +226,7 @@ struct Dsp_Data {
 	float32 XI_Ph3Rms_Flt;
 
 	float32 WU_IPhClRms;
-	Uint16 B_LimAct :1;
+	Uint16 B_LimAct;
 
 	/*UFCODA*/
 	cfloat32 WU_3PhSec;
@@ -117,7 +239,7 @@ struct Dsp_Data {
 	float32 WU_Ref_Abs;
 	float32 XX_MRef; //base Udc
 
-	Uint16 S_3PhOvMd :1;
+	Uint16 S_3PhOvMd;
 	float32 WU_OvMd;/*3-phase output load voltage manipulation due to over modulation*/
 	float32 WU_3PhAbsOvMd;
 	float32 WU_IPhClRmsRed;
@@ -127,7 +249,7 @@ struct Dsp_Data {
 	float32 XX_CrU;
 	float32 XX_CrV;
 	float32 XX_CrW;
-	Uint16 S_UDcLkLow :1;
+	Uint16 S_UDcLkLow;
 
 	/*PPG3*/
 	float32 XT_Tsc;
@@ -135,32 +257,38 @@ struct Dsp_Data {
 	float32 XX_DutyA; //output
 	float32 XX_DutyB;
 	float32 XX_DutyC;
-	Uint16 XX_Mode :1;
-	Uint16 L_DsPlElm3PhMod :1; //TRUE
+	Uint16 XX_Mode;
+	Uint16 L_DsPlElm3PhMod; //TRUE
 
 	/*SRTODA*/
-	Uint16 A_CvOp :1;
+	Uint16 A_CvOp;
 
 	/**/
 	float32 XP_Ovp;/*OVP power*/
 	float32 XH_Ovp_Est;/*Estimated OVP temperature*/
 
 	/*MEMS*/
-	Uint16 B_U3PhRmsPlySvFl :1; //三相输出电压合理性监视
+	Uint16 B_U3PhRmsPlySvFl; //三相输出电压合理性监视
 
 	/*ACLS*/
-	Uint16 B_IPhClTmWnd1Fl :1;
-	Uint16 B_IPhClRmsTmFl :1;
+	Uint16 B_IPhClTmWnd1Fl;
+	Uint16 B_IPhClRmsTmFl;
 
 	/*OVPT*/
 	float32 XX_Duty4A;
-	Uint16 C_OvpFcTs :1;
-	Uint16 A_OvpFcTsOk :1;
+	Uint16 C_OvpFcTs;
+	Uint16 A_OvpFcTsOk;
 
-	Uint16 A_BtCpAv :1;
+	Uint16 A_BtCpAv;
 
-	Uint16 A_OvpAv :1;
-	Uint16 S_OvpEn :1;
+	Uint16 A_OvpAv;
+	Uint16 S_OvpEn;
+
+	/**/
+	Uint16 B_DspOvLdFl;
+	Uint16 S_DspWdAlm;
+	Uint16 S_DspFpgaComFl;
+	Uint16 B_DspStkSvFl;
 
 };
 
@@ -201,7 +329,7 @@ struct Dsp_Param {
 	cfloat32 PZ_3PhFiCa;
 	cfloat32 PZ_3PhTf;
 
-	Uint16 L_UDcLkStbEn :1; //	TRUE
+	Uint16 L_UDcLkStbEn; //	TRUE
 	float32 PN_UDcLkStbSliSmt; //	2200
 	float32 PN_UDcLkStbHevSmt; //	13,5
 	float32 PU_DcLkStbMaxMin; //	100
@@ -209,11 +337,11 @@ struct Dsp_Param {
 	float32 PX_KpUDcLkVoStbFb;
 
 	float32 PX_3PhRndMax; //	0,0345
-	Uint16 L_3PhRndEn :1; //	TRUE
+	Uint16 L_3PhRndEn; //	TRUE
 	float32 PF_3PhSg; //1350
 
-	Uint16 L_EnTPrDdCmp :1;
-	Uint16 L_DsPlElm3PhMod :1;
+	Uint16 L_EnTPrDdCmp;
+	Uint16 L_DsPlElm3PhMod;
 
 	//DUVP
 	float32 PARTDP_PU_DcLkMin; //	1000
@@ -228,7 +356,7 @@ struct Dsp_Param {
 	float32 PT_U3PhRmsPlySvDy;	//1	s
 
 	//ACCL
-	Uint16 L_EnIPhClRms :1;	//	FALSE
+	Uint16 L_EnIPhClRms;	//	FALSE
 	float32 PI_PhClRmsLim;	//	800	A
 
 };
@@ -237,7 +365,7 @@ struct Mcu_Data {
 	/*ACCLMA*/
 	/*IPhClGenOvLd 4ms*/
 	float32 WF_IPhCl;
-	Uint16 S_IPhClGenOvLdAv :1;
+	Uint16 S_IPhClGenOvLdAv;
 
 	/*IPhClPsTrs 4ms*/
 	float32 WI_PhActDsp;
@@ -246,6 +374,9 @@ struct Mcu_Data {
 	float32 XX_IPhClTrsKpActDsp;
 	float32 XX_IPhClTrsKpRctDsp;
 	float32 XX_IPhClTrsKpAbsDsp;
+
+	/*IPhDcCl*/
+	float32 WU_IPhDcClDsp;
 
 	/*COMPMA*/
 	/*UF3PhCmp*/
@@ -277,8 +408,8 @@ struct Mcu_Data {
 
 	/*FrefRmp 16ms*/
 	float32 WF_3PhRmp;
-	Uint16 A_FNom :1;
-	Uint16 A_FMin :1;
+	Uint16 A_FNom;
+	Uint16 A_FMin;
 
 	/*AUSZMA*/
 	/*F3PhSz 16ms*/
@@ -290,36 +421,110 @@ struct Mcu_Data {
 	float32 WU_UF3PhSzErr;
 
 	/*UF3PhSz 16ms*/
-	Uint16 A_AuSz :1;
+	Uint16 A_AuSz;
 
 	/*SRTOMA*/
 	/*CvOpSaSq*/
-	Uint16 C_CdAuLdCt :1;
-	Uint16 C_Ck3PhGduFb :1;
-	Uint16 C_CvOpSa :1;
-	Uint16 C_AuSz :1;	//开始同步
-	Uint16 A_CvOpSa :1;
+	Uint16 C_Ck3PhGduFb;
+	Uint16 C_CdAuLdCt;
+	Uint16 C_CvOpSa;
+	Uint16 C_AuSz;	//开始同步
 	Uint16 NX_SqStCvOpSa;
-
-	Uint16 C_CvOpSa_MnSq :1;
-	Uint16 C_FRmp :1;
-	Uint16 B_EnU3PhCl :1;	//开始闭环
-	Uint16 A_CdAuLdCt :1;
-
+	Uint16 A_CvOpSa;
 	/*CvOpSoSq*/
-	Uint16 C_CvBc :1;
-	Uint16 C_CkSrCtI :1;	//(*Command check of current through contactors*)
-	Uint16 C_OpAuLdCt :1;
-	Uint16 C_OpChCt :1;
-	Uint16 C_OpSrCt :1;
-	Uint16 A_CvOpSo :1;
+	Uint16 C_CvBc;
+	Uint16 C_CkSrCtI;	//(*Command check of current through contactors*)
+	Uint16 C_OpAuLdCt;
+	Uint16 C_OpChCt;
+	Uint16 C_OpSrCt;
 	Uint16 NX_SqStCvOpSo;
+	Uint16 A_CvOpSo;
+	/*CvOpSa_X*/
+	Uint16 C_CvOpSaDsp;
+	Uint16 C_Sa2qcDsp;
+	Uint16 B_EnU3PhCl;	//开始闭环
+	Uint16 B_EnU3PhOpLoCl;
+	Uint16 B_EnUBtCl;
+	Uint16 B_EnIBtCl;
+	Uint16 A_CvCl;
 
-	Uint16 C_CvOpSo_MnSq :1;
-	Uint16 A_SrCtIOk :1;
-	Uint16 A_CdChCt :1;
-	Uint16 A_CdSrCt :1;
-	Uint16 B_BcOpSrCt :1;
+
+
+
+
+	Uint16 C_FRmp;
+
+	/*BAUCMA*/
+	/*BtCpURef*/
+	float32 WU_BtDsp;
+
+	/*BTCPMA*/
+	Uint16 B_RqBtCpSfBc;
+	Uint16 B_RqBtCpPrBc;
+	Uint16 B_RqBtCpSlt;
+	Uint16 B_RqBtCpSa;
+	Uint16 B_RqBtCpSo;
+	Uint16 S_BtCpAv;
+
+	/*OVPTMA*/
+	Uint16 C_OvpFcTsDsp;
+
+	Uint16 C_DspNt;
+	Uint16 C_SaDsp;
+	Uint16 C_RstDsp;
+	Uint16 C_ResetDspDl;
+	Uint16 B_DspRamTsSa;
+
+	Uint16 B_FrOvpDsp;
+
+	Uint16 NX_McuSqNo;
+
+	/*ISCSMA*/
+	Uint16 A_SrCtIOk;
+
+	/*DIGIMA*/
+	Uint16 A_CdAuLdCt;
+	Uint16 A_CdChCt;
+	Uint16 A_CdSrCt;
+
+	/*ALCSMA*/
+	Uint16 B_AuLdCtOnFl;
+
+	/*SFPAMA*/
+	Uint16 A_GduFb3PhOk;
+
+	/*SSSCMA*/
+	Uint16 C_CvOpSa_MnSq;
+	Uint16 C_CvOpSo_MnSq;
+	Uint16 B_BcOpSrCt;//通过打开分离接触器封锁
+
+	/*DCCHMA*/
+	Uint16 C_Sa2qc;
+
+	/*DCDHMA*/
+	Uint16 C_So2qc;
+
+	/*CVISMA*/
+	Uint16 B_RqCvBc;
+	Uint16 C_So2qc_slt;
+
+	/*PRSDMA*/
+	Uint16 C_FpgaPrSd;
+
+	/*FSSDMA*/
+	Uint16 C_FpgaFsSd;
+
+	/*SFSDMA*/
+	Uint16 C_FpgSfSd;
+
+	/*PRBCMA*/
+	Uint16 C_FpgaPrBc;
+
+	/*MEMSMA*/
+	Uint16 B_EnU3PhOpLoCl_mem;
+
+	/*IUCLMA*/
+	Uint16 S_IdlAcmBu;
 
 };
 
@@ -350,7 +555,7 @@ struct Mcu_Param {
 	float32 PX_IPhClTrsKpAbs;	//	0
 
 	/*IPhDcCl*/
-	Uint16 L_EnIPhDcCl :1;	//	TRUE
+	Uint16 L_EnIPhDcCl;	//	TRUE
 	float32 PU_IPhDcClMaxMin;	//	3
 	float32 PX_KpIPhDcCl;	//	0,2
 	float32 PX_KiIPhDcCl;	//	0,0001
@@ -414,9 +619,9 @@ struct Mcu_Param {
 	float32 PX_U3PhRefRmp2;
 
 	/*U3PhCl*/
-	Uint16 B_En3PhClFqAda :1;
-	Uint16 L_En3PhCl :1;
-	Uint16 L_EnU3PhOpLoCl :1;
+	Uint16 B_En3PhClFqAda;
+	Uint16 L_En3PhCl;
+	Uint16 L_EnU3PhOpLoCl;
 	float32 PX_KpU3PhCl;
 	float32 PT_U3PhCl;
 	float32 PU_3PhClMax;
@@ -428,6 +633,14 @@ struct Mcu_Param {
 	/*CvOpSaSq*/
 	float32 PU_3PhIdlCmp;
 	float32 PU_3PhActCmp;
+
+	/*DCDS*/
+//	PARTAP_PU_DhDcLk_Max	100	V
+//	PARTAP_PT_DcLkDhDy	600	ms
+//	PARTAP_PT_FrOvp	500	ms
+//	PARTAP_L_EnDhDcLkCvSl	TRUE
+//	PARTAP_PU_DcLkCvSlDh	1000	V
+
 
 };
 
@@ -472,14 +685,13 @@ extern float32 FKG4(float32 X, float32 X1, float32 Y1, float32 X2, float32 Y2,
 		float32 X3, float32 Y3, float32 X4, float32 Y4);
 extern float32 PIREG();
 
-extern Uint16 SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
-extern Uint16 SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
-
-extern Uint16 DLYON(Uint16 In, Uint16 N, volatile Uint16 *Cnt,
-		volatile Uint16 *Prev_In);
-extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile Uint16 *Cnt,
-		volatile Uint16 *Prev_In);
-extern Uint16 MONO(Uint16 In, Uint16 N, TYPE_LOGICAL* data);
+extern Uint16 RTRIG(Uint16 In, volatile union LOGICAL* data);
+extern Uint16 FTRIG(Uint16 In, volatile union LOGICAL* data);
+extern void SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern void SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern Uint16 DLYON(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
+extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
+extern Uint16 MONO(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
 
 extern float32 Min(float32 a, float32 b);
 extern float32 Max(float32 a, float32 b);
