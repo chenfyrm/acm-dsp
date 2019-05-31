@@ -664,24 +664,65 @@ void ACCL_T2(void) {
  *
  *
  *****************************************************/
+/*A_Cl1*/
+void ACCLMA(void);
+void IPhClGenOvLd(void);
+void IPhClPsTrs(void);
+
+void COMPMA(void);
+void UF3PhCmp(void);
+
+void UFCO1MA_X(void);
+void F3PhRef(void);
+void U3PhRef(void);
+void U3PhCl(void);
+
+void BACCMA(void);
+
+void BAUC1MA(void);
+
+void PCTS2MA(void);
+
+/*A_Cl2*/
+void BAUC2MA_X(void);
+
+void UFCO2MA_X(void);
+void TFrefRmp(void);
+void FrefUDcLk(void);
+void FrefRmp(void);
+
+void AUSZMA(void);
+void F3PhSz(void);
+void U3PhSz(void);
+void UF3PhSz(void);
+
+void BTCPMA_X(void);
+
+/*A_Dg3*/
+
+/*A_Diag3*/
+
+/*A_In1*/
+
+/*A_In3*/
+
+/*A_Out1*/
+
+/*A_Sq1*/
 void SRTOMA_X(void);
 void CvOpSaSq(void);
 void CvOpSoSq(void);
 void CvOpSa(void);
 
-void UF3PhCmp(void);
-void IPhClGenOvLd(void);
-void IPhClPsTrs(void);
-void F3PhRef(void);
-void U3PhRef(void);
-void U3PhCl(void);
+/*A_Sq2*/
 
-void TFrefRmp(void);
-void FrefUDcLk(void);
-void FrefRmp(void);
-void F3PhSz(void);
-void U3PhSz(void);
-void UF3PhSz(void);
+/*A_Sv1 4ms*/
+
+/*A_Sv2 16ms*/
+
+/*A_Sv3 64ms*/
+
+/*A_Txt4 1024ms*/
 
 /**/
 void McuInit(void) {
@@ -691,6 +732,9 @@ void McuInit(void) {
 	McuParam.PU_3PhActCmp = 30.0;
 
 	/*CvOpSoSq 4ms*/
+
+	/*CvOpSa*/
+	McuParam.L_PrlAcm = TRUE; //	TRUE
 
 	/*UF3PhCmp 4ms*/
 	McuParam.L_EnUF3PhCmp = FALSE;	//TRUE
@@ -814,8 +858,10 @@ void McuTask_16ms(void) {
 	UF3PhSz();
 }
 /**/
-void SRTOMA_X(void){
+void SRTOMA_X(void) {
 	CvOpSaSq();
+	CvOpSoSq();
+	CvOpSa();
 }
 
 /*
@@ -823,6 +869,11 @@ void SRTOMA_X(void){
  * */
 void CvOpSaSq(void) {
 	if (McuData.NX_SqStCvOpSa == 0) {
+		McuData.C_CdAuLdCt = FALSE;
+		McuData.C_Ck3PhGduFb = FALSE;
+		McuData.C_CvOpSa = FALSE;
+		McuData.C_AuSz = FALSE;
+
 		if (McuData.C_CvOpSa_MnSq) {
 			if (DspData.XU_3PhRms < McuParam.PU_3PhIdlCmp) {
 				McuData.NX_SqStCvOpSa = 1;
@@ -832,32 +883,36 @@ void CvOpSaSq(void) {
 		}
 	} else if (McuData.NX_SqStCvOpSa == 1) {
 		McuData.C_CdAuLdCt = TRUE;
+
 		if (McuData.A_CdAuLdCt) {
 			McuData.NX_SqStCvOpSa = 2;
 		}
 	} else if (McuData.NX_SqStCvOpSa == 2) {
 		McuData.C_Ck3PhGduFb = TRUE;
+
 		McuData.NX_SqStCvOpSa = 3;
 	} else if (McuData.NX_SqStCvOpSa == 3) {
 		McuData.C_CvOpSa = TRUE;
+
 		if (DspData.A_CvOp) {
 			McuData.NX_SqStCvOpSa = 4;
 		}
 	} else if (McuData.NX_SqStCvOpSa == 4) {
-		McuData.C_FRmp = TRUE;
+
 		if (McuData.A_FNom)
 			McuData.NX_SqStCvOpSa = 5;
 	} else if (McuData.NX_SqStCvOpSa == 5) {
-		if (McuData.A_CdAuLdCt) {
-			McuData.NX_SqStCvOpSa = 8;
 
-			McuData.B_EnU3PhCl = TRUE; //Î¢Íø
-
-		} else {
-			McuData.NX_SqStCvOpSa = 6;
+		if (McuData.A_CvCl) {
+			if (McuData.A_CdAuLdCt) {
+				McuData.NX_SqStCvOpSa = 8;
+			} else {
+				McuData.NX_SqStCvOpSa = 6;
+			}
 		}
 	} else if (McuData.NX_SqStCvOpSa == 6) {
 		McuData.C_AuSz = TRUE;
+
 		if (McuData.A_AuSz) {
 			McuData.NX_SqStCvOpSa = 7;
 		}
@@ -868,12 +923,15 @@ void CvOpSaSq(void) {
 //		}
 		McuData.NX_SqStCvOpSa = 8;
 
-		McuData.C_AuSz = TRUE; //Ç¿Íø
-
 	} else if (McuData.NX_SqStCvOpSa == 8) {
 		McuData.A_CvOpSa = TRUE;
-//		McuData.B_EnU3PhCl = TRUE;//Î¢Íø
-//		McuData.C_AuSz = FALSE; //Î¢Íø
+
+		if (!McuData.C_CvOpSa_MnSq) {
+			McuData.NX_SqStCvOpSa = 0;
+		}
+	}else
+	{
+		McuData.NX_SqStCvOpSa = 0;
 	}
 }
 
@@ -882,15 +940,23 @@ void CvOpSaSq(void) {
  * */
 void CvOpSoSq(void) {
 	if (McuData.NX_SqStCvOpSo == 0) {
+		McuData.C_CvBc= FALSE;
+		McuData.C_CkSrCtI = FALSE;
+		McuData.C_OpAuLdCt = FALSE;
+		McuData.C_OpSrCt = FALSE;
+		McuData.C_OpChCt = FALSE;
+
 		if (McuData.C_CvOpSo_MnSq)
 			McuData.NX_SqStCvOpSo = 1;
 	} else if (McuData.NX_SqStCvOpSo == 1) {
-		McuData.C_CvOpSa = FALSE;
+		McuData.C_CvBc= TRUE;
+
 		if (!DspData.A_CvOp) {
 			McuData.NX_SqStCvOpSo = 2;
 		}
 	} else if (McuData.NX_SqStCvOpSo == 2) {
 		McuData.C_CkSrCtI = TRUE;
+
 //		if (McuData.A_SrCtIOk)
 //			McuData.NX_SqStCvOpSo = 3;
 		McuData.NX_SqStCvOpSo = 3;
@@ -898,21 +964,55 @@ void CvOpSoSq(void) {
 		McuData.C_OpAuLdCt = TRUE;
 		McuData.C_OpSrCt = TRUE;
 		McuData.C_OpChCt = TRUE;
+
 //		if ((!McuData.A_CdAuLdCt) && (!McuData.A_CdSrCt) && (!McuData.A_CdChCt))
 //			McuData.NX_SqStCvOpSo = 5;
 		if ((!McuData.A_CdAuLdCt))
 			McuData.NX_SqStCvOpSo = 5;
 	} else if (McuData.NX_SqStCvOpSo == 4) {
 		McuData.C_OpAuLdCt = TRUE;
+
 		if (!McuData.A_CdAuLdCt)
 			McuData.NX_SqStCvOpSo = 5;
 	} else if (McuData.NX_SqStCvOpSo == 5) {
 		McuData.A_CvOpSo = TRUE;
+
+		if(!McuData.C_CvOpSo_MnSq){
+			McuData.NX_SqStCvOpSo = 0;
+		}
 	}
 }
 
-void CvOpSa(void){
+void CvOpSa(void) {
+	Uint16 v01, v02;
 
+	static Uint16 rtrig1;
+	v01 = RTRIG(McuData.C_CvOpSa, &rtrig1) || McuData.C_CvOpSa_MnSq;
+	v02 = McuData.C_CvBc || McuData.B_BcOpSrCt || McuData.C_FpgaPrBc
+			|| McuData.C_FpgaPrSd || McuData.C_FpgaFsSd || McuData.C_FpgSfSd;
+	RS(&McuData.C_CvOpSaDsp, v01, v02);
+
+	static Uint16 rtrig2;
+	v01 = RTRIG(McuData.C_Sa2qc, &rtrig2);
+	v02 = McuData.C_So2qc || McuData.C_So2qc_slt || McuData.C_FpgaPrSd
+			|| McuData.C_FpgaFsSd || McuData.C_FpgSfSd;
+	RS(&McuData.C_Sa2qcDsp, v01, v02);
+
+	McuData.A_CvCl = DspData.A_CvOp;
+	/*B_EnUBtCl*/
+	/*B_EnIBtCl*/
+
+	static Uint16 rs4;
+	v01 = DspData.A_CvOp && (McuData.S_IdlAcmBu || McuData.A_AuSz)
+			&& McuParam.L_PrlAcm;
+	v02 = !DspData.A_CvOp;
+	RS(&rs4, v01, v02);
+	McuData.B_EnU3PhCl = McuParam.L_En3PhCl && DspData.A_CvOp
+			&& (rs4 || (!McuParam.L_PrlAcm))
+			&& (!(McuParam.L_EnU3PhOpLoCl || McuData.B_EnU3PhOpLoCl_mem));
+
+	McuData.B_EnU3PhOpLoCl = McuParam.L_En3PhCl && DspData.A_CvOp
+			&& (McuParam.L_EnU3PhOpLoCl || McuData.B_EnU3PhOpLoCl_mem);
 }
 
 /*
@@ -1060,21 +1160,23 @@ void FrefUDcLk(void) {
  * */
 void FrefRmp(void) {
 	static float32 temp = 0.0;
-	if (McuData.C_FRmp) {
+	if (DspData.A_CvOp) {
 		RAMP2(&temp, McuParam.PF_3PhNom, McuData.XX_FRefRmpUp * 0.016,
 				-McuData.XX_FRefRmpDo * 0.016, 0.0, FALSE, FALSE);
-		if (temp == McuParam.PF_3PhNom)
-			McuData.A_FNom = TRUE;
-		else
-			McuData.A_FNom = FALSE;
+
 	} else {
 		RAMP2(&temp, McuParam.PF_3PhMin, McuData.XX_FRefRmpUp * 0.016,
 				-McuData.XX_FRefRmpDo * 0.016, 0.0, FALSE, FALSE);
-		if (temp == McuParam.PF_3PhMin)
-			McuData.A_FMin = TRUE;
-		else
-			McuData.A_FMin = FALSE;
+//		if (temp == McuParam.PF_3PhMin)
+//			McuData.A_FMin = TRUE;
+//		else
+//			McuData.A_FMin = FALSE;
 	}
+
+	if (temp == McuParam.PF_3PhNom)
+		McuData.A_FNom = TRUE;
+	else
+		McuData.A_FNom = FALSE;
 
 //	McuData.WF_3PhRmp = Min(temp, McuData.WF_3PhUDcLk);
 	McuData.WF_3PhRmp = temp;
@@ -1239,35 +1341,35 @@ void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,
 }
 
 /**/
-Uint16 RTRIG(Uint16 In, volatile union LOGICAL* data) {
+Uint16 RTRIG(Uint16 In, volatile Uint16* PreIn) {
 	Uint16 logic = FALSE;
 	if (In) {
-		if (!data->bit.PreLogic) {
+		if (!(*PreIn)) {
 			logic = TRUE;
 		}
 	}
-	data->bit.PreLogic = In;
+	*PreIn = In;
 
 	return logic;
 }
 
 /**/
-Uint16 FTRIG(Uint16 In, volatile union LOGICAL* data) {
+Uint16 FTRIG(Uint16 In, volatile Uint16* PreIn) {
 	Uint16 logic = FALSE;
 	if (!In) {
-		if (data->bit.PreLogic) {
+		if (*PreIn) {
 			logic = TRUE;
 		}
 	}
-	data->bit.PreLogic = In;
+	*PreIn = In;
 
 	return logic;
 }
 
 /*
- * SR Flip Flop with reset dominant
+ * RS Flip Flop with reset dominant
  * */
-void SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
+void RS(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 	if (Reset) {
 		*Q = FALSE;
 	} else {
@@ -1279,7 +1381,7 @@ void SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 /*
  * SR Flip Flop with set dominant
  * */
-void SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
+void SR(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 	if (Set) {
 		*Q = TRUE;
 	} else {
@@ -1329,13 +1431,13 @@ extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
 /**/
 Uint16 MONO(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
 	Uint16 logic = FALSE;
-	if (RTRIG(In, &data->logic) || FTRIG(In, &data->logic)) {
-		data->Cnt = N;
-		if (data->Cnt > 0) {
-			data->Cnt--;
-			logic = TRUE;
-		}
-	}
+//	if (RTRIG(In, &data->logic.bit.) || FTRIG(In, &data->logic)) {
+//		data->Cnt = N;
+//		if (data->Cnt > 0) {
+//			data->Cnt--;
+//			logic = TRUE;
+//		}
+//	}
 
 	return logic;
 }

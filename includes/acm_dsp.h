@@ -488,7 +488,13 @@ struct Mcu_Data {
 	Uint16 A_CdSrCt;
 
 	/*ALCSMA*/
+	Uint16 C_CdAuLdCt_ALCS;
+	Uint16 B_RqPrBcReSa_ALCS;
+	Uint16 B_3PhDsOpAuLdCt;
+
+	Uint16 B_RqPrBc_ALCS;
 	Uint16 B_AuLdCtOnFl;
+	Uint16 B_AuLdCtOfFl;
 
 	/*SFPAMA*/
 	Uint16 A_GduFb3PhOk;
@@ -634,6 +640,10 @@ struct Mcu_Param {
 	float32 PU_3PhIdlCmp;
 	float32 PU_3PhActCmp;
 
+	/*CvOpSa*/
+	Uint16 L_PrlAcm;//	TRUE
+
+
 	/*DCDS*/
 //	PARTAP_PU_DhDcLk_Max	100	V
 //	PARTAP_PT_DcLkDhDy	600	ms
@@ -685,10 +695,10 @@ extern float32 FKG4(float32 X, float32 X1, float32 Y1, float32 X2, float32 Y2,
 		float32 X3, float32 Y3, float32 X4, float32 Y4);
 extern float32 PIREG();
 
-extern Uint16 RTRIG(Uint16 In, volatile union LOGICAL* data);
-extern Uint16 FTRIG(Uint16 In, volatile union LOGICAL* data);
-extern void SR1(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
-extern void SR2(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern Uint16 RTRIG(Uint16 In, volatile Uint16* PreIn);
+extern Uint16 FTRIG(Uint16 In, volatile Uint16* PreIn);
+extern void RS(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern void SR(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
 extern Uint16 DLYON(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
 extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
 extern Uint16 MONO(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
