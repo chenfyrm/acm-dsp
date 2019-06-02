@@ -789,7 +789,7 @@ void DspStCl(void) {
 			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
 		}
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x44) {
-		McuData.C_FRmp = TRUE;
+//		McuData.C_FRmp = TRUE;
 		if ((PX_In_Spf.NX_McuOpSt == 0x408)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
 			if (McuData.A_FNom == 1)
@@ -873,9 +873,8 @@ void DspStCl(void) {
 		McuData.C_AuSz = FALSE;
 		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x53;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x53) {
-		McuData.C_FRmp = FALSE;	//
-		if (McuData.A_FMin == 1)
-			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x54;
+//		McuData.C_FRmp = FALSE;	//
+		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x54;
 	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x54) {
 		PX_Out_Spf.SX_Run = 0;
 		PX_Out_Spf.XX_DspFlag1.bit.CvOp = 0;

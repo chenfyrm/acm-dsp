@@ -154,15 +154,15 @@ union LOGICAL {
 	struct LOGICAL_BITS bit;
 };
 
-typedef struct DLYONOFF_N{
+typedef struct DLYONOFF_N {
 	union LOGICAL logic;
 	Uint16 Cnt;
-}TYPE_DLYONOFF_N;
+} TYPE_DLYONOFF_N;
 
-typedef struct DLYONOFF_T{
-	union LOGICAL logic;
+typedef struct DLYONOFF_T {
+	Uint16 PreIn;
 	float32 Tm;
-}TYPE_DLYONOFF_T;
+} TYPE_DLYONOFF_T;
 
 /*STRUCTDEFS*/
 struct Dsp_Data {
@@ -409,7 +409,7 @@ struct Mcu_Data {
 	/*FrefRmp 16ms*/
 	float32 WF_3PhRmp;
 	Uint16 A_FNom;
-	Uint16 A_FMin;
+//	Uint16 A_FMin;
 
 	/*AUSZMA*/
 	/*F3PhSz 16ms*/
@@ -447,12 +447,6 @@ struct Mcu_Data {
 	Uint16 B_EnUBtCl;
 	Uint16 B_EnIBtCl;
 	Uint16 A_CvCl;
-
-
-
-
-
-	Uint16 C_FRmp;
 
 	/*BAUCMA*/
 	/*BtCpURef*/
@@ -502,7 +496,7 @@ struct Mcu_Data {
 	/*SSSCMA*/
 	Uint16 C_CvOpSa_MnSq;
 	Uint16 C_CvOpSo_MnSq;
-	Uint16 B_BcOpSrCt;//通过打开分离接触器封锁
+	Uint16 B_BcOpSrCt;	//通过打开分离接触器封锁
 
 	/*DCCHMA*/
 	Uint16 C_Sa2qc;
@@ -641,8 +635,7 @@ struct Mcu_Param {
 	float32 PU_3PhActCmp;
 
 	/*CvOpSa*/
-	Uint16 L_PrlAcm;//	TRUE
-
+	Uint16 L_PrlAcm;	//	TRUE
 
 	/*DCDS*/
 //	PARTAP_PU_DhDcLk_Max	100	V
@@ -650,8 +643,6 @@ struct Mcu_Param {
 //	PARTAP_PT_FrOvp	500	ms
 //	PARTAP_L_EnDhDcLkCvSl	TRUE
 //	PARTAP_PU_DcLkCvSlDh	1000	V
-
-
 };
 
 /**/
@@ -677,9 +668,12 @@ extern void McuInit(void);
 
 extern void McuTask_4ms(void);
 extern void McuTask_16ms(void);
+extern void McuTask_64ms(void);
+extern void McuTask_1024ms(void);
 
 /*math*/
-extern void Delay(volatile float32 *Dy, float32 Src);
+extern float32 Delay1(float32 In, volatile float32* PreIn);
+extern float32 DelayN(float32 In, volatile float32* PreInArr32, Uint16 N);
 extern void LowPass(volatile float32 *Flt, float32 Src, float32 TsPerT1);
 extern void CplxLowPass(volatile cfloat32 *Flt, cfloat32 Src, float32 TsPerT1);
 extern void RmsClc(volatile float32 *rms, float32 Src, Uint16 N,
@@ -694,14 +688,6 @@ extern void INTEGR(volatile float32 *Y, float32 X, float32 T, float32 Init,
 extern float32 FKG4(float32 X, float32 X1, float32 Y1, float32 X2, float32 Y2,
 		float32 X3, float32 Y3, float32 X4, float32 Y4);
 extern float32 PIREG();
-
-extern Uint16 RTRIG(Uint16 In, volatile Uint16* PreIn);
-extern Uint16 FTRIG(Uint16 In, volatile Uint16* PreIn);
-extern void RS(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
-extern void SR(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
-extern Uint16 DLYON(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
-extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
-extern Uint16 MONO(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
 
 extern float32 Min(float32 a, float32 b);
 extern float32 Max(float32 a, float32 b);
@@ -729,6 +715,19 @@ extern cfloat32 PH3TOCPLX(float32 a, float32 b, float32 c);
 extern void CPLXTO3PH(volatile float32 *a, volatile float32 *b,
 		volatile float32 *c, cfloat32 Z);
 extern cfloat32 POL2CPLX(float32 r, float32 fi);
+
+/*Logical*/
+extern Uint16 RTRIG(Uint16 In, volatile Uint16* PreIn);
+extern Uint16 FTRIG(Uint16 In, volatile Uint16* PreIn);
+extern void RS(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern void SR(volatile Uint16* Q, Uint16 Set, Uint16 Reset);
+extern Uint16 DLYON_N(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
+extern Uint16 DLYOFF_N(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
+extern Uint16 DLYON_T(Uint16 In, float32 T, volatile TYPE_DLYONOFF_T* data,
+		float32 CT);
+extern Uint16 DLYOFF_T(Uint16 In, float32 T, volatile TYPE_DLYONOFF_T* data,
+		float32 CT);
+extern Uint16 MONO(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data);
 
 #ifdef __cplusplus
 }

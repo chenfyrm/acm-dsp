@@ -873,54 +873,82 @@ void CvOpSaSq(void) {
 		McuData.C_Ck3PhGduFb = FALSE;
 		McuData.C_CvOpSa = FALSE;
 		McuData.C_AuSz = FALSE;
+		McuData.A_CvOpSa = FALSE;
 
-		if (McuData.C_CvOpSa_MnSq) {
-			if (DspData.XU_3PhRms < McuParam.PU_3PhIdlCmp) {
-				McuData.NX_SqStCvOpSa = 1;
-			} else if (DspData.XU_3PhRms > McuParam.PU_3PhActCmp) {
-				McuData.NX_SqStCvOpSa = 2;
-			}
+		if (McuData.C_CvOpSa_MnSq
+				&& (DspData.XU_3PhRms < McuParam.PU_3PhIdlCmp)) {
+			McuData.NX_SqStCvOpSa = 1;
+		} else if (McuData.C_CvOpSa_MnSq
+				&& (DspData.XU_3PhRms > McuParam.PU_3PhActCmp)) {
+			McuData.NX_SqStCvOpSa = 2;
+		} else {
 		}
+
 	} else if (McuData.NX_SqStCvOpSa == 1) {
 		McuData.C_CdAuLdCt = TRUE;
 
-		if (McuData.A_CdAuLdCt) {
+		if ((!McuData.C_CvOpSa_MnSq) || McuData.B_AuLdCtOnFl) {
+			McuData.NX_SqStCvOpSa = 0;
+		} else if (McuData.C_CvOpSa_MnSq && McuData.A_CdAuLdCt) {
 			McuData.NX_SqStCvOpSa = 2;
+		} else {
 		}
 	} else if (McuData.NX_SqStCvOpSa == 2) {
 		McuData.C_Ck3PhGduFb = TRUE;
 
-		McuData.NX_SqStCvOpSa = 3;
+		if (!McuData.C_CvOpSa_MnSq) {
+			McuData.NX_SqStCvOpSa = 0;
+		} else if (McuData.C_CvOpSa_MnSq && McuData.A_GduFb3PhOk) {
+			McuData.NX_SqStCvOpSa = 3;
+		} else {
+		}
 	} else if (McuData.NX_SqStCvOpSa == 3) {
 		McuData.C_CvOpSa = TRUE;
 
-		if (DspData.A_CvOp) {
+		if (!McuData.C_CvOpSa_MnSq) {
+			McuData.NX_SqStCvOpSa = 0;
+		} else if (McuData.C_CvOpSa_MnSq && DspData.A_CvOp) {
 			McuData.NX_SqStCvOpSa = 4;
+		} else {
 		}
 	} else if (McuData.NX_SqStCvOpSa == 4) {
 
-		if (McuData.A_FNom)
+		if (!McuData.C_CvOpSa_MnSq) {
+			McuData.NX_SqStCvOpSa = 0;
+		} else if (McuData.C_CvOpSa_MnSq && McuData.A_FNom) {
 			McuData.NX_SqStCvOpSa = 5;
+		} else {
+		}
 	} else if (McuData.NX_SqStCvOpSa == 5) {
 
-		if (McuData.A_CvCl) {
-			if (McuData.A_CdAuLdCt) {
-				McuData.NX_SqStCvOpSa = 8;
-			} else {
-				McuData.NX_SqStCvOpSa = 6;
-			}
+		if (!McuData.C_CvOpSa_MnSq) {
+			McuData.NX_SqStCvOpSa = 0;
+		} else if (McuData.C_CvOpSa_MnSq && McuData.A_CvCl
+				&& McuData.A_CdAuLdCt) {
+			McuData.NX_SqStCvOpSa = 8;
+		} else if (McuData.C_CvOpSa_MnSq && McuData.A_CvCl
+				&& (!McuData.A_CdAuLdCt)) {
+			McuData.NX_SqStCvOpSa = 6;
+		} else {
 		}
 	} else if (McuData.NX_SqStCvOpSa == 6) {
 		McuData.C_AuSz = TRUE;
 
-		if (McuData.A_AuSz) {
+		if (McuData.C_CvOpSa_MnSq && McuData.A_AuSz) {
 			McuData.NX_SqStCvOpSa = 7;
+		} else if (!McuData.C_CvOpSa_MnSq) {
+			McuData.NX_SqStCvOpSa = 0;
+		} else {
 		}
 	} else if (McuData.NX_SqStCvOpSa == 7) {
 //		McuData.C_CdAuLdCt = TRUE;
-//		if (McuData.A_CdAuLdCt) {
+//		if (McuData.C_CvOpSa_MnSq &&McuData.A_CdAuLdCt) {
 //			McuData.NX_SqStCvOpSa = 8;
-//		}
+//		}else if((!McuData.C_CvOpSa_MnSq)|| McuData.B_AuLdCtOnFl)){
+//		McuData.NX_SqStCvOpSa = 0;
+//	} else {
+//	}
+
 		McuData.NX_SqStCvOpSa = 8;
 
 	} else if (McuData.NX_SqStCvOpSa == 8) {
@@ -929,8 +957,7 @@ void CvOpSaSq(void) {
 		if (!McuData.C_CvOpSa_MnSq) {
 			McuData.NX_SqStCvOpSa = 0;
 		}
-	}else
-	{
+	} else {
 		McuData.NX_SqStCvOpSa = 0;
 	}
 }
@@ -940,46 +967,65 @@ void CvOpSaSq(void) {
  * */
 void CvOpSoSq(void) {
 	if (McuData.NX_SqStCvOpSo == 0) {
-		McuData.C_CvBc= FALSE;
+		McuData.C_CvBc = FALSE;
 		McuData.C_CkSrCtI = FALSE;
 		McuData.C_OpAuLdCt = FALSE;
 		McuData.C_OpSrCt = FALSE;
 		McuData.C_OpChCt = FALSE;
+		McuData.A_CvOpSo = FALSE;
 
 		if (McuData.C_CvOpSo_MnSq)
 			McuData.NX_SqStCvOpSo = 1;
 	} else if (McuData.NX_SqStCvOpSo == 1) {
-		McuData.C_CvBc= TRUE;
+		McuData.C_CvBc = TRUE;
 
-		if (!DspData.A_CvOp) {
+		if (McuData.NX_SqStCvOpSo && (!DspData.A_CvOp)) {
 			McuData.NX_SqStCvOpSo = 2;
+		} else if (!McuData.NX_SqStCvOpSo) {
+			McuData.NX_SqStCvOpSo = 0;
+		} else {
 		}
 	} else if (McuData.NX_SqStCvOpSo == 2) {
 		McuData.C_CkSrCtI = TRUE;
 
-//		if (McuData.A_SrCtIOk)
-//			McuData.NX_SqStCvOpSo = 3;
-		McuData.NX_SqStCvOpSo = 3;
+		McuData.A_SrCtIOk = TRUE;
+		if (McuData.NX_SqStCvOpSo && McuData.A_SrCtIOk)
+			McuData.NX_SqStCvOpSo = 3;
+		else if (!McuData.NX_SqStCvOpSo) {
+			McuData.NX_SqStCvOpSo = 0;
+		} else {
+		}
 	} else if (McuData.NX_SqStCvOpSo == 3) {
 		McuData.C_OpAuLdCt = TRUE;
 		McuData.C_OpSrCt = TRUE;
 		McuData.C_OpChCt = TRUE;
 
-//		if ((!McuData.A_CdAuLdCt) && (!McuData.A_CdSrCt) && (!McuData.A_CdChCt))
-//			McuData.NX_SqStCvOpSo = 5;
-		if ((!McuData.A_CdAuLdCt))
+		McuData.A_CdSrCt = FALSE;
+		McuData.A_CdChCt = FALSE;
+		if (McuData.NX_SqStCvOpSo && (!McuData.A_CdAuLdCt)
+				&& (!McuData.A_CdSrCt) && (!McuData.A_CdChCt)) {
 			McuData.NX_SqStCvOpSo = 5;
+		} else if (!McuData.NX_SqStCvOpSo) {
+			McuData.NX_SqStCvOpSo = 0;
+		} else {
+		}
 	} else if (McuData.NX_SqStCvOpSo == 4) {
 		McuData.C_OpAuLdCt = TRUE;
 
-		if (!McuData.A_CdAuLdCt)
+		if (McuData.NX_SqStCvOpSo && (!McuData.A_CdAuLdCt)) {
 			McuData.NX_SqStCvOpSo = 5;
+		} else if (!McuData.NX_SqStCvOpSo) {
+			McuData.NX_SqStCvOpSo = 0;
+		} else {
+		}
 	} else if (McuData.NX_SqStCvOpSo == 5) {
 		McuData.A_CvOpSo = TRUE;
 
-		if(!McuData.C_CvOpSo_MnSq){
+		if (!McuData.C_CvOpSo_MnSq) {
 			McuData.NX_SqStCvOpSo = 0;
 		}
+	} else {
+		McuData.NX_SqStCvOpSo = 0;
 	}
 }
 
@@ -1248,6 +1294,19 @@ void UF3PhSz(void) {
 }
 
 /**/
+float32 Delay1(float32 In, volatile float32* PreIn) {
+	float32 v01;
+	v01 = *PreIn;
+	*PreIn = In;
+
+	return v01;
+}
+
+float32 DelayN(float32 In, volatile float32* PreInArr32, Uint16 N) {
+	return *(PreInArr32);
+}
+
+/**/
 void LowPass(volatile float32 *Flt, float32 Src, float32 TsPerT1) {
 	*Flt = (*Flt + Src * TsPerT1) / (1.0 + TsPerT1);
 }
@@ -1393,7 +1452,7 @@ void SR(volatile Uint16* Q, Uint16 Set, Uint16 Reset) {
 /*
  *
  * */
-Uint16 DLYON(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
+Uint16 DLYON_N(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
 	Uint16 logic = FALSE;
 	if (In) {
 		if (!data->logic.bit.PreLogic) {
@@ -1411,7 +1470,7 @@ Uint16 DLYON(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
 }
 
 /**/
-extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
+extern Uint16 DLYOFF_N(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
 	Uint16 logic = TRUE;
 	if (!In) {
 		if (data->logic.bit.PreLogic) {
@@ -1426,6 +1485,44 @@ extern Uint16 DLYOFF(Uint16 In, Uint16 N, volatile TYPE_DLYONOFF_N* data) {
 	data->logic.bit.PreLogic = In;
 
 	return logic;
+}
+
+/**/
+Uint16 DLYON_T(Uint16 In, float32 T, volatile TYPE_DLYONOFF_T* data, float32 CT) {
+	Uint16 logic = FALSE;
+	if (In) {
+		if (!data->PreIn) {
+			data->Tm = T;
+		}
+		if (data->Tm > 0) {
+			data->Tm -= CT;
+		} else {
+			logic = TRUE;
+		}
+	}
+	data->PreIn = In;
+
+	return logic;
+}
+
+/**/
+Uint16 DLYOFF_T(Uint16 In, float32 T, volatile TYPE_DLYONOFF_T* data,
+		float32 CT) {
+	Uint16 logic = TRUE;
+	if (!In) {
+		if (data->PreIn) {
+			data->Tm = T;
+		}
+		if (data->Tm > 0) {
+			data->Tm -= CT;
+		} else {
+			logic = TRUE;
+		}
+	}
+	data->PreIn = In;
+
+	return logic;
+
 }
 
 /**/
