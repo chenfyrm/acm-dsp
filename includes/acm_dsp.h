@@ -397,6 +397,7 @@ struct Mcu_Data {
 	float32 WU_3PhDsp;/**/
 	float32 WU_3PhClIn;
 	float32 WU_U3PhClOut;
+	Uint16 S_U3PhClDivFl;
 
 	/*TFrefRmp 16ms*/
 	float32 XX_FRefRmpUp;
@@ -409,7 +410,10 @@ struct Mcu_Data {
 	/*FrefRmp 16ms*/
 	float32 WF_3PhRmp;
 	Uint16 A_FNom;
-//	Uint16 A_FMin;
+	Uint16 B_FRefIPhInHigh;
+	Uint16 B_IPhDcClEn;
+	Uint16 S_CvCurLim;
+	Uint16 S_ActComBus;
 
 	/*AUSZMA*/
 	/*F3PhSz 16ms*/
@@ -422,22 +426,23 @@ struct Mcu_Data {
 
 	/*UF3PhSz 16ms*/
 	Uint16 A_AuSz;
+	Uint16 B_RqAuSzPrBc;
 
 	/*SRTOMA*/
 	/*CvOpSaSq*/
+	Uint16 NX_SqStCvOpSa;
 	Uint16 C_Ck3PhGduFb;
 	Uint16 C_CdAuLdCt;
 	Uint16 C_CvOpSa;
 	Uint16 C_AuSz;	//开始同步
-	Uint16 NX_SqStCvOpSa;
 	Uint16 A_CvOpSa;
 	/*CvOpSoSq*/
+	Uint16 NX_SqStCvOpSo;
 	Uint16 C_CvBc;
 	Uint16 C_CkSrCtI;	//(*Command check of current through contactors*)
 	Uint16 C_OpAuLdCt;
 	Uint16 C_OpChCt;
 	Uint16 C_OpSrCt;
-	Uint16 NX_SqStCvOpSo;
 	Uint16 A_CvOpSo;
 	/*CvOpSa_X*/
 	Uint16 C_CvOpSaDsp;
@@ -481,12 +486,12 @@ struct Mcu_Data {
 	Uint16 A_CdChCt;
 	Uint16 A_CdSrCt;
 
-	/*ALCSMA*/
+	/*ALCSMA 16ms*/
 	Uint16 C_CdAuLdCt_ALCS;
 	Uint16 B_RqPrBcReSa_ALCS;
 	Uint16 B_3PhDsOpAuLdCt;
 
-	Uint16 B_RqPrBc_ALCS;
+	Uint16 B_RqALCSPrBc;
 	Uint16 B_AuLdCtOnFl;
 	Uint16 B_AuLdCtOfFl;
 
@@ -494,9 +499,36 @@ struct Mcu_Data {
 	Uint16 A_GduFb3PhOk;
 
 	/*SSSCMA*/
-	Uint16 C_CvOpSa_MnSq;
-	Uint16 C_CvOpSo_MnSq;
+	/*MnStCl*/
 	Uint16 B_BcOpSrCt;	//通过打开分离接触器封锁
+
+	Uint16 NX_MnSqSt;
+	Uint16 C_DcuNt;
+	Uint16 C_DcuReNt;
+	Uint16 S_DcuNt;
+	Uint16 C_CvNt;
+	Uint16 S_DcLkDh;
+	Uint16 C_DcLkCh;
+	Uint16 S_DcLkCh;
+	Uint16 C_CvOpSa_MnSq;
+	Uint16 S_CvOpSa;
+	Uint16 C_CvOpSo_MnSq;
+	Uint16 S_CvOpSo;
+	Uint16 C_DcLkDh;
+	Uint16 C_PrSd;
+	Uint16 C_FsSd;
+	Uint16 C_SfSd;
+	Uint16 C_PrBc;
+	Uint16 C_SfBc;
+	Uint16 C_Slt;
+	Uint16 S_PrSd;
+	Uint16 S_FsSd;
+	Uint16 S_SfSd;
+	Uint16 S_PrBc;
+	Uint16 S_SfBc;
+	Uint16 S_Slt;
+
+	Uint16 B_RqCvOpSa;
 
 	/*DCCHMA*/
 	Uint16 C_Sa2qc;
@@ -636,6 +668,8 @@ struct Mcu_Param {
 
 	/*CvOpSa*/
 	Uint16 L_PrlAcm;	//	TRUE
+
+
 
 	/*DCDS*/
 //	PARTAP_PU_DhDcLk_Max	100	V

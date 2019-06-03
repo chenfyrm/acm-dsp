@@ -89,22 +89,22 @@ volatile struct PX_InPr PX_InPr_Spf = { 1800.0,         		//
 //-------------output-------------
 //============================================================================================
 struct WARN_BITS {
-	Uint16 TA0 :1;		//
-	Uint16 TA1 :1;		//
-	Uint16 TA2 :1;		// Idc
-	Uint16 TA3 :1;		// Udc
-	Uint16 TA4 :1;		// DSP
-	Uint16 TA5 :1;		//A
-	Uint16 TA6 :1;		//B
-	Uint16 TA7 :1;		//C
-	Uint16 TA8 :1;		// Iac
-	Uint16 TA9 :1;		// Ia
-	Uint16 TA10 :1;		// Ib
-	Uint16 TA11 :1;		// Ic
-	Uint16 TA12 :1;		// Ia
-	Uint16 TA13 :1;		// Ib
-	Uint16 TA14 :1;		// Ic
-	Uint16 TA15 :1;		// Iac
+	Uint16 TA0 :1;		//Udc故障
+	Uint16 TA1 :1;		//Idc过流
+	Uint16 TA2 :1;		// Idc采样
+	Uint16 TA3 :1;		// Udc采样
+	Uint16 TA4 :1;		// DSP过载
+	Uint16 TA5 :1;		//IA过流
+	Uint16 TA6 :1;		//IB过流
+	Uint16 TA7 :1;		//IC过流
+	Uint16 TA8 :1;		// Iac不平衡
+	Uint16 TA9 :1;		// Ia缺相
+	Uint16 TA10 :1;		// Ib缺相
+	Uint16 TA11 :1;		// Ic缺相
+	Uint16 TA12 :1;		// Ia采样
+	Uint16 TA13 :1;		// Ib采样
+	Uint16 TA14 :1;		// Ic采样
+	Uint16 TA15 :1;		// 同步
 };
 union WARN_REG {
 	Uint16 all;
@@ -674,6 +674,13 @@ void NX_Pr(void) {
 	} else
 		PX_InPr_Spf.XI_PhCOvCn = 0;
 
+	//-----------------同步故障--------------------------------
+	if(McuData.B_RqAuSzPrBc){
+		PX_Out_Spf.SX_Run = 0;
+		PX_Out_Spf.XX_Flt1.bit.TA15 = 1;
+	}
+
+
 }
 //==============================================================================
 void EN_GPIO30(void) {
@@ -852,11 +859,12 @@ void DspStCl(void) {
 		McuData.C_CvOpSo_MnSq = TRUE;
 	}
 	if (!McuData.A_AuSz) {
+
 		PX_Out_Spf.oldDspSt.bit.CvSt == 0x51;
 		McuData.C_CvOpSo_MnSq = TRUE;
 	}
-	//
 
+	//-------------
 	else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x50) {
 		if ((PX_In_Spf.NX_McuOpSt == 0x40A)
 				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 0)) {
