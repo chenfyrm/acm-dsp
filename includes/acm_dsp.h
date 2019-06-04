@@ -500,8 +500,6 @@ struct Mcu_Data {
 
 	/*SSSCMA*/
 	/*MnStCl*/
-	Uint16 B_BcOpSrCt;	//通过打开分离接触器封锁
-
 	Uint16 NX_MnSqSt;
 	Uint16 C_DcuNt;
 	Uint16 C_DcuReNt;
@@ -528,7 +526,17 @@ struct Mcu_Data {
 	Uint16 S_SfBc;
 	Uint16 S_Slt;
 
+	Uint16 B_BcOpSrCt;	//通过打开分离接触器封锁
 	Uint16 B_RqCvOpSa;
+	Uint16 A_DcLkCh;
+	Uint16 A_DcuNt;
+	Uint16 B_RqDcLkCh;
+	Uint16 B_RqDcuReNt;
+	Uint16 S_SyRd;
+	Uint16 A_DcLkDh;
+	Uint16 B_RqDcLkDh;
+	Uint16 S_CvRd;
+
 
 	/*DCCHMA*/
 	Uint16 C_Sa2qc;

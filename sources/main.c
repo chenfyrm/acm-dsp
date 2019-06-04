@@ -430,7 +430,7 @@ interrupt void DPRAM_isr_Fix(void) //ï¿½Ì¶ï¿½ï¿½Ð¶ï¿½Æµï¿½ï¿½4.35kHz
 //		}
 
 	/**/
-	PX_Out_Spf.SX_Run = PX_Out_Spf.SX_Run&&DspData.A_CvOp;
+	PX_Out_Spf.SX_Run = PX_Out_Spf.SX_Run && DspData.A_CvOp;
 	if (PX_Out_Spf.SX_Run) {
 		if (DspData.XX_Mode == 1) {
 			PX_Out_Spf.XX_PwmMo = 21; //
@@ -555,7 +555,7 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x28) = fabs(McuData.WU_3PhDsp * 10);
 //	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqStCvOpSa);
 //	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs/SQRT2*10 );
-	*(XintfZone7 + 0x27) = fabs(sogiosg.peak * 10);
+	*(XintfZone7 + 0x27) = fabs(0.0 * 10);
 	*(XintfZone7 + 0x28) = fabs(DspData.XU_3PhAbs * 10);
 	*(XintfZone7 + 0x29) = fabs(DspData.XU_3PhAbs_Notch * 10);
 	*(XintfZone7 + 0x2A) = fabs(McuData.WU_UF3PhSz * 10);
@@ -563,7 +563,7 @@ void DPRAM_WR(void)			//DSP-->MCU
 	/*
 	 *
 	 * */
-	DA[3] = sogiosg.alpha * 10;
+	DA[3] = 0.0 * 10;
 	DA[4] = DspData.XI_PhDQ_Flt.re * 10;
 	DA[5] = DspData.XI_PhDQ_Flt.im * 10;
 	DA[6] = DspData.XU_3PhAbs * 10;
@@ -675,11 +675,10 @@ void NX_Pr(void) {
 		PX_InPr_Spf.XI_PhCOvCn = 0;
 
 	//-----------------Í¬²½¹ÊÕÏ--------------------------------
-	if(McuData.B_RqAuSzPrBc){
+	if (McuData.B_RqAuSzPrBc) {
 		PX_Out_Spf.SX_Run = 0;
 		PX_Out_Spf.XX_Flt1.bit.TA15 = 1;
 	}
-
 
 }
 //==============================================================================
@@ -976,6 +975,62 @@ void DspStCl(void) {
 	//------------------------------------------
 }
 
+/**/
+void DspStCl1(void) {
+	McuData.NX_MnSqSt = PX_In_Spf.NX_McuOpSt & 0x00FF;
+
+	McuData.C_DcuNt = (1 == McuData.NX_MnSqSt);
+	McuData.S_DcuNt = (2 == McuData.NX_MnSqSt);
+	McuData.C_CvNt = (3 == McuData.NX_MnSqSt);
+	McuData.S_DcLkDh = (4 == McuData.NX_MnSqSt);
+	McuData.C_DcLkCh = (5 == McuData.NX_MnSqSt) || (7 == McuData.NX_MnSqSt);
+	McuData.S_DcLkCh = (6 == McuData.NX_MnSqSt);
+	McuData.C_CvOpSa_MnSq = (8 == McuData.NX_MnSqSt);
+	McuData.S_CvOpSa = (9 == McuData.NX_MnSqSt);
+	McuData.C_CvOpSo_MnSq = (10 == McuData.NX_MnSqSt);
+	McuData.S_CvOpSo = (11 == McuData.NX_MnSqSt);
+	McuData.C_DcLkDh = (12 == McuData.NX_MnSqSt);
+	McuData.C_SfBc = (20 == McuData.NX_MnSqSt);
+	McuData.S_SfBc = (21 == McuData.NX_MnSqSt);
+	McuData.C_PrBc = (23 == McuData.NX_MnSqSt);
+	McuData.S_PrBc = (24 == McuData.NX_MnSqSt);
+	McuData.C_SfSd = (26 == McuData.NX_MnSqSt);
+	McuData.S_SfSd = (27 == McuData.NX_MnSqSt);
+	McuData.C_PrSd = (28 == McuData.NX_MnSqSt);
+	McuData.S_PrSd = (29 == McuData.NX_MnSqSt);
+	McuData.C_Slt = (30 == McuData.NX_MnSqSt);
+	McuData.S_Slt = (31 == McuData.NX_MnSqSt);
+	McuData.C_FsSd = (38 == McuData.NX_MnSqSt);
+	McuData.S_FsSd = (39 == McuData.NX_MnSqSt);
+	McuData.C_DcuReNt = (40 == McuData.NX_MnSqSt); //Ôö¼ÓDcuÖØÐÂ³õÊ¼»¯×´Ì¬
+
+	if (McuData.C_DcuNt) {
+		PX_Out_Spf.NX_DspOpSt.all == 0x00;
+	}
+	if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x00) {
+		if (PX_In_Spf.NX_McuOpSt == 0x402)
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x10;
+	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x10) {
+		if (PX_In_Spf.NX_McuOpSt == 0x403)
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x20;
+	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x20) {
+		DspInit();
+		McuInit();
+		PX_Out_Spf.XX_DspFlag1.all = 0x0000;
+		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x30;
+	} else if (PX_Out_Spf.oldDspSt.bit.CvSt == 0x30) {
+		if ((PX_In_Spf.NX_McuOpSt == 0x408)
+				&& (PX_In_Spf.XX_McuFlag1.bit.CvOp == 1)) {
+			PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40;
+		}
+	}else if((PX_Out_Spf.oldDspSt.bit.CvSt&0x00F0) == 0x40){
+		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x40|McuData.NX_SqStCvOpSa;
+	}else if((PX_Out_Spf.oldDspSt.bit.CvSt&0x00F0) == 0x50){
+		PX_Out_Spf.NX_DspOpSt.bit.CvSt = 0x50|McuData.NX_SqStCvOpSo;
+	}
+
+	PX_Out_Spf.oldDspSt.all = PX_Out_Spf.NX_DspOpSt.all;
+}
 //===============================================================================================
 //=========================================THE END===============================================
 //===============================================================================================
