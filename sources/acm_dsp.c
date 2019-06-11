@@ -1463,6 +1463,112 @@ void AuLdCtCl(void) {
 }
 
 /**/
+void EnergyFed(void) {
+	/*ADC*/
+
+	/*Filter*/
+
+	/*Protect*/
+
+	/*control*/
+	cfloat32 XU_3PhAB, XU_3PhDQ;
+	XU_3PhAB = PH3TOCPLX(DspData.XU_PhABLk, DspData.XU_PhBCLk,
+			-DspData.XU_PhABLk - DspData.XU_PhBCLk);
+	XU_3PhDQ = CPLXMULT(XU_3PhAB,
+			POL2CPLX(ONEbySQRT3, -PI / 6.0 - DspData.WX_Theta));
+	DspData.XU_3PhRe = XU_3PhDQ.re;
+	DspData.XU_3PhIm = XU_3PhDQ.im;
+
+	DspData.XI_PhAB = PH3TOCPLX(DspData.XI_PhA, DspData.XI_PhB, DspData.XI_PhC);
+	DspData.XI_PhDQ = CPLXMULT(DspData.XI_PhAB,
+			POL2CPLX(1.0, -DspData.WX_Theta));
+	DspData.XI_PhAct = DspData.XI_PhDQ.re;
+	DspData.XI_PhRct = DspData.XI_PhDQ.im;
+
+	DspData.WX_Theta += 2.0 * PI * McuData.WF_3PhDsp * DspData.XT_Tsc;
+	DspData.WX_Theta = fmod(DspData.WX_Theta, 2 * PI);
+
+	static cfloat32 PreIerr = { 0.0, 0.0 };
+	static cfloat32 PreUDQ = { 0.0, 0.0 };
+	cfloat32 IrefDQ = { 0.0, 0.0 };
+	cfloat32 Ierr, UDQ;
+
+	Ierr = CPLXSUB(IrefDQ, DspData.XI_PhDQ);
+
+	float32 R = 0.1;
+	float32 L = 0.7e-3;
+	float32 K = 0.25;
+	float32 a = exp(-R / L * DspData.XT_Tsc);
+	float32 b = K * R / (1 - a);
+	UDQ = CPLXSUB(
+			CPLXADD(PreUDQ,
+					CPLXMULT(
+							CPLXSCA(
+									POL2CPLX(1.0,
+											PI2 * McuData.WF_3PhDsp
+													* DspData.XT_Tsc), b),
+							Ierr)), CPLXSCA(PreIerr, b * a));
+	PreIerr = CPLXMOV(Ierr);
+	PreUDQ = CPLXMOV(UDQ);
+
+	DspData.WU_3PhAB = CPLXMULT(UDQ, POL2CPLX(1.0, DspData.WX_Theta));
+
+	static TYPE_PI_CONTROLLER PI_F3PhSz = PI_CONTROLLER_DEFAULTS;
+	float32 temp = sqrt(
+			DspData.XU_3PhRe * DspData.XU_3PhRe
+					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
+	PI_F3PhSz.Ref = 0.0;
+	PI_F3PhSz.Fbk = -DspData.XU_3PhIm / Max(0.001, temp);
+	PI_F3PhSz.Kp = PI2 * 10.0;
+	PI_F3PhSz.Ki = DspData.XT_Tsc * PI_F3PhSz.Kp * PI_F3PhSz.Kp / 4.0;
+	PI_F3PhSz.Umax = McuParam.PF_UF3PhSzClMaxMin;
+	PI_F3PhSz.Umin = -McuParam.PF_UF3PhSzClMaxMin;
+	PI_CONTROLLER(&PI_F3PhSz);
+	McuData.WF_UF3PhSzErr = Limit(
+			atan2(DspData.XU_3PhIm, Max(DspData.XU_3PhRe, 1.0)), -PI / 2.0,
+			PI / 2.0);
+	McuData.WF_UF3PhSz = PI_F3PhSz.Out;
+
+	McuData.WF_3PhDsp = (50.0 + McuData.WF_UF3PhSz);
+
+	SVPWM(&DspData.XX_CrU, &DspData.XX_CrV, &DspData.XX_CrW,
+			CPLXSCA(DspData.WU_3PhAB, 1.0 / Max(1.0,DspData.XU_DcLk)));
+
+	DspData.XX_Mode = !DspData.XX_Mode;
+
+	/***************/
+	if (Max(DspData.XX_CrU, Max(DspData.XX_CrV, DspData.XX_CrW))
+			> DspParam.PX_3PhClRtHgh) {
+		DspData.S_UDcLkLow = 1;
+	} else {
+		DspData.S_UDcLkLow = 0;
+	}
+
+	/*
+	 * 随机开关频率降噪
+	 * */
+	if (!DspParam.L_3PhRndEn) {
+		DspData.XT_Tsc = 0.5 / DspParam.PF_3PhSg; //开关频率1350Hz，波峰波谷双采样
+	} else {
+
+	}
+	/**/
+	DspData.XX_PwmPdVv = DspData.XT_Tsc * DspParam.PF_IRQBMax + 0.5;
+
+	/*
+	 * 最小脉宽限制
+	 * */
+	DspData.XX_DutyA = Limit(DspData.XX_CrU, DspParam.PX_3PhClRtLow,
+			DspParam.PX_3PhClRtHgh);
+	DspData.XX_DutyB = Limit(DspData.XX_CrV, DspParam.PX_3PhClRtLow,
+			DspParam.PX_3PhClRtHgh);
+	DspData.XX_DutyC = Limit(DspData.XX_CrW, DspParam.PX_3PhClRtLow,
+			DspParam.PX_3PhClRtHgh);
+	/*DAC*/
+
+}
+
+/**/
 float32 Delay1(float32 In, volatile float32* PreIn) {
 	float32 v01;
 	v01 = *PreIn;
@@ -1736,6 +1842,13 @@ cfloat32 FRAC2CPLX(float32 Re, float32 Im) {
 	Z.re = Re;
 	Z.im = Im;
 	return Z;
+}
+
+cfloat32 CPLXMOV(cfloat32 Z) {
+	cfloat32 Z1;
+	Z1.re = Z.re;
+	Z1.im = Z.im;
+	return Z1;
 }
 
 cfloat32 CPLXCONJ(cfloat32 Z) {

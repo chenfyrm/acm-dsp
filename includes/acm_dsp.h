@@ -173,6 +173,7 @@ struct Dsp_Data {
 	float32 XI_PhB;
 	float32 XI_PhC;
 	float32 XU_PhABLk;
+	float32 XU_PhBCLk;
 
 	/*SIPRDA*/
 	float32 XI_PhReFix;
@@ -737,6 +738,7 @@ extern float32 Limit(float32 x, float32 low, float32 up);
 
 extern void CPLX2FRAC(volatile float32 *Re, volatile float32 *Im, cfloat32 Z);
 extern cfloat32 FRAC2CPLX(float32 Re, float32 Im);
+extern cfloat32 CPLXMOV(cfloat32 Z);
 extern cfloat32 CPLXCONJ(cfloat32 Z);
 extern cfloat32 CPLXMULT(cfloat32 Z1, cfloat32 Z2);
 extern cfloat32 CPLXMULT_SHFT(cfloat32 Z1, cfloat32 Z2, int32 m);
@@ -904,5 +906,7 @@ extern TYPE_SOGIOSGMA sogiosg;
 extern TYPE_IIRFILTER_2ND U3PhRe, U3PhIm;
 extern TYPE_PI_CONTROLLER PI_F3PhSz;
 extern TYPE_PI_CONTROLLER PI_U3PhCl;
+
+extern void EnergyFed(void);
 
 #endif
