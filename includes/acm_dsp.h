@@ -818,7 +818,7 @@ typedef struct {
 	100*3.1415926,\
 	0.0,\
 	0.0,\
-	0.0,\
+	0.0\
 	}
 
 #ifdef __cplusplus
