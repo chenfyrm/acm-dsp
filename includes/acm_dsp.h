@@ -730,7 +730,10 @@ extern void INTEGR(volatile float32 *Y, float32 X, float32 T, float32 Init,
 		float32 Max, float32 Min, Uint16 Set, Uint16 Hold);
 extern float32 FKG4(float32 X, float32 X1, float32 Y1, float32 X2, float32 Y2,
 		float32 X3, float32 Y3, float32 X4, float32 Y4);
-extern float32 PIREG();
+extern void PIREG(float32 Ref, float32 Fbk, float32 Kp, float32 TsPerT1,
+		float32 Init, Uint16 Set, Uint16 Reset, float32 Max, float32 Min,
+		volatile float32 *Y, volatile Uint16 *Y_MX, volatile Uint16 *Y_MN,
+		volatile Uint16 *Yi)
 
 extern float32 Min(float32 a, float32 b);
 extern float32 Max(float32 a, float32 b);
