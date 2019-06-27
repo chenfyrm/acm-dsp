@@ -140,9 +140,9 @@ void DspInit(void) {
 
 	DspData.XX_PwmPdVv = floor(1.0 / 1350.0 / 2.0 * DspParam.PF_IRQBMax);
 	DspData.XT_Tsc = DspData.XX_PwmPdVv / DspParam.PF_IRQBMax; //开关频率1350Hz，波峰波谷双采样
-	DspData.XX_DutyA = 0;
-	DspData.XX_DutyB = 0;
-	DspData.XX_DutyC = 0;
+	DspData.XX_DutyA = 0.5;
+	DspData.XX_DutyB = 0.5;
+	DspData.XX_DutyC = 0.5;
 	DspData.XX_Mode = 0;
 }
 
@@ -573,6 +573,13 @@ void PPG3_B(void) {
 			DspParam.PX_3PhClRtHgh);
 	DspData.XX_DutyC = Limit(DspData.XX_CrW, DspParam.PX_3PhClRtLow,
 			DspParam.PX_3PhClRtHgh);
+
+	if(!DspData.A_CvOp)
+	{
+		DspData.XX_DutyA = 0.5;
+		DspData.XX_DutyB = 0.5;
+		DspData.XX_DutyC = 0.5;
+	}
 }
 
 /*
@@ -1481,7 +1488,7 @@ void F3PhSz(void) {
 	Set = rtrig1Q || rs1;
 
 	McuData.WF_UF3PhSzErr = Limit(
-			atan2(DspData.XU_3PhIm, Max(DspData.XU_3PhRe, 1.0)), -PI / 2.0,
+			atan2(DspData.XU_3PhIm, DspData.XU_3PhRe), -PI / 2.0,
 			PI / 2.0);
 
 	PIREG(0.0, McuData.WF_UF3PhSzErr, McuParam.PX_KpF3PhSzCl,
