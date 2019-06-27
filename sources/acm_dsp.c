@@ -921,9 +921,9 @@ void McuInit(void) {
 		for (i = 0; i < sizeof(McuData); i++) {
 			*((Uint16*) &McuData + i) = 0;
 		}
-		for (i = 0; i < sizeof(PI_F3PhSz); i++) {
-			*((Uint16*) &PI_F3PhSz + i) = 0;
-		}
+//		for (i = 0; i < sizeof(PI_F3PhSz); i++) {
+//			*((Uint16*) &PI_F3PhSz + i) = 0;
+//		}
 		for (i = 0; i < sizeof(PI_U3PhCl); i++) {
 			*((Uint16*) &PI_U3PhCl + i) = 0;
 		}
@@ -945,8 +945,8 @@ void McuTask_16ms(void) {
 	TFrefRmp();
 	FrefUDcLk();
 	FrefRmp();
-	//	F3PhSz();
-	//	U3PhSz();
+	F3PhSz();
+	U3PhSz();
 	UF3PhSz();
 	AuLdCtCl();
 }
@@ -1380,7 +1380,6 @@ void U3PhCl(void) {
 					+ DspData.WU_IPhClRmsRed) / McuParam.PX_TrfRtPr3Ph;
 	PI_U3PhCl.Fbk = DspData.XU_3PhAbs / SQRT3;
 
-	PIREG();
 	if ((!McuData.B_EnU3PhCl) || McuData.B_EnU3PhOpLoCl) {
 		PI_U3PhCl.i1 = 0.0;
 		PI_U3PhCl.v1 = 0.0;
@@ -1454,37 +1453,42 @@ void FrefRmp(void) {
  * 16ms
  * */
 void F3PhSz(void) {
-	static TYPE_PI_CONTROLLER PI_F3PhSz = PI_CONTROLLER_DEFAULTS;
+
 	static Uint16 v01 = 0;
 	static Uint16 sr1 = 0;
 	static Uint16 rs1 = 0;
-	static Uint16 ftrig1 =0;
+	static Uint16 ftrig1 = 0;
 	static Uint16 rtrig1 = 0;
-	static Uint16 Y_MX = 0;
-	static Uint16 Y_MX, Y_MN, Yi;Y_MN, Yi;
-
-	static float32 Init =0.0;
-
-	Uint16 rtrig1Q, Set;
-
+	static float32 Init = 0.0;
+	static Uint16 Yi = 0;
 
 	float32 value;
+	Uint16 rtrig1Q, Set;
 
 	SR(&sr1, McuData.C_AuSz, v01);
 	RS(&rs1, FTRIG(McuData.C_AuSz, &ftrig1), v01);
 	rtrig1Q = RTRIG(McuData.C_AuSz, &rtrig1);
 
-	float32 Fbk = Limit(atan2(DspData.XU_3PhIm, Max(DspData.XU_3PhRe, 1.0)),
-			-PI / 2.0, PI / 2.0);
-	float32 Init = 0.0;
+	if (rtrig1Q) {
+		value = Limit(DspData.XF_U3Ph - McuParam.PF_3PhNom, -5.0, 5.0); //开始同步
+	} else {
+		value = McuData.WF_UF3PhSz; //同步过程中
+	}
 
-	PIREG(0.0, Fbk, McuParam.PX_KpF3PhSzCl, 16.0 / McuParam.PT_F3PhSzCl,
-			rs1 || rtrig1Q, !sr1, McuParam.PF_UF3PhSzClMaxMin,
-			-McuParam.PF_UF3PhSzClMaxMin, &McuData.WF_UF3PhSz, &Y_MX, &Y_MN,
-			&Yi);
+	RAMP(&Init, 0.0, 16.0 / McuParam.PT_UF3PhSzRmp,
+			16.0 / McuParam.PT_UF3PhSzRmp, value, !rs1, FALSE, value);
 
-	McuData.WF_UF3PhSzErr = PI_F3PhSz.Fbk;
-	McuData.WF_UF3PhSz = PI_F3PhSz.Out;
+	Set = rtrig1Q || rs1;
+
+	McuData.WF_UF3PhSzErr = Limit(
+			atan2(DspData.XU_3PhIm, Max(DspData.XU_3PhRe, 1.0)), -PI / 2.0,
+			PI / 2.0);
+
+	PIREG(0.0, McuData.WF_UF3PhSzErr, McuParam.PX_KpF3PhSzCl,
+			16.0 / McuParam.PT_F3PhSzCl, Init, Set, !sr1,
+			McuParam.PF_UF3PhSzClMaxMin, -McuParam.PF_UF3PhSzClMaxMin,
+			&McuData.WF_UF3PhSz, &Yi);
+
 	v01 = (fabs(McuData.WF_UF3PhSz) < 0.005);
 }
 
@@ -1495,10 +1499,15 @@ void U3PhSz(void) {
 	McuData.WU_UF3PhSzErr = DspData.XU_3PhAbs / SQRT3 * McuParam.PX_TrfRtPr3Ph
 			+ McuParam.PU_UF3PhSzClAdd - McuData.WU_3PhDsp;
 
-	static float32 Init;
-	Uint16 rtrig1Q, Set;
-	static Uint16 sr1, rs1, ftrig1, rtrig1, v01;
+	static float32 Init = 0.0;
+	static Uint16 sr1 = 0;
+	static Uint16 rs1 = 0;
+	static Uint16 ftrig1 = 0;
+	static Uint16 rtrig1 = 0;
+	static Uint16 v01 = 0;
+
 	float32 value;
+	Uint16 rtrig1Q, Set;
 
 	SR(&sr1, McuData.C_AuSz, v01);
 	RS(&rs1, FTRIG(McuData.C_AuSz, &ftrig1), v01);
@@ -1507,17 +1516,17 @@ void U3PhSz(void) {
 	Set = (!sr1) || rs1 || rtrig1Q;
 
 	if (!sr1) {
-		value = 0.0;
+		value = 0.0; //正在同步
 	} else {
 		if (rtrig1Q) {
-			value = McuData.WU_UF3PhSzErr;
+			value = McuData.WU_UF3PhSzErr; //开始同步
 		} else {
-			value = McuData.WU_UF3PhSz;
+			value = McuData.WU_UF3PhSz; //同步过程中
 		}
 	}
 
 	RAMP(&Init, 0.0, 16.0 / McuParam.PT_UF3PhSzRmp,
-			-16.0 / McuParam.PT_UF3PhSzRmp, value, !rs1, FALSE, value);
+			16.0 / McuParam.PT_UF3PhSzRmp, value, !rs1, FALSE, value);
 
 	INTEGR(&McuData.WU_UF3PhSz, McuData.WU_UF3PhSzErr, 16.0 / 200.0, Init,
 			McuParam.PU_UF3PhSzClMaxMin, -McuParam.PU_UF3PhSzClMaxMin, Set,
@@ -1531,18 +1540,21 @@ void U3PhSz(void) {
  * 16ms
  * */
 void UF3PhSz(void) {
+
+	static TYPE_DLYONOFF_T TON1 = DLYONOFF_DEFAULTS;
+	static TYPE_DLYONOFF_T TOF1 = DLYONOFF_DEFAULTS;
+	static TYPE_DLYONOFF_T TON2 = DLYONOFF_DEFAULTS;
+
 	Uint16 logic;
+
 	logic = McuData.C_AuSz
 			&& (fabs(McuData.WF_UF3PhSzErr) <= McuParam.PF_UF3PhSzRdy)
 			&& (fabs(McuData.WU_UF3PhSzErr) <= McuParam.PU_UF3PhSzRdy);
 
-	static TYPE_DLYONOFF_T TON2;
 	McuData.A_AuSz = DLYON_T(logic, McuParam.PT_UF3PhSzRdy, &TON2, 16.0);
 
-	static TYPE_DLYONOFF_T TON1, TOF1;
 	logic = DLYON_T(McuData.C_AuSz, McuParam.PT_UF3PhSzFl, &TON1, 16.0)
 			&& (!McuData.A_AuSz);
-	McuData.A_DcuNt = logic;
 	McuData.B_RqAuSzPrBc = DLYOFF_T(logic, 140.0, &TOF1, 16.0);
 }
 
@@ -1556,7 +1568,10 @@ void AuLdCtCl(void) {
 	RS(&McuData.C_CdAuLdCt_ALCS, v01, v02);
 }
 
-/**/
+/*
+ *
+ *
+ * */
 void EnergyFed(void) {
 	/*ADC*/
 
@@ -1746,7 +1761,7 @@ void RAMP(volatile float32 *Y, float32 X, float32 TsPerTr, float32 TsPerTf,
 			*Y = Init;
 		} else {
 			Yinc = *Y + fabs(Max) * Min(TsPerTr, 1.0);
-			Ydec = *Y - fabs(Max) * Min(TsPerTr, 1.0);
+			Ydec = *Y - fabs(Max) * Min(TsPerTf, 1.0);
 
 			if (X > Yinc) {
 				*Y = Yinc;
@@ -1774,7 +1789,7 @@ void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,
 
 void PIREG(float32 Ref, float32 Fbk, float32 Kp, float32 TsPerT1, float32 Init,
 		Uint16 Set, Uint16 Reset, float32 Max, float32 Min, volatile float32 *Y,
-		volatile Uint16 *Y_MX, volatile Uint16 *Y_MN, volatile Uint16 *Yi) {
+		volatile Uint16 *Yi) {
 	float32 Err, Yp, Out;
 	Err = Ref - Fbk;
 	Yp = Kp * Err;
@@ -1790,24 +1805,17 @@ void PIREG(float32 Ref, float32 Fbk, float32 Kp, float32 TsPerT1, float32 Init,
 	Out = Yp + *Yi;
 	if (Max < Min) {
 		Out = 0.0;
-		*Y_MN = TRUE;
-		*Y_MX = TRUE;
 	} else {
 		if (Out <= Min) {
-			*Y_MN = TRUE;
-			*Y_MX = FALSE;
 			Out = Min;
 			*Yi = Out - Yp;
 		} else if (Out >= Max) {
-			*Y_MN = FALSE;
-			*Y_MX = TRUE;
+
 			Out = Max;
 			*Yi = Out - Yp;
 
-		} else {
-			*Y_MN = FALSE;
-			*Y_MX = FALSE;
 		}
+
 	}
 	*Y = Out;
 
