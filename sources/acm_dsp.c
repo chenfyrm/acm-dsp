@@ -2,7 +2,6 @@
 #include "acm_dsp.h"
 
 #define SIMULATION 1
-#define U3PHRMS 380.0
 
 volatile struct Dsp_Param DspParam;
 volatile struct Dsp_Data DspData;
@@ -410,10 +409,11 @@ void SIPR_B(void) {
 	DspData.XU_3PhAbs = sqrt(
 			DspData.XU_3PhRe * DspData.XU_3PhRe
 					+ DspData.XU_3PhIm * DspData.XU_3PhIm);
-	LowPass(&DspData.XU_3PhSqu, DspData.XU_PhABLk * DspData.XU_PhABLk,
-			DspData.XT_Tsc * DspParam.PN_U3PhRms_Flt);
-	DspData.XU_3PhRms = sqrt(DspData.XU_3PhSqu);
-//	DspData.XU_3PhRms = DspData.XU_3PhAbs / SQRT2;
+	/**/
+//	LowPass(&DspData.XU_3PhSqu, DspData.XU_PhABLk * DspData.XU_PhABLk,
+//			DspData.XT_Tsc * DspParam.PN_U3PhRms_Flt);
+//	DspData.XU_3PhRms = sqrt(DspData.XU_3PhSqu);
+	DspData.XU_3PhRms = DspData.XU_3PhAbs / SQRT2;
 
 	/**/
 	LowPass(&DspData.XU_DcLkFlt, DspData.XU_DcLk,
@@ -574,8 +574,7 @@ void PPG3_B(void) {
 	DspData.XX_DutyC = Limit(DspData.XX_CrW, DspParam.PX_3PhClRtLow,
 			DspParam.PX_3PhClRtHgh);
 
-	if(!DspData.A_CvOp)
-	{
+	if (!DspData.A_CvOp) {
 		DspData.XX_DutyA = 0.5;
 		DspData.XX_DutyB = 0.5;
 		DspData.XX_DutyC = 0.5;
@@ -851,8 +850,8 @@ void McuInit(void) {
 	McuParam.PF_U3PhRef3 = 50.0;
 	McuParam.PU_U3PhRef1 = 0.0; //0Hz
 	McuParam.PU_U3PhRef2 = 0.0;  //6Hz
-	McuParam.PU_U3PhRef3 = U3PHRMS * SQRT2bySQRT3;  //50Hz 相电压峰值
-	McuParam.PU_U3PhRef4 = U3PHRMS * SQRT2bySQRT3; //100Hz
+	McuParam.PU_U3PhRef3 = 380.0 * SQRT2bySQRT3;  //50Hz 相电压峰值
+	McuParam.PU_U3PhRef4 = 380.0 * SQRT2bySQRT3; //100Hz
 	McuParam.L_ExtU3PhRef = FALSE;
 	McuParam.PX_ExtU3PhRefRmp = 200.0;
 	McuParam.L_EnRmpU3PhRef = FALSE;
@@ -861,7 +860,7 @@ void McuInit(void) {
 	McuParam.PX_U3PhRefRmpSel = 0.9;
 
 	/*U3PhCl 4ms*/
-	McuParam.L_En3PhCl = FALSE; //TRUE
+	McuParam.L_En3PhCl = TRUE; //TRUE
 	McuParam.L_EnU3PhOpLoCl = FALSE;
 	McuParam.PX_KpU3PhCl = 0.8;
 	McuParam.PT_U3PhCl = 50.0; //ms
@@ -1279,7 +1278,7 @@ void CvOpSa(void) {
 
 	static Uint16 rtrig1;
 	v01 = RTRIG(McuData.C_CvOpSa, &rtrig1) || McuData.C_CvOpSa_MnSq;
-	v02 = McuData.C_CvBc || McuData.B_BcOpSrCt || McuData.C_FpgaPrBc
+	v02 = McuData.C_CvBc || McuData.B_RqCvBc || McuData.C_FpgaPrBc
 			|| McuData.C_FpgaPrSd || McuData.C_FpgaFsSd || McuData.C_FpgSfSd;
 	RS(&McuData.C_CvOpSaDsp, v01, v02);
 
@@ -1294,7 +1293,8 @@ void CvOpSa(void) {
 	/*B_EnIBtCl*/
 
 	static Uint16 rs4;
-	v01 = DspData.A_CvOp && (McuData.S_IdlAcmBu || McuData.A_AuSz)
+	v01 = DspData.A_CvOp
+			&& ((DspData.XU_3PhRms < McuParam.PU_3PhIdlCmp) || McuData.A_AuSz)
 			&& McuParam.L_PrlAcm;
 	v02 = !DspData.A_CvOp;
 	RS(&rs4, v01, v02);
@@ -1487,8 +1487,11 @@ void F3PhSz(void) {
 
 	Set = rtrig1Q || rs1;
 
-	McuData.WF_UF3PhSzErr = Limit(
-			atan2(DspData.XU_3PhIm, DspData.XU_3PhRe), -PI / 2.0,
+//	McuData.WF_UF3PhSzErr = Limit(
+//			atan2(DspData.XU_3PhIm, Max(1.0,DspData.XU_3PhRe)), -PI / 2.0,
+//			PI / 2.0);
+	McuData.WF_UF3PhSzErr = -Limit(
+			asin(DspData.XU_3PhIm / Max(1.0, DspData.XU_3PhAbs)), -PI / 2.0,
 			PI / 2.0);
 
 	PIREG(0.0, McuData.WF_UF3PhSzErr, McuParam.PX_KpF3PhSzCl,
@@ -1789,9 +1792,10 @@ void INTEGR(volatile float32 *Y, float32 X, float32 TsPerT1, float32 Init,
 			*Y = Init;
 		} else {
 			*Y = *Y + X * TsPerT1;
-			*Y = Limit(*Y, Min, Max);
 		}
 	}
+
+	*Y = Limit(*Y, Min, Max);
 }
 
 void PIREG(float32 Ref, float32 Fbk, float32 Kp, float32 TsPerT1, float32 Init,

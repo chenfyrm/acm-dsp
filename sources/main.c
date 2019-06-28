@@ -368,6 +368,8 @@ interrupt void DPRAM_isr_Fix(void) //锟教讹拷锟叫讹拷频锟斤拷4.35kHz
 	if (PX_Out_Spf.NX_DspPlCn > 32767)
 		PX_Out_Spf.NX_DspPlCn = 0;
 
+	PX_Out_Spf.NX_DspVer = 628;
+
 	DIS_GPIO30();
 
 //	PX_In_Spf.NX_McuPlCn = *(XintfZone7 + 0x7FFF); // MCU pulse(heartbeat) counter    (RAM 0x7FFF clear)
@@ -520,10 +522,12 @@ void DPRAM_WR(void)			//DSP-->MCU
 	*(XintfZone7 + 0x22) = PX_Out_Spf.XQ_Out;
 	*(XintfZone7 + 0x23) = PX_Out_Spf.XI_DcLkEst;
 
-	*(XintfZone7 + 0x24) = PX_Out_Spf.NX_DspOpSt.all;
-	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_DspFlag1.all;
+	*(XintfZone7 + 0x24) = PX_Out_Spf.NX_DspOpSt.all;//上位机1
+	*(XintfZone7 + 0x25) = PX_Out_Spf.XX_DspFlag1.all;//上位机2
 
 	*(XintfZone7 + 0x26) = PX_Out_Spf.XX_Flt1.all;		// DSP
+
+
 
 	/*濞戞挸锕ｇ紞鍛村嫉閿燂拷*/
 	//	*(XintfZone7 + 0x27) = McuData.WU_3PhDsp*10;
@@ -554,10 +558,10 @@ void DPRAM_WR(void)			//DSP-->MCU
 //	*(XintfZone7 + 0x28) = fabs(McuData.WU_3PhDsp * 10);
 //	*(XintfZone7 + 0x29) = fabs(McuData.NX_SqStCvOpSa);
 //	*(XintfZone7 + 0x2A) = fabs(DspData.XU_3PhAbs/SQRT2*10 );
-	*(XintfZone7 + 0x27) = fabs(0.0 * 10);
-	*(XintfZone7 + 0x28) = fabs(DspData.XU_3PhAbs * 10);
-	*(XintfZone7 + 0x29) = fabs(DspData.XU_3PhAbs_Notch * 10);
-	*(XintfZone7 + 0x2A) = fabs(McuData.WU_UF3PhSz * 10);
+	*(XintfZone7 + 0x27) = PX_Out_Spf.NX_DspVer;  //上位机3
+	*(XintfZone7 + 0x28) = fabs(DspData.XU_3PhAbs * 10);//上位机4
+	*(XintfZone7 + 0x29) = fabs(DspData.XU_3PhAbs_Notch * 10);//上位机5
+	*(XintfZone7 + 0x2A) = fabs(McuData.WU_UF3PhSz * 10);//上位机6
 
 	/*
 	 *
