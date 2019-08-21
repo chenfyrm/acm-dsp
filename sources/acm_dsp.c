@@ -575,9 +575,13 @@ void PPG3_B(void) {
 			DspParam.PX_3PhClRtHgh);
 
 	if (!DspData.A_CvOp) {
+		DspData.XX_Mode = 2;
 		DspData.XX_DutyA = 0.5;
 		DspData.XX_DutyB = 0.5;
 		DspData.XX_DutyC = 0.5;
+	}else
+	{
+
 	}
 }
 
@@ -830,7 +834,7 @@ void McuInit(void) {
 	McuParam.L_PrlAcm = TRUE; //	TRUE
 
 	/*UF3PhCmp 4ms*/
-	McuParam.L_EnUF3PhCmp = FALSE;	//TRUE
+	McuParam.L_EnUF3PhCmp = TRUE;	//TRUE
 	McuParam.PI_UF3PhCmpActHiLo = 4000.0;
 	McuParam.PF_UF3PhCmpActHiLo = -10.0;
 	McuParam.PI_UF3PhCmpRctHiLo = 4000.0;

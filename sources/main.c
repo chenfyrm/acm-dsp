@@ -269,7 +269,6 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 		PX_Out_Spf.NX_DspPlCn = 0;
 
 	DIS_GPIO30();
-
 	DPRAM_RD(); //
 
 	NX_Pr();
@@ -354,7 +353,6 @@ interrupt void DPRAM_isr(void) //after DSP1 has written to DPRAM, trigger the in
 	PX_Out_Spf.XI_DcLkEst = DspData.XP_3Ph_Flt / DspData.XU_DcLkFlt;
 
 	DPRAM_WR(); //
-
 	EN_GPIO30();
 
 	PieCtrlRegs.PIEACK.all |= PIEACK_GROUP1;
@@ -979,6 +977,7 @@ void DspStCl(void) {
 void DspStCl1(void) {
 	McuData.NX_MnSqSt = PX_In_Spf.NX_McuOpSt & 0x00FF;
 	McuData.A_CdAuLdCt = PX_In_Spf.XX_McuFlag1.bit.CdAuLdCt;
+	PX_In_Spf.XX_McuFlag1.bit.OvpFcTsAv;
 
 	McuData.C_DcuNt = (1 == McuData.NX_MnSqSt);
 	McuData.S_DcuNt = (2 == McuData.NX_MnSqSt);
